@@ -13,5 +13,6 @@ table! {
         username -> Text,
         status -> Text,
         moderator ->Text,
+        created ->Bigint,
     }
 }

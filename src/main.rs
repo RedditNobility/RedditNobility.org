@@ -20,7 +20,7 @@ use new_rawr::client::RedditClient;
 use new_rawr::auth::AnonymousAuthenticator;
 use new_rawr::options::ListingOptions;
 use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Content, Commentable};
+use new_rawr::traits::{Content, Commentable, Votable};
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 use std::path::Path;
@@ -32,6 +32,8 @@ use bcrypt::{DEFAULT_COST, hash, verify};
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::time::{SystemTime, UNIX_EPOCH};
+use crate::controllers::{RedditPost, RedditUser};
 
 pub mod models;
 pub mod schema;
@@ -88,7 +90,7 @@ async fn main() -> std::io::Result<()> {
             let client = RedditClient::new("RedditRoyalty bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
             let r_all = client.subreddit("all");
             let new = r_all.hot(ListingOptions::default()).expect("Request failed!");
-            let new_list = new.take(60).collect::<Vec<Submission>>();
+            let new_list = new.take(1).collect::<Vec<Submission>>();
             for x in new_list {
                 if is_valid(x.author().name) {
                     quick_add(x.author().name, &result);
@@ -110,11 +112,10 @@ async fn main() -> std::io::Result<()> {
         let tera =
             Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*")).unwrap();
         let reddit_royalty = Rc::new(RefCell::new(RedditRoyalty::new()));
-
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(CookieSession::signed(&[0; 32]).secure(false))
-            .data(pool.clone()).data(reddit_royalty.clone()).data(tera).service(fs::Files::new("static", "static").show_files_listing())
+            .data(pool.clone()).data(reddit_royalty).data(tera).service(fs::Files::new("static", "static").show_files_listing())
             .service(index).
             service(submit).
             service(get_login).
@@ -135,6 +136,7 @@ fn quick_add(username: String, conn: &MysqlConnection) {
             username: username.clone(),
             moderator: "".to_string(),
             status: "Found".to_string(),
+            created: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64,
         };
         action::add_new_fuser(&fuser, &conn);
     }
@@ -192,6 +194,7 @@ pub async fn submit(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpReq
                 username: form.username.clone(),
                 moderator: "".to_string(),
                 status: "Found".to_string(),
+                created: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64,
             };
             action::add_new_fuser(&fuser, &conn);
         }

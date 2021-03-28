@@ -11,13 +11,6 @@ pub struct Moderator {
     pub admin: bool,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum Status {
-    Found,
-    Approved,
-    Denied,
-    Banned,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 pub struct Fuser {
@@ -25,24 +18,17 @@ pub struct Fuser {
     pub username: String,
     pub status: String,
     pub moderator: String,
+    pub created: i64,
 }
+//Found, Approved, Denied, Banned
 
-impl FromStr for Status {
-    type Err = ();
-
-    fn from_str(input: &str) -> Result<Status, Self::Err> {
-        match input {
-            "Found" => Ok(Status::Found),
-            "Approved" => Ok(Status::Approved),
-            "Denied" => Ok(Status::Denied),
-            "Banned" => Ok(Status::Banned),
-            _ => Err(())
-        }
-    }
-}
 
 impl Fuser {
-    pub fn get_status(&self) -> Status {
-        Status::from_str(&*self.status).unwrap()
+    pub fn set_status(&mut self, status: String) {
+        self.status = status;
+    }
+
+    pub fn set_moderator(&mut self, moderator: String) {
+        self.moderator = moderator;
     }
 }

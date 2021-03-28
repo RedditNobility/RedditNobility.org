@@ -19,6 +19,24 @@ pub fn get_fuser(fuser: String, conn: &MysqlConnection) -> Result<Option<models:
 
     Ok(found_mod)
 }
+
+pub fn update_fuser(status: String, moderator: String, username: String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::fusers::dsl::*;
+
+    diesel::update(fusers.filter(username.eq(username)))
+        .set((moderator.eq(moderator), status.eq(status)))
+        .execute(conn);
+    Ok(())
+}
+
+pub fn get_found_fusers(conn: &MysqlConnection) -> Result<Vec<models::Fuser>, diesel::result::Error> {
+    use crate::schema::fusers::dsl::*;
+
+    let values = fusers.filter(status.eq("Found")).load::<models::Fuser>(conn).expect("Error loading mods");
+
+    Ok(values)
+}
+
 pub fn get_moderator(moderator: String, conn: &MysqlConnection) -> Result<Option<models::Moderator>, diesel::result::Error> {
     use crate::schema::moderators::dsl::*;
 
