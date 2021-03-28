@@ -33,6 +33,7 @@ use bcrypt::{DEFAULT_COST, hash, verify};
 pub mod models;
 pub mod schema;
 mod action;
+mod controllers;
 
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
@@ -94,7 +95,9 @@ async fn main() -> std::io::Result<()> {
             service(post_login).
             service(admin).
             service(admin_del_user).
-            service(admin_create_user)
+            service(admin_create_user).
+            service(controllers::moderator_index).
+            service(web::resource("/ws/moderator").route(web::get().to(controllers::ws_index)))
     }).bind("127.0.0.1:6742")?.run().await
 }
 
