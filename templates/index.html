@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Sign Up</title>
+
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="static/index.css"/>
+
+</head>
+
+<body>
+
+    <form method="post" action="submit">
+
+        <div class="login-area">
+
+            <a href="/"><img src="static/TuxCrown.png" alt="KingTux"></a>
+
+            <h2>Name yourself</h2>
+
+            <h5>Submit your username here</h5>
+            {% if success %}
+            <div class="success">Username added!</div>
+            {% endif %}
+            {% if already_exists %}
+            <div class="error">Username already exists!</div>
+            {% endif %}
+
+            <label for="submit_username">Username</label><br/>
+
+            <input type="text" name="username" autofocus id="submit_username">
+
+            <br/><br/><br/>
+
+            <button type="submit">Submit</button>
+
+            <br/><br/>
+
+        </div>
+
+    </form>
+
+</body>
+
+</html>
