@@ -2,7 +2,7 @@ use diesel::MysqlConnection;
 use diesel::prelude::*;
 
 use crate::models;
-use crate::models::{Moderator, Fuser, Member};
+use crate::models::{Moderator, Fuser};
 
 pub fn add_new_fuser(fuser: &Fuser, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::fusers::dsl::*;

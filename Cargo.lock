@@ -18,6 +18,7 @@ dependencies = [
  "new-rawr",
  "r2d2",
  "r2d2_mysql",
+ "rand 0.8.3",
  "sanitize-filename",
  "serde",
  "serde_json",
@@ -1995,7 +1996,7 @@ dependencies = [
 [[package]]
 name = "new-rawr"
 version = "0.0.1"
-source = "git+https://github.com/wherkamp/new-rawr.git#55f52ba107d21e1d2da4443c551c97c83649b3de"
+source = "git+https://github.com/wherkamp/new-rawr.git#8bf6dbbddc774d03925f3b7969fa7ee71478edd1"
 dependencies = [
  "base64 0.13.0",
  "futures",

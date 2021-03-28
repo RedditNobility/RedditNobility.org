@@ -1,5 +1,7 @@
 CREATE TABLE fusers
 (
-    id       BIGINT AUTO_INCREMENT PRIMARY KEY,
-    username TEXT
+    id        BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username  TEXT,
+    status    TEXT,
+    moderator TEXT DEFAULT NULL
 )

@@ -6,17 +6,12 @@ table! {
         admin -> Bool,
     }
 }
-table! {
-    members (id) {
-        id -> Bigint,
-        username -> Text,
-        moderator -> Text,
-        created_on ->Bigint,
-    }
-}
+
 table! {
     fusers (id) {
         id -> Bigint,
         username -> Text,
+        status -> Text,
+        moderator ->Text,
     }
 }

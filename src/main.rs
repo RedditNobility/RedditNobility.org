@@ -29,15 +29,39 @@ use actix_web::http::header::LOCATION;
 use actix_web::http::StatusCode;
 use actix_web::body::Body;
 use bcrypt::{DEFAULT_COST, hash, verify};
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub mod models;
 pub mod schema;
 mod action;
 mod controllers;
 
-
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
+pub struct RedditRoyalty {
+    pub active_keys: HashMap<String, i64>
+}
+
+impl RedditRoyalty {
+    fn new() -> RedditRoyalty {
+        RedditRoyalty {
+            active_keys: HashMap::new()
+        }
+    }
+    pub fn add_key(&mut self, key: String, moderator: i64) {
+        self.active_keys.insert(key, moderator);
+    }
+
+    pub fn drop_key(&mut self, key: String) {
+        self.active_keys.remove(&*key);
+    }
+
+    pub fn is_key_valid(&self, key: String) -> bool {
+        self.active_keys.contains_key(&*key)
+    }
+}
 embed_migrations!();
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -63,7 +87,7 @@ async fn main() -> std::io::Result<()> {
             let result = MysqlConnection::establish(&*string).unwrap();
             let client = RedditClient::new("RedditRoyalty bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
             let r_all = client.subreddit("all");
-            let new = r_all.new(ListingOptions::default()).expect("Request failed!");
+            let new = r_all.hot(ListingOptions::default()).expect("Request failed!");
             let new_list = new.take(60).collect::<Vec<Submission>>();
             for x in new_list {
                 if is_valid(x.author().name) {
@@ -81,14 +105,16 @@ async fn main() -> std::io::Result<()> {
             thread::sleep(time);
         }
     });
+
     HttpServer::new(move || {
         let tera =
             Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*")).unwrap();
+        let reddit_royalty = Rc::new(RefCell::new(RedditRoyalty::new()));
 
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(CookieSession::signed(&[0; 32]).secure(false))
-            .data(pool.clone()).data(tera).service(fs::Files::new("static", "static").show_files_listing())
+            .data(pool.clone()).data(reddit_royalty.clone()).data(tera).service(fs::Files::new("static", "static").show_files_listing())
             .service(index).
             service(submit).
             service(get_login).
@@ -107,6 +133,8 @@ fn quick_add(username: String, conn: &MysqlConnection) {
         let fuser = Fuser {
             id: 0,
             username: username.clone(),
+            moderator: "".to_string(),
+            status: "Found".to_string(),
         };
         action::add_new_fuser(&fuser, &conn);
     }
@@ -162,6 +190,8 @@ pub async fn submit(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpReq
             let fuser = Fuser {
                 id: 0,
                 username: form.username.clone(),
+                moderator: "".to_string(),
+                status: "Found".to_string(),
             };
             action::add_new_fuser(&fuser, &conn);
         }
