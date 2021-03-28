@@ -1996,7 +1996,7 @@ dependencies = [
 [[package]]
 name = "new-rawr"
 version = "0.0.1"
-source = "git+https://github.com/wherkamp/new-rawr.git#4e15ecf9adeace431ebe8c17f2d465fddce0943a"
+source = "git+https://github.com/wherkamp/new-rawr.git#569e2fd337e80cbc54bffc86422985c7abc3be2c"
 dependencies = [
  "base64 0.13.0",
  "futures",

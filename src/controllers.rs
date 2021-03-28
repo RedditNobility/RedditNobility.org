@@ -21,6 +21,8 @@ use new_rawr::auth::AnonymousAuthenticator;
 use crate::models::Fuser;
 use new_rawr::structures::submission::Submission;
 use new_rawr::traits::{Votable, Content};
+use rand::Rng;
+use rand::distributions::Alphanumeric;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -55,22 +57,31 @@ pub struct WebsocketRequest {
 /// do websocket handshake and start `MyWebSocket` actor
 pub async fn ws_index(r: HttpRequest, rr: web::Data<Rc<RefCell<RedditRoyalty>>>, stream: web::Payload, info: web::Query<WebsocketRequest>) -> Result<HttpResponse, Error> {
     let data = rr.as_ref().clone();
-    if !data.borrow().is_key_valid(info.moderator.clone()) {
-        return Ok(HttpResponse::Unauthorized().into());
-    }
+
     let res = ws::start(MyWebSocket::new(data), &r, stream);
     res
 }
 
 #[get("/moderator")]
-pub async fn moderator_index(pool: web::Data<DbPool>, rr: web::Data<Rc<RefCell<RedditRoyalty>>>, tera: web::Data<Tera>, r: HttpRequest) -> Result<HttpResponse, Error> {
+pub async fn moderator_index(pool: web::Data<DbPool>, mut rr: web::Data<Rc<RefCell<RedditRoyalty>>>, session: Session, tera: web::Data<Tera>, r: HttpRequest) -> Result<HttpResponse, Error> {
     let mut ctx = tera::Context::new();
+    let conn = pool.get().expect("couldn't get db connection from pool");
 
-    let result = tera.get_ref().render("moderator.html", &ctx);
-    if result.is_err() {
-        let error = result.err().unwrap();
-        return Err(HttpResponse::InternalServerError().into());
+    let result2: Option<String> = session.get("moderator").unwrap();
+    if result2.is_none() {
+        return Err(HttpResponse::Unauthorized().into());
     }
+    let s: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(25)
+        .map(char::from)
+        .collect();
+    let mut data = rr.as_ref().clone();
+
+    let result1: String = session.get("moderator").unwrap().unwrap();
+    data.borrow_mut().add_key(s.clone(), action::get_moderator(result1, &conn).unwrap().unwrap().id);
+    ctx.insert("mod_key", &s);
+    let result = tera.get_ref().render("moderator.html", &ctx);
     Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
 }
 
@@ -85,12 +96,13 @@ impl Actor for MyWebSocket {
 }
 
 
-fn approve_user(user: &str, moderator: &str, conn: &MysqlConnection) {
+fn approve_user(user: &str, moderator: &str, client: &RedditClient, conn: &MysqlConnection) {
     let result = action::get_fuser(user.parse().unwrap(), &conn);
     let option = result.unwrap();
     if option.is_none() {
         return;
     }
+    client.subreddit("royal").invite_member(user.parse().unwrap());
     action::update_fuser("Approved".to_string(), moderator.to_string(), user.to_string(), conn);
 }
 
@@ -100,7 +112,8 @@ fn deny_user(user: &str, moderator: &str, conn: &MysqlConnection) {
     if option.is_none() {
         return;
     }
-    action::update_fuser("Denied".to_string(), moderator.to_string(), user.to_string(), conn);}
+    action::update_fuser("Denied".to_string(), moderator.to_string(), user.to_string(), conn);
+}
 
 struct MyWebSocket {
     /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
@@ -131,7 +144,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                 if value1.eq("approve") {
                     let value2 = value["user"].as_str();
                     if value2.is_some() {
-                        approve_user(value2.unwrap(), value["moderator"].as_str().unwrap(), &self.conn);
+                        approve_user(value2.unwrap(), value["moderator"].as_str().unwrap(), &self.reddit_royalty.borrow().reddit, &self.conn);
                     }
                 } else if value1.eq("disapprove") {
                     let value2 = value["user"].as_str();

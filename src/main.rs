@@ -17,7 +17,7 @@ use crate::models::{Fuser, Moderator};
 use serde::{Serialize, Deserialize};
 use core::time;
 use new_rawr::client::RedditClient;
-use new_rawr::auth::AnonymousAuthenticator;
+use new_rawr::auth::{AnonymousAuthenticator, PasswordAuthenticator};
 use new_rawr::options::ListingOptions;
 use new_rawr::structures::submission::Submission;
 use new_rawr::traits::{Content, Commentable, Votable};
@@ -43,13 +43,15 @@ mod controllers;
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
 pub struct RedditRoyalty {
-    pub active_keys: HashMap<String, i64>
+    pub active_keys: HashMap<String, i64>,
+    pub reddit: RedditClient,
 }
 
 impl RedditRoyalty {
-    fn new() -> RedditRoyalty {
+    fn new(client: RedditClient) -> RedditRoyalty {
         RedditRoyalty {
-            active_keys: HashMap::new()
+            active_keys: HashMap::new(),
+            reddit: client,
         }
     }
     pub fn add_key(&mut self, key: String, moderator: i64) {
@@ -111,7 +113,13 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let tera =
             Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*")).unwrap();
-        let reddit_royalty = Rc::new(RefCell::new(RedditRoyalty::new()));
+        let arc = PasswordAuthenticator::new(
+            dotenv::var("CLIENT_KEY").unwrap().as_str(),
+            dotenv::var("CLIENT_SECRET").unwrap().as_str(),
+            dotenv::var("USER").unwrap().as_str(),
+            dotenv::var("PASSWORD").unwrap().as_str());
+        let client = RedditClient::new("RedditRoyalty bot(by u/KingTuxWH)", arc);
+        let reddit_royalty = Rc::new(RefCell::new(RedditRoyalty::new(client)));
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(CookieSession::signed(&[0; 32]).secure(false))
