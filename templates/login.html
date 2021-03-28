@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Login</title>
+
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="static/login.css"/>
+
+</head>
+
+<body>
+
+<form method="post" action="/login">
+
+    <div class="login-area">
+
+        <a href="/"><img src="static/TuxCrown.png" alt="KingTux"></a>
+
+        <h2>Login</h2>
+
+        <h5>Sign into your account</h5>
+
+        <!--<div class="error">There was an error signing you in</div>-->
+
+        <label for="login_username">Username</label><br/>
+
+        <input type="text" name="username" autofocus id="login_username">
+
+        <br/><br/>
+
+        <label for="login_password">Password</label><br/>
+
+        <input type="password" name="password" id="login_password">
+
+        <br/><br/><br/>
+
+        <button type="submit">Log In</button>
+
+        <br/><br/>
+
+    </div>
+
+</form>
+
+</body>
+
+</html>

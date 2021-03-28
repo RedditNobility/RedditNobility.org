@@ -3,16 +3,17 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 extern crate dotenv;
+extern crate bcrypt;
 
 use dotenv::dotenv;
-use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer, HttpRequest, error};
+use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer, HttpRequest, error, Responder};
 use std::{env, thread};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use tera::Tera;
 use actix_files as fs;
 use actix_web::web::Form;
-use crate::models::Fuser;
+use crate::models::{Fuser, Moderator};
 use serde::{Serialize, Deserialize};
 use core::time;
 use new_rawr::client::RedditClient;
@@ -23,6 +24,11 @@ use new_rawr::traits::{Content, Commentable};
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 use std::path::Path;
+use actix_session::{CookieSession, Session};
+use actix_web::http::header::LOCATION;
+use actix_web::http::StatusCode;
+use actix_web::body::Body;
+use bcrypt::{DEFAULT_COST, hash, verify};
 
 pub mod models;
 pub mod schema;
@@ -59,8 +65,6 @@ async fn main() -> std::io::Result<()> {
             let new = r_all.new(ListingOptions::default()).expect("Request failed!");
             let new_list = new.take(60).collect::<Vec<Submission>>();
             for x in new_list {
-                let time = time::Duration::from_secs(5);
-                thread::sleep(time);
                 if is_valid(x.author().name) {
                     quick_add(x.author().name, &result);
                 }
@@ -82,7 +86,15 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .wrap(middleware::Logger::default())
-            .data(pool.clone()).data(tera).service(fs::Files::new("static", "static").show_files_listing()).service(index).service(submit)
+            .wrap(CookieSession::signed(&[0; 32]).secure(false))
+            .data(pool.clone()).data(tera).service(fs::Files::new("static", "static").show_files_listing())
+            .service(index).
+            service(submit).
+            service(get_login).
+            service(post_login).
+            service(admin).
+            service(admin_del_user).
+            service(admin_create_user)
     }).bind("127.0.0.1:6742")?.run().await
 }
 
@@ -158,4 +170,131 @@ pub async fn submit(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpReq
         return Err(HttpResponse::InternalServerError().into());
     }
     Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
+}
+
+#[get("/login")]
+pub async fn get_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> Result<HttpResponse, Error> {
+    let mut ctx = tera::Context::new();
+    let conn = pool.get().expect("couldn't get db connection from pool");
+
+    let result = tera.get_ref().render("login.html", &ctx);
+    if result.is_err() {
+        let error = result.err().unwrap();
+        return Err(HttpResponse::InternalServerError().into());
+    }
+    Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
+}
+
+#[post("/login")]
+pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, req: HttpRequest, form: Form<CreateMod>) -> HttpResponse {
+    let conn = pool.get().expect("couldn't get db connection from pool");
+    let result = action::get_moderator(form.username.clone(), &conn).unwrap();
+    if result.is_none() {
+        return HttpResponse::Found().header("Location", "/login").finish();
+    }
+    let moderator = result.unwrap();
+    if verify(&form.password, &moderator.password).unwrap() {
+        println!("Worked!");
+        let result1 = session.set("moderator", moderator.username);
+        return HttpResponse::Found().header("Location", "/moderator").finish();
+    }
+    return HttpResponse::Found().header("Location", "/login").finish();
+}
+
+
+#[get("/admin")]
+pub async fn admin(pool: web::Data<DbPool>, session: Session, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
+    let mut ctx = tera::Context::new();
+    let conn = pool.get().expect("couldn't get db connection from pool");
+
+    let result1 = action::get_moderators(&conn);
+    if (result1.is_err()) {
+        //TODO handle
+    }
+    let result1 = result1.unwrap();
+    let mut approved = false;
+    if !result1.is_empty() {
+        let moderator = session.get("moderator");
+        let option = moderator.unwrap();
+        if option.is_some() {
+            let value: String = option.unwrap();
+            for x in result1 {
+                if x.username.eq(&value) {
+                    if x.admin {
+                        approved = true;
+                    }
+                }
+            }
+        }
+    } else {
+        approved = true;
+    }
+    if !approved {
+        return HttpResponse::Unauthorized().header("Location", "/").finish();
+    }
+    let result = tera.get_ref().render("admin.html", &ctx);
+    if result.is_err() {
+        let error = result.err().unwrap();
+        return HttpResponse::InternalServerError().into();
+    }
+    HttpResponse::Ok().content_type("text/html").body(&result.unwrap())
+}
+
+#[derive(Deserialize)]
+pub struct CreateMod {
+    pub username: String,
+    pub password: String,
+
+}
+
+#[post("/admin/user/del")]
+pub async fn admin_del_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, req: HttpRequest) -> HttpResponse {
+    HttpResponse::Found().header("Location", "/admin").finish()
+}
+
+#[post("/admin/user/create")]
+pub async fn admin_create_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, form: Form<CreateMod>, req: HttpRequest) -> HttpResponse {
+    let conn = pool.get().expect("couldn't get db connection from pool");
+
+    let result1 = action::get_moderators(&conn);
+    if (result1.is_err()) {
+        //TODO handle
+    }
+    let result1 = result1.unwrap();
+    let mut approved = false;
+    if !result1.is_empty() {
+        let moderator = session.get("moderator");
+        let option = moderator.unwrap();
+        if option.is_some() {
+            let value: String = option.unwrap();
+            for x in result1 {
+                if x.username.eq(&value) {
+                    if x.admin {
+                        approved = true;
+                    }
+                }
+            }
+        }
+    } else {
+        approved = true;
+    }
+    if !approved {
+        return HttpResponse::Unauthorized().header("Location", "/").finish();
+    }
+    let result1 = action::get_moderators(&conn);
+    let result1 = result1.unwrap();
+
+    for x in result1 {
+        if x.username.eq(&form.username) {
+            return HttpResponse::Found().header("Location", "/admin").finish();
+        }
+    }
+    let moderator1 = Moderator {
+        id: 0,
+        username: form.username.clone(),
+        password: hash(&form.password.clone(), DEFAULT_COST).unwrap(),
+        admin: false,
+    };
+    action::add_moderator(&moderator1, &conn);
+    HttpResponse::Found().header("Location", "/admin").finish()
 }

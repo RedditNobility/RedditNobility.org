@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use diesel::{Queryable};
 use crate::schema::*;
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
-pub(crate) struct Moderator {
+pub struct Moderator {
     pub id: i64,
     pub username: String,
     pub password: String,
