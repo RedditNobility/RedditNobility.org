@@ -34,6 +34,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::controllers::{RedditPost, RedditUser};
+use std::sync::{Mutex, Arc};
 
 pub mod models;
 pub mod schema;
@@ -92,13 +93,13 @@ async fn main() -> std::io::Result<()> {
             let client = RedditClient::new("RedditRoyalty bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
             let r_all = client.subreddit("all");
             let new = r_all.hot(ListingOptions::default()).expect("Request failed!");
-            let new_list = new.take(1).collect::<Vec<Submission>>();
+            let new_list = new.take(60).collect::<Vec<Submission>>();
             for x in new_list {
                 if is_valid(x.author().name) {
                     quick_add(x.author().name, &result);
                 }
                 let list = x.replies().unwrap();
-                let take = list.take(60);
+                let take = list.take(100);
                 for comment_x in take {
                     if is_valid(comment_x.author().name) {
                         quick_add(comment_x.author().name, &result);
@@ -109,21 +110,22 @@ async fn main() -> std::io::Result<()> {
             thread::sleep(time);
         }
     });
+    let arc = PasswordAuthenticator::new(
+        dotenv::var("CLIENT_KEY").unwrap().as_str(),
+        dotenv::var("CLIENT_SECRET").unwrap().as_str(),
+        dotenv::var("USER").unwrap().as_str(),
+        dotenv::var("PASSWORD").unwrap().as_str());
+    let client = RedditClient::new("RedditRoyalty bot(by u/KingTuxWH)", arc);
+    let reddit_royalty = Arc::new(Mutex::new(RedditRoyalty::new(client)));
 
     HttpServer::new(move || {
         let tera =
             Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*")).unwrap();
-        let arc = PasswordAuthenticator::new(
-            dotenv::var("CLIENT_KEY").unwrap().as_str(),
-            dotenv::var("CLIENT_SECRET").unwrap().as_str(),
-            dotenv::var("USER").unwrap().as_str(),
-            dotenv::var("PASSWORD").unwrap().as_str());
-        let client = RedditClient::new("RedditRoyalty bot(by u/KingTuxWH)", arc);
-        let reddit_royalty = Rc::new(RefCell::new(RedditRoyalty::new(client)));
+
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(CookieSession::signed(&[0; 32]).secure(false))
-            .data(pool.clone()).data(reddit_royalty).data(tera).service(fs::Files::new("static", "static").show_files_listing())
+            .data(pool.clone()).data(Arc::clone(&reddit_royalty)).data(tera).service(fs::Files::new("static", "static").show_files_listing())
             .service(index).
             service(submit).
             service(get_login).

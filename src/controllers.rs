@@ -23,6 +23,7 @@ use new_rawr::structures::submission::Submission;
 use new_rawr::traits::{Votable, Content};
 use rand::Rng;
 use rand::distributions::Alphanumeric;
+use serde_json::Value;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -55,7 +56,7 @@ pub struct WebsocketRequest {
 }
 
 /// do websocket handshake and start `MyWebSocket` actor
-pub async fn ws_index(r: HttpRequest, rr: web::Data<Rc<RefCell<RedditRoyalty>>>, stream: web::Payload, info: web::Query<WebsocketRequest>) -> Result<HttpResponse, Error> {
+pub async fn ws_index(r: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, stream: web::Payload, info: web::Query<WebsocketRequest>) -> Result<HttpResponse, Error> {
     let data = rr.as_ref().clone();
 
     let res = ws::start(MyWebSocket::new(data), &r, stream);
@@ -121,7 +122,7 @@ struct MyWebSocket {
     hb: Instant,
     conn: MysqlConnection,
     key: Option<String>,
-    reddit_royalty: Rc<RefCell<RedditRoyalty>>,
+    reddit_royalty: Arc<Mutex<RedditRoyalty>>,
 
 }
 
@@ -139,12 +140,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                 self.hb = Instant::now();
             }
             Ok(ws::Message::Text(text)) => {
-                let value = serde_json::json!(text);
+                let value: Value = serde_json::from_str(&*text).unwrap();
                 let value1 = value["type"].as_str().unwrap();
                 if value1.eq("approve") {
                     let value2 = value["user"].as_str();
                     if value2.is_some() {
-                        approve_user(value2.unwrap(), value["moderator"].as_str().unwrap(), &self.reddit_royalty.borrow().reddit, &self.conn);
+                        approve_user(value2.unwrap(), value["moderator"].as_str().unwrap(), &self.reddit_royalty.lock().unwrap().reddit, &self.conn);
                     }
                 } else if value1.eq("disapprove") {
                     let value2 = value["user"].as_str();
@@ -208,13 +209,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                 ctx.close(reason);
                 ctx.stop();
                 if self.key.is_some() {
-                    self.reddit_royalty.borrow_mut().drop_key(self.get_key())
+                    self.reddit_royalty.lock().unwrap().drop_key(self.get_key())
                 }
             }
             _ => {
                 ctx.stop();
                 if self.key.is_some() {
-                    self.reddit_royalty.borrow_mut().drop_key(self.get_key())
+                    self.reddit_royalty.lock().unwrap().drop_key(self.get_key())
                 }
             }
         }
@@ -223,7 +224,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
 
 
 impl MyWebSocket {
-    fn new(rr: Rc<RefCell<RedditRoyalty>>) -> Self {
+    fn new(rr: Arc<Mutex<RedditRoyalty>>) -> Self {
         let string = std::env::var("DATABASE_URL").expect("DATABASE_URL");
         Self {
             hb: Instant::now(),
@@ -258,7 +259,7 @@ impl MyWebSocket {
         return string;
     }
     fn set_key(&mut self, key: String) -> bool {
-        if !self.reddit_royalty.borrow().is_key_valid(key.clone()) {
+        if !self.reddit_royalty.lock().unwrap().is_key_valid(key.clone()) {
             return false;
         }
         self.key = Option::from(key);
