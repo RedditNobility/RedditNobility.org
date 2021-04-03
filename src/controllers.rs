@@ -158,7 +158,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     let mut vec = result.unwrap();
                     vec.sort_by_key(|x| x.created);
                     let mut users = Vec::<RedditUser>::new();
-                    let client = RedditClient::new("RedditRoyalty bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
+                    let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
                     for i in 0..value2 {
                         let option = vec.get(i as usize);
                         if option.is_none() {

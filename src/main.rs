@@ -90,7 +90,7 @@ async fn main() -> std::io::Result<()> {
         loop {
             let string = std::env::var("DATABASE_URL").expect("DATABASE_URL");
             let result = MysqlConnection::establish(&*string).unwrap();
-            let client = RedditClient::new("RedditRoyalty bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
+            let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
             let r_all = client.subreddit("all");
             let new = r_all.hot(ListingOptions::default()).expect("Request failed!");
             let new_list = new.take(60).collect::<Vec<Submission>>();
@@ -115,7 +115,7 @@ async fn main() -> std::io::Result<()> {
         dotenv::var("CLIENT_SECRET").unwrap().as_str(),
         dotenv::var("USER").unwrap().as_str(),
         dotenv::var("PASSWORD").unwrap().as_str());
-    let client = RedditClient::new("RedditRoyalty bot(by u/KingTuxWH)", arc);
+    let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", arc);
     let reddit_royalty = Arc::new(Mutex::new(RedditRoyalty::new(client)));
 
     HttpServer::new(move || {
