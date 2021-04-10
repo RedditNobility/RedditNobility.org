@@ -24,6 +24,8 @@ use new_rawr::traits::{Votable, Content};
 use rand::Rng;
 use rand::distributions::Alphanumeric;
 use serde_json::Value;
+use actix::prelude::*;
+use std::borrow::BorrowMut;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -64,7 +66,7 @@ pub async fn ws_index(r: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, 
 }
 
 #[get("/moderator")]
-pub async fn moderator_index(pool: web::Data<DbPool>, mut rr: web::Data<Rc<RefCell<RedditRoyalty>>>, session: Session, tera: web::Data<Tera>, r: HttpRequest) -> Result<HttpResponse, Error> {
+pub async fn moderator_index(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>, session: Session, tera: web::Data<Tera>, r: HttpRequest) -> Result<HttpResponse, Error> {
     let mut ctx = tera::Context::new();
     let conn = pool.get().expect("couldn't get db connection from pool");
 
@@ -80,8 +82,9 @@ pub async fn moderator_index(pool: web::Data<DbPool>, mut rr: web::Data<Rc<RefCe
     let mut data = rr.as_ref().clone();
 
     let result1: String = session.get("moderator").unwrap().unwrap();
-    data.borrow_mut().add_key(s.clone(), action::get_moderator(result1, &conn).unwrap().unwrap().id);
+    data.borrow_mut().lock().unwrap().add_key(s.clone(), action::get_moderator(result1, &conn).unwrap().unwrap().id);
     ctx.insert("mod_key", &s);
+    ctx.insert("web_socket_url", "ws://127.0.0.1:6742/ws/moderator");
     let result = tera.get_ref().render("moderator.html", &ctx);
     Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
 }
@@ -95,7 +98,6 @@ impl Actor for MyWebSocket {
         self.hb(ctx);
     }
 }
-
 
 fn approve_user(user: &str, moderator: &str, client: &RedditClient, conn: &MysqlConnection) {
     let result = action::get_fuser(user.parse().unwrap(), &conn);
@@ -153,16 +155,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                         deny_user(value2.unwrap(), value["moderator"].as_str().unwrap(), &self.conn);
                     }
                 } else if value1.eq("users") {
-                    let value2 = value["number"].as_i64().unwrap_or(10);
                     let result = action::get_found_fusers(&self.conn);
                     let mut vec = result.unwrap();
                     vec.sort_by_key(|x| x.created);
-                    let mut users = Vec::<RedditUser>::new();
                     let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
-                    for i in 0..value2 {
                         let option = vec.get(i as usize);
                         if option.is_none() {
-                            continue;
+                            return;
                         }
                         let x1: &Fuser = option.unwrap();
                         let user = client.user(x1.username.as_str());
@@ -193,14 +192,15 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                             created: final_user.data.created as i64,
                             topFivePosts: user_posts,
                         };
-                        users.push(user);
-                        ctx.text(serde_json::to_string(&users).unwrap())
-                    }
+                        ctx.text(serde_json::to_string(&user).unwrap())
+
                 } else if value1.eq("login") {
                     let x = self.set_key(value["key"].as_str().unwrap().to_string());
                     if !x {
                         ctx.close(Option::from(CloseReason::from(CloseCode::Invalid)));
                         ctx.stop();
+                    }else{
+                        println!("Logged in moderator")
                     }
                 }
             }

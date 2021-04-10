@@ -40,7 +40,7 @@ pub mod models;
 pub mod schema;
 mod action;
 mod controllers;
-
+mod api;
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
 pub struct RedditRoyalty {
@@ -86,30 +86,8 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to create pool.");
     let connection = pool.get().unwrap();
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
-    thread::spawn(|| {
-        loop {
-            let string = std::env::var("DATABASE_URL").expect("DATABASE_URL");
-            let result = MysqlConnection::establish(&*string).unwrap();
-            let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
-            let r_all = client.subreddit("all");
-            let new = r_all.hot(ListingOptions::default()).expect("Request failed!");
-            let new_list = new.take(60).collect::<Vec<Submission>>();
-            for x in new_list {
-                if is_valid(x.author().name) {
-                    quick_add(x.author().name, &result);
-                }
-                let list = x.replies().unwrap();
-                let take = list.take(100);
-                for comment_x in take {
-                    if is_valid(comment_x.author().name) {
-                        quick_add(comment_x.author().name, &result);
-                    }
-                }
-            }
-            let time = time::Duration::from_secs(7200);
-            thread::sleep(time);
-        }
-    });
+
+
     let arc = PasswordAuthenticator::new(
         dotenv::var("CLIENT_KEY").unwrap().as_str(),
         dotenv::var("CLIENT_SECRET").unwrap().as_str(),
@@ -134,6 +112,7 @@ async fn main() -> std::io::Result<()> {
             service(admin_del_user).
             service(admin_create_user).
             service(controllers::moderator_index).
+            service(api::user).
             service(web::resource("/ws/moderator").route(web::get().to(controllers::ws_index)))
     }).bind("127.0.0.1:6742")?.run().await
 }

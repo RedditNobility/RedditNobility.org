@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Moderator</title>
+
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="static/moderator.css"/>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+
+
+</head>
+
+<body>
+<div class="container">
+    <div>
+        <div><a id="name" href="https://reddit.com/u/KingTux">KingTuxWH</a><img id="avatar"
+                                                                                src="https://i.redd.it/snoovatar/snoovatars/bf3a69f9-02ef-4670-9ef1-71f1d31236f3.png"
+                                                                                width="100">
+            <h2>Posts</h2>
+        </div>
+    </div>
+    <div>
+        <div><a id="post_link-0" href="#">
+            <h6 id="post_one_header">Type: Comment</h6>
+        </a>
+            <p id="post_content-0">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p><a
+                    id="subreddit-0" href="#">r/dankmemes</a>
+        </div>
+        <div><a id="post_link-1" href="#">
+            <h6 id="post_header-1">Type: Comment</h6>
+        </a><a id="subreddit-1" href="#">r/dankmemes</a>
+            <p id="post_content-1">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
+        </div>
+        <div><a id="post_link-2" href="#">
+            <h6 id="post_header-2">Type: Comment</h6>
+        </a><a id="subreddit-2" href="#">r/dankmemes</a>
+            <p id="post_content-2">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
+        </div>
+        <div><a id="post_link-3" href="#">
+            <h6 id="post_header-3">Type: Comment</h6>
+        </a><a id="subreddit-3" href="#">r/dankmemes</a>
+            <p id="post_content-3">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
+        </div>
+        <div><a id="post_link-4" href="#">
+            <h6 id="post_header-4">Type: Comment</h6>
+        </a><a id="subreddit-4" href="#">r/dankmemes</a>
+            <p id="post_content-4">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <h3>Details</h3>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <h6 id="comment_karma" style="width: 200px;">Comment Karma: 2146</h6>
+        </div>
+        <div class="col-md-4">
+            <h6 id="total_karma" style="margin: 0px,0px,0px;width: 200px;">TotalKarma: 7395</h6>
+        </div>
+        <div class="col-md-4">
+            <h6 id="created" style="width: 300px;">Created: Wednesday, April 10, 2019 8:06:52 AM</h6>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <button class="btn btn-primary" id="deny" type="button" style="text-align: left;margin-top: 10px;">Deny</button>
+    <button class="btn btn-primary" id="accept" type="button" style="text-align: justify;margin-top: 10px;">Approve
+    </button>
+</div>
+<script>
+    var exampleSocket = new WebSocket("{{web_socket_url| safe}}?moderator={{mod_key}}", "protocolOne");
+    exampleSocket.onopen = function (event) {
+        var obj = {"type": "login", "key": "{{mod_key}}"}
+        exampleSocket.send(JSON.stringify(obj));
+    };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"
+        integrity="sha384-SR1sx49pcuLnqZUnnPwx6FCym0wLsk5JZuNx2bPPENzswTNFaQU1RDvt3wT4gWFG"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.min.js"
+        integrity="sha384-j0CNLUeiqtyaRmlzUHCPZ+Gy5fQu0dQ6eZ/xAww941Ai1SxSY+0EQqNXNE6DZiVc"
+        crossorigin="anonymous"></script>
+
+</body>
+
+</html>
