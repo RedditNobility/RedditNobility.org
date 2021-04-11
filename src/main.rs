@@ -12,7 +12,7 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use tera::Tera;
 use actix_files as fs;
-use actix_web::web::Form;
+use actix_web::web::{Form, BytesMut};
 use crate::models::{Fuser, Moderator};
 use serde::{Serialize, Deserialize};
 use core::time;
@@ -35,12 +35,15 @@ use std::cell::RefCell;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::controllers::{RedditPost, RedditUser};
 use std::sync::{Mutex, Arc};
-
+use actix_multipart_derive::MultipartForm;
 pub mod models;
 pub mod schema;
 mod action;
 mod controllers;
 mod api;
+mod morecontrollers;
+mod utils;
+
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
 pub struct RedditRoyalty {
@@ -113,23 +116,12 @@ async fn main() -> std::io::Result<()> {
             service(admin_create_user).
             service(controllers::moderator_index).
             service(api::user).
+            service(morecontrollers::file_upload).
             service(web::resource("/ws/moderator").route(web::get().to(controllers::ws_index)))
     }).bind("127.0.0.1:6742")?.run().await
 }
 
-fn quick_add(username: String, conn: &MysqlConnection) {
-    println!("Adding user {}", username);
-    if action::get_fuser(username.clone(), &conn).unwrap().is_none() {
-        let fuser = Fuser {
-            id: 0,
-            username: username.clone(),
-            moderator: "".to_string(),
-            status: "Found".to_string(),
-            created: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64,
-        };
-        action::add_new_fuser(&fuser, &conn);
-    }
-}
+
 
 fn is_valid(username: String) -> bool {
     let vec = lines_from_file(Path::new("resources").join("names.txt"));
@@ -236,22 +228,30 @@ pub async fn admin(pool: web::Data<DbPool>, session: Session, tera: web::Data<Te
     if (result1.is_err()) {
         //TODO handle
     }
+    println!("Test");
     let result1 = result1.unwrap();
     let mut approved = false;
     if !result1.is_empty() {
+        println!("1");
+
         let moderator = session.get("moderator");
         let option = moderator.unwrap();
         if option.is_some() {
+            println!("2");
             let value: String = option.unwrap();
             for x in result1 {
+                println!("3");
                 if x.username.eq(&value) {
                     if x.admin {
+                        println!("4");
                         approved = true;
                     }
                 }
             }
         }
     } else {
+        println!("Test Approved");
+
         approved = true;
     }
     if !approved {
@@ -264,6 +264,7 @@ pub async fn admin(pool: web::Data<DbPool>, session: Session, tera: web::Data<Te
     }
     HttpResponse::Ok().content_type("text/html").body(&result.unwrap())
 }
+
 
 #[derive(Deserialize)]
 pub struct CreateMod {
@@ -287,6 +288,12 @@ pub async fn admin_create_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, s
     }
     let result1 = result1.unwrap();
     let mut approved = false;
+    let result2: Option<String> = session.get("moderator").unwrap();
+    if result2.is_none() {
+        return HttpResponse::Unauthorized().header("Location", "/").finish();
+    }else {
+        approved = true;
+    }
     if !result1.is_empty() {
         let moderator = session.get("moderator");
         let option = moderator.unwrap();
