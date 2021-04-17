@@ -177,6 +177,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
 
                     let submissions = user.submissions().unwrap().take(5).collect::<Vec<Submission>>();
                     let mut user_posts = Vec::<RedditPost>::new();
+
                     for x in submissions {
                         let post = RedditPost {
                             subreddit: x.subreddit().name,
