@@ -129,7 +129,7 @@ async fn main() -> std::io::Result<()> {
             .unwrap();
         builder.set_certificate_chain_file(std::env::var("CERT_KEY").unwrap()).unwrap();
 
-        server.bind_openssl("127.0.0.1:6742", builder)?
+        server.bind_openssl("0.0.0.0:6742", builder)?
             .run()
             .await
     } else {
