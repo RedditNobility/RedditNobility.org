@@ -119,7 +119,7 @@ async fn main() -> std::io::Result<()> {
             service(api::user).
             service(morecontrollers::file_upload).
             service(web::resource("/ws/moderator").route(web::get().to(controllers::ws_index)))
-    }).bind("127.0.0.1:6742")?.run().await
+    }).bind("0.0.0.0:6742")?.run().await
 }
 
 

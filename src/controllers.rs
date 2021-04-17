@@ -60,7 +60,7 @@ pub struct WebsocketRequest {
 }
 
 /// do websocket handshake and start `MyWebSocket` actor
-pub async fn ws_index(r: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, stream: web::Payload, info: web::Query<WebsocketRequest>) -> Result<HttpResponse, Error> {
+pub async fn ws_index(r: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, stream: web::Payload) -> Result<HttpResponse, Error> {
     let data = rr.as_ref().clone();
 
     let res = ws::start(MyWebSocket::new(data), &r, stream);
