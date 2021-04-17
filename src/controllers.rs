@@ -26,6 +26,7 @@ use rand::distributions::Alphanumeric;
 use serde_json::Value;
 use actix::prelude::*;
 use std::borrow::BorrowMut;
+use std::collections::HashMap;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -37,7 +38,7 @@ pub struct RedditUser {
     pub name: String,
     pub avatar: String,
     pub commentKarma: i64,
-    pub linkKarma: i64,
+    pub total_karma: i64,
     pub created: i64,
     pub topFivePosts: Vec<RedditPost>,
 }
@@ -48,6 +49,7 @@ pub struct RedditPost {
     pub url: String,
     pub id: String,
     pub title: String,
+    pub content: String,
     pub score: i64,
 
 }
@@ -154,52 +156,56 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     if value2.is_some() {
                         deny_user(value2.unwrap(), value["moderator"].as_str().unwrap(), &self.conn);
                     }
-                } else if value1.eq("users") {
+                } else if value1.eq("user") {
+                    println!("Hey");
                     let result = action::get_found_fusers(&self.conn);
                     let mut vec = result.unwrap();
                     vec.sort_by_key(|x| x.created);
                     let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
-                        let option = vec.get(0);
-                        if option.is_none() {
-                            return;
-                        }
-                        let x1: &Fuser = option.unwrap();
-                        let user = client.user(x1.username.as_str());
-                        let result1 = user.about();
-                        if result1.is_err() {
-                            //Delete User
-                        }
-                        let final_user = result1.unwrap();
-                        let user = client.user(x1.username.as_str());
+                    let option = vec.get(0);
+                    if option.is_none() {
+                        return;
+                    }
+                    let x1: &Fuser = option.unwrap();
+                    let user = client.user(x1.username.as_str());
+                    let result1 = user.about();
+                    if result1.is_err() {
+                        //Delete User
+                    }
+                    let final_user = result1.unwrap();
+                    let user = client.user(x1.username.as_str());
 
-                        let submissions = user.submissions().unwrap().take(5).collect::<Vec<Submission>>();
-                        let mut user_posts = Vec::<RedditPost>::new();
-                        for x in submissions {
-                            let post = RedditPost {
-                                subreddit: x.subreddit().name,
-                                url: format!("https://reddit.com{}", x.data.permalink),
-                                id: x.data.id.clone(),
-                                title: x.title().clone().to_string(),
-                                score: x.score(),
-                            };
-                            user_posts.push(post);
-                        }
-                        let user = RedditUser {
-                            name: final_user.data.name,
-                            avatar: final_user.data.icon_img,
-                            commentKarma: final_user.data.comment_karma,
-                            linkKarma: final_user.data.link_karma,
-                            created: final_user.data.created as i64,
-                            topFivePosts: user_posts,
+                    let submissions = user.submissions().unwrap().take(5).collect::<Vec<Submission>>();
+                    let mut user_posts = Vec::<RedditPost>::new();
+                    for x in submissions {
+                        let post = RedditPost {
+                            subreddit: x.subreddit().name,
+                            url: format!("https://reddit.com{}", x.data.permalink),
+                            id: x.data.id.clone(),
+                            title: x.title().clone().to_string(),
+                            content: x.data.selftext.clone().to_string(),
+                            score: x.score(),
                         };
-                        ctx.text(serde_json::to_string(&user).unwrap())
-
+                        user_posts.push(post);
+                    }
+                    let user = RedditUser {
+                        name: final_user.data.name,
+                        avatar: final_user.data.icon_img,
+                        commentKarma: final_user.data.comment_karma,
+                        total_karma: final_user.data.total_karma,
+                        created: final_user.data.created as i64,
+                        topFivePosts: user_posts,
+                    };
+                    let mut values = HashMap::<String, Value>::new();
+                    values.insert("type".parse().unwrap(), Value::String("user".parse().unwrap()));
+                    values.insert("data".parse().unwrap(), serde_json::to_value(&user).unwrap());
+                    ctx.text(serde_json::to_string(&values).unwrap())
                 } else if value1.eq("login") {
                     let x = self.set_key(value["key"].as_str().unwrap().to_string());
                     if !x {
                         ctx.close(Option::from(CloseReason::from(CloseCode::Invalid)));
                         ctx.stop();
-                    }else{
+                    } else {
                         println!("Logged in moderator")
                     }
                 }

@@ -31,28 +31,28 @@
         </div>
     </div>
     <div>
-        <div><a id="post_link-0" href="#">
-            <h6 id="post_one_header">Type: Comment</h6>
+        <div style="border-bottom-width: thick; border-color: black;"><a id="post_link-0" href="#">
+            <h6 id="post_header-0">Type: Comment</h6>
         </a>
             <p id="post_content-0">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p><a
                     id="subreddit-0" href="#">r/dankmemes</a>
         </div>
-        <div><a id="post_link-1" href="#">
+        <div style="border-bottom-width: thick; border-color: black;"><a id="post_link-1" href="#">
             <h6 id="post_header-1">Type: Comment</h6>
         </a><a id="subreddit-1" href="#">r/dankmemes</a>
             <p id="post_content-1">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
         </div>
-        <div><a id="post_link-2" href="#">
+        <div style="border-bottom-width: thick; border-color: black;"><a id="post_link-2" href="#">
             <h6 id="post_header-2">Type: Comment</h6>
         </a><a id="subreddit-2" href="#">r/dankmemes</a>
             <p id="post_content-2">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
         </div>
-        <div><a id="post_link-3" href="#">
+        <div style="border-bottom-width: thick; border-color: black;"><a id="post_link-3" href="#">
             <h6 id="post_header-3">Type: Comment</h6>
         </a><a id="subreddit-3" href="#">r/dankmemes</a>
             <p id="post_content-3">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
         </div>
-        <div><a id="post_link-4" href="#">
+        <div style="border-bottom-width: thick; border-color: black;"><a id="post_link-4" href="#">
             <h6 id="post_header-4">Type: Comment</h6>
         </a><a id="subreddit-4" href="#">r/dankmemes</a>
             <p id="post_content-4">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
@@ -85,7 +85,34 @@
     exampleSocket.onopen = function (event) {
         var obj = {"type": "login", "key": "{{mod_key}}"}
         exampleSocket.send(JSON.stringify(obj));
+        var firstUser = {"type": "user"}
+        exampleSocket.send(JSON.stringify(firstUser))
     };
+    exampleSocket.onmessage = function (event) {
+        const msg = JSON.parse(event.data);
+        if (msg.type === "user") {
+
+            const user = msg.data;
+            let elementById = document.getElementById("name");
+            elementById.innerText = user.name
+            elementById.href = "https://reddit.com/u/" + user.name
+            document.getElementById("avatar").src = user.avatar
+            document.getElementById("comment_karma").innerText = "Comment Karma: " + user.commentKarma
+            document.getElementById("total_karma").innerText = "Total Karma: " + user.total_karma
+            alert(user.created)
+            var date = new Date(user.created).toLocaleDateString("en-US")
+
+            document.getElementById("created").innerText = "Created On: " + date;
+            for (let i = 0; i < 5; i++) {
+                let post = user.topFivePosts[i];
+                document.getElementById("post_link-" + i).href = post.url
+                document.getElementById("post_header-" + i).innerText = post.title
+                document.getElementById("post_content-" + i).innerText = post.content
+                document.getElementById("subreddit-" + i).innerText = post.subreddit
+
+            }
+        }
+    }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"
         integrity="sha384-SR1sx49pcuLnqZUnnPwx6FCym0wLsk5JZuNx2bPPENzswTNFaQU1RDvt3wT4gWFG"

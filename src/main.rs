@@ -281,19 +281,17 @@ pub async fn admin_del_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, sess
 #[post("/admin/user/create")]
 pub async fn admin_create_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, form: Form<CreateMod>, req: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
-
+println!("1");
     let result1 = action::get_moderators(&conn);
     if (result1.is_err()) {
-        //TODO handle
+        println!("Hey");
+        return HttpResponse::InternalServerError().finish();
     }
     let result1 = result1.unwrap();
     let mut approved = false;
-    let result2: Option<String> = session.get("moderator").unwrap();
-    if result2.is_none() {
-        return HttpResponse::Unauthorized().header("Location", "/").finish();
-    }else {
-        approved = true;
-    }
+
+    println!("1");
+
     if !result1.is_empty() {
         let moderator = session.get("moderator");
         let option = moderator.unwrap();
@@ -310,6 +308,7 @@ pub async fn admin_create_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, s
     } else {
         approved = true;
     }
+    println!("1");
     if !approved {
         return HttpResponse::Unauthorized().header("Location", "/").finish();
     }
@@ -321,6 +320,7 @@ pub async fn admin_create_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, s
             return HttpResponse::Found().header("Location", "/admin").finish();
         }
     }
+    println!("1");
     let moderator1 = Moderator {
         id: 0,
         username: form.username.clone(),
@@ -328,5 +328,7 @@ pub async fn admin_create_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, s
         admin: false,
     };
     action::add_moderator(&moderator1, &conn);
+    println!("1");
+
     HttpResponse::Found().header("Location", "/admin").finish()
 }
