@@ -105,16 +105,23 @@ impl Actor for MyWebSocket {
     }
 }
 
-fn approve_user(user: &str, moderator: &str, client: &RedditClient, conn: &MysqlConnection) {
-    print!("Hey");
+fn approve_user(user: &str, moderator: &str, client: &RedditClient, conn: &MysqlConnection) -> bool {
+    let result1 = client.subreddit("RedditNobility").invite_member(user.parse().unwrap());
+    if result1.is_err() {
+        return false;
+    }
+    if result1.unwrap() == false {
+        return false;
+    }
     let result = action::get_fuser(user.parse().unwrap(), &conn);
     let option = result.unwrap();
     if option.is_none() {
-        return;
+        return false;
     }
     client.subreddit("RedditNobility").invite_member(user.parse().unwrap());
     print!("Updating!");
     action::update_fuser("Approved".to_string(), moderator.to_string(), user.to_string(), conn);
+    return true;
 }
 
 fn deny_user(user: &str, moderator: &str, conn: &MysqlConnection) {
@@ -155,7 +162,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                 if value1.eq("approve") {
                     let value2 = value["user"].as_str();
                     if value2.is_some() {
-                        approve_user(value2.unwrap(), value["moderator"].as_str().unwrap(), &self.reddit_royalty.lock().unwrap().reddit, &self.conn);
+                        let user1 = approve_user(value2.unwrap(), value["moderator"].as_str().unwrap(), &self.reddit_royalty.lock().unwrap().reddit, &self.conn);
+                        if !user1 {
+                            let mut values = HashMap::<String, Value>::new();
+                            values.insert("type".parse().unwrap(), "error".parse().unwrap());
+                            values.insert("error".parse().unwrap(), Value::String(format!("Unable to approve user: {}", value2.unwrap())));
+                            ctx.text(serde_json::to_string(&values).unwrap())
+                        }
                     }
                 } else if value1.eq("deny") {
                     let value2 = value["user"].as_str();
