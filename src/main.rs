@@ -89,15 +89,12 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to create pool.");
     let connection = pool.get().unwrap();
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
-    println!("{}", std::env::var("CLIENT_KEY").unwrap().as_str());
-    println!("{}", std::env::var("CLIENT_SECRET").unwrap().as_str());
-    println!("{}", std::env::var("USER").unwrap().as_str());
-    println!("{}", std::env::var("PASSWORD").unwrap().as_str());
+
 
     let arc = PasswordAuthenticator::new(
         std::env::var("CLIENT_KEY").unwrap().as_str(),
         std::env::var("CLIENT_SECRET").unwrap().as_str(),
-        std::env::var("USER").unwrap().as_str(),
+        std::env::var("REDDIT_USER").unwrap().as_str(),
         std::env::var("PASSWORD").unwrap().as_str());
 
     let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", arc);
