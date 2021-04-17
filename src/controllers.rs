@@ -88,7 +88,9 @@ pub async fn moderator_index(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mute
     data.borrow_mut().lock().unwrap().add_key(s.clone(), moderator.id);
     ctx.insert("mod_key", &s);
     ctx.insert("moderator", &moderator.username.clone());
-    ctx.insert("web_socket_url", &format!("{}/ws/moderator", std::env::var("WEBSOCKET_URL").unwrap()));
+    let string = std::env::var("WEBSOCKET_URL").unwrap();
+    println!("{}", &string);
+    ctx.insert("web_socket_url", &format!("{}/ws/moderator", string));
     let result = tera.get_ref().render("moderator.html", &ctx);
     Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
 }
