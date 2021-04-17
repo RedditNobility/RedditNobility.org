@@ -92,10 +92,10 @@ async fn main() -> std::io::Result<()> {
 
 
     let arc = PasswordAuthenticator::new(
-        dotenv::var("CLIENT_KEY").unwrap().as_str(),
-        dotenv::var("CLIENT_SECRET").unwrap().as_str(),
-        dotenv::var("USER").unwrap().as_str(),
-        dotenv::var("PASSWORD").unwrap().as_str());
+        std::env::var("CLIENT_KEY").unwrap().as_str(),
+        std::env::var("CLIENT_SECRET").unwrap().as_str(),
+        std::env::var("USER").unwrap().as_str(),
+        std::env::var("PASSWORD").unwrap().as_str());
     let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", arc);
     let reddit_royalty = Arc::new(Mutex::new(RedditRoyalty::new(client)));
 
