@@ -122,7 +122,7 @@ async fn main() -> std::io::Result<()> {
             service(morecontrollers::file_upload).
             service(web::resource("/ws/moderator").route(web::get().to(controllers::ws_index)))
     });
-    if std::env::var("private-key").is_ok() {
+    if std::env::var("PRIVATE_KEY").is_ok() {
         let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
         builder
             .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
