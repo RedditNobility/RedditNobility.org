@@ -36,6 +36,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::controllers::{RedditPost, RedditUser};
 use std::sync::{Mutex, Arc};
 use actix_multipart_derive::MultipartForm;
+use openssl::ssl::{SslAcceptor, SslMethod, SslFiletype};
+
 pub mod models;
 pub mod schema;
 mod action;
@@ -100,7 +102,7 @@ async fn main() -> std::io::Result<()> {
     let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", arc);
     let reddit_royalty = Arc::new(Mutex::new(RedditRoyalty::new(client)));
 
-    HttpServer::new(move || {
+    let mut server = HttpServer::new(move || {
         let tera =
             Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*")).unwrap();
 
@@ -119,9 +121,21 @@ async fn main() -> std::io::Result<()> {
             service(api::user).
             service(morecontrollers::file_upload).
             service(web::resource("/ws/moderator").route(web::get().to(controllers::ws_index)))
-    }).bind("0.0.0.0:6742")?.run().await
-}
+    });
+    if std::env::var("private-key").is_ok() {
+        let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+        builder
+            .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
+            .unwrap();
+        builder.set_certificate_chain_file(std::env::var("CERT_KEY").unwrap()).unwrap();
 
+        server.bind_openssl("127.0.0.1:6742", builder)?
+            .run()
+            .await
+    } else {
+        server.bind("0.0.0.0:6742")?.run().await
+    }
+}
 
 
 fn is_valid(username: String) -> bool {
@@ -282,7 +296,7 @@ pub async fn admin_del_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, sess
 #[post("/admin/user/create")]
 pub async fn admin_create_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, form: Form<CreateMod>, req: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
-println!("1");
+    println!("1");
     let result1 = action::get_moderators(&conn);
     if (result1.is_err()) {
         println!("Hey");
