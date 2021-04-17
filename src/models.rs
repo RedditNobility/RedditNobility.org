@@ -14,7 +14,7 @@ pub struct Moderator {
 
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
-pub struct Fuser {
+pub struct User {
     pub id: i64,
     pub username: String,
     pub status: String,
@@ -24,7 +24,7 @@ pub struct Fuser {
 //Found, Approved, Denied, Banned
 
 
-impl Fuser {
+impl User {
     pub fn set_status(&mut self, status: String) {
         self.status = status;
     }
@@ -33,7 +33,7 @@ impl Fuser {
         self.moderator = moderator;
     }
 }
-impl Display for Fuser{
+impl Display for User{
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{}", serde_json::to_string(self).unwrap())
     }

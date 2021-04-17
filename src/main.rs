@@ -13,7 +13,7 @@ use diesel::r2d2::{self, ConnectionManager};
 use tera::Tera;
 use actix_files as fs;
 use actix_web::web::{Form, BytesMut};
-use crate::models::{Fuser, Moderator};
+use crate::models::{User, Moderator};
 use serde::{Serialize, Deserialize};
 use core::time;
 use new_rawr::client::RedditClient;
@@ -170,7 +170,7 @@ pub async fn submit(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpReq
             ctx.insert("already_exists", &true);
         } else {
             ctx.insert("success", &true);
-            let fuser = Fuser {
+            let fuser = User {
                 id: 0,
                 username: form.username.clone(),
                 moderator: "".to_string(),

@@ -2,37 +2,37 @@ use diesel::MysqlConnection;
 use diesel::prelude::*;
 
 use crate::models;
-use crate::models::{Moderator, Fuser};
+use crate::models::{Moderator, User};
 
-pub fn add_new_fuser(fuser: &Fuser, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
-    use crate::schema::fusers::dsl::*;
+pub fn add_new_fuser(fuser: &User, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::users::dsl::*;
 
-    diesel::insert_into(fusers).values(fuser).execute(conn).unwrap();
+    diesel::insert_into(users).values(fuser).execute(conn).unwrap();
 
     Ok(())
 }
 
-pub fn get_fuser(fuser: String, conn: &MysqlConnection) -> Result<Option<models::Fuser>, diesel::result::Error> {
-    use crate::schema::fusers::dsl::*;
+pub fn get_fuser(fuser: String, conn: &MysqlConnection) -> Result<Option<models::User>, diesel::result::Error> {
+    use crate::schema::users::dsl::*;
 
-    let found_mod = fusers.filter(username.eq(fuser)).first::<models::Fuser>(conn).optional()?;
+    let found_mod = users.filter(username.eq(fuser)).first::<models::User>(conn).optional()?;
 
     Ok(found_mod)
 }
 
 pub fn update_fuser(s: String, md: String, name: String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
-    use crate::schema::fusers::dsl::*;
+    use crate::schema::users::dsl::*;
 
-    diesel::update(fusers.filter(username.eq(name)))
+    diesel::update(users.filter(username.eq(name)))
         .set((moderator.eq(md), status.eq(s)))
         .execute(conn);
     Ok(())
 }
 
-pub fn get_found_fusers(conn: &MysqlConnection) -> Result<Vec<models::Fuser>, diesel::result::Error> {
-    use crate::schema::fusers::dsl::*;
+pub fn get_found_fusers(conn: &MysqlConnection) -> Result<Vec<models::User>, diesel::result::Error> {
+    use crate::schema::users::dsl::*;
 
-    let values = fusers.filter(status.eq("Found")).load::<models::Fuser>(conn).expect("Error loading mods");
+    let values = users.filter(status.eq("Found")).load::<models::User>(conn).expect("Error loading mods");
 
     Ok(values)
 }

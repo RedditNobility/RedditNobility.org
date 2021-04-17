@@ -1,4 +1,4 @@
-CREATE TABLE fusers
+CREATE TABLE users
 (
     id        BIGINT AUTO_INCREMENT PRIMARY KEY,
     username  TEXT,

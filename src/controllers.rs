@@ -15,10 +15,10 @@ use std::rc::Rc;
 use std::sync::{Mutex, Arc};
 use std::cell::RefCell;
 use actix_web_actors::ws::{CloseReason, CloseCode};
-use crate::schema::fusers::dsl::created;
+use crate::schema::users::dsl::created;
 use new_rawr::client::RedditClient;
 use new_rawr::auth::AnonymousAuthenticator;
-use crate::models::Fuser;
+use crate::models::User;
 use new_rawr::structures::submission::Submission;
 use new_rawr::traits::{Votable, Content};
 use rand::Rng;
@@ -170,7 +170,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     if option.is_none() {
                         return;
                     }
-                    let x1: &Fuser = option.unwrap();
+                    let x1: &User = option.unwrap();
                     let user = client.user(x1.username.as_str());
                     let result1 = user.about();
                     if result1.is_err() {

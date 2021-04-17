@@ -8,7 +8,7 @@ table! {
 }
 
 table! {
-    fusers (id) {
+    users (id) {
         id -> Bigint,
         username -> Text,
         status -> Text,

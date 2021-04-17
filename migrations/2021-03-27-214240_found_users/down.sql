@@ -1,1 +1,1 @@
-DROP TABLE fusers;
+DROP TABLE users;

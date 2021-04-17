@@ -1,6 +1,6 @@
 use crate::action;
 use diesel::MysqlConnection;
-use crate::models::Fuser;
+use crate::models::User;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn quick_add(username: String, conn: &MysqlConnection) {
@@ -12,7 +12,7 @@ pub fn quick_add(username: String, conn: &MysqlConnection) {
     }
     let username = username.replace("=T", "").replace("=F", "").replace("\r","");
     if action::get_fuser(username.clone(), &conn).unwrap().is_none() {
-        let fuser = Fuser {
+        let fuser = User {
             id: 0,
             username: username.clone(),
             moderator: "".to_string(),
