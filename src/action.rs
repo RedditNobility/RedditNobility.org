@@ -20,11 +20,11 @@ pub fn get_fuser(fuser: String, conn: &MysqlConnection) -> Result<Option<models:
     Ok(found_mod)
 }
 
-pub fn update_fuser(status: String, moderator: String, username: String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+pub fn update_fuser(s: String, md: String, name: String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::fusers::dsl::*;
 
-    diesel::update(fusers.filter(username.eq(username)))
-        .set((moderator.eq(moderator), status.eq(status)))
+    diesel::update(fusers.filter(username.eq(name)))
+        .set((moderator.eq(md), status.eq(s)))
         .execute(conn);
     Ok(())
 }

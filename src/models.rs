@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 use diesel::{Queryable};
 use crate::schema::*;
 use std::str::FromStr;
+use std::fmt::{Display, Formatter, Error};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 pub struct Moderator {
@@ -30,5 +31,10 @@ impl Fuser {
 
     pub fn set_moderator(&mut self, moderator: String) {
         self.moderator = moderator;
+    }
+}
+impl Display for Fuser{
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "{}", serde_json::to_string(self).unwrap())
     }
 }

@@ -42,7 +42,8 @@
         </a><a id="subreddit-1" href="#">r/dankmemes</a>
             <p id="post_content-1">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
         </div>
-        <div style="border-bottom-width: thick; border-color: black; border-style: solid; "><a id="post_link-2" href="#">
+        <div style="border-bottom-width: thick; border-color: black; border-style: solid; "><a id="post_link-2"
+                                                                                               href="#">
             <h6 id="post_header-2">Type: Comment</h6>
         </a><a id="subreddit-2" href="#">r/dankmemes</a>
             <p id="post_content-2">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
@@ -76,12 +77,36 @@
     </div>
 </div>
 <div class="container">
-    <button class="btn btn-primary" id="deny" type="button" style="text-align: left;margin-top: 10px;">Deny</button>
-    <button class="btn btn-primary" id="accept" type="button" style="text-align: justify;margin-top: 10px;">Approve
+    <button class="btn btn-primary" onclick="deny()" id="deny" type="button" style="text-align: left;margin-top: 10px;">
+        Deny
+    </button>
+    <button class="btn btn-primary" onclick="approve()" id="accept" type="button"
+            style="text-align: justify;margin-top: 10px;">Approve
     </button>
 </div>
 <script>
     var exampleSocket = new WebSocket("{{web_socket_url| safe}}?moderator={{mod_key}}", "protocolOne");
+
+    function approve() {
+        let name = document.getElementById("name").innerText;
+        var deny = {"type": "approve", "user": name, "moderator": "{{moderator}}"}
+        exampleSocket.send(JSON.stringify(deny))
+        update_user()
+    }
+
+    function deny() {
+        let name = document.getElementById("name").innerText;
+        var deny = {"type": "deny", "user": name, "moderator": "{{moderator}}"}
+        exampleSocket.send(JSON.stringify(deny))
+        update_user()
+
+    }
+
+    function update_user() {
+        var firstUser = {"type": "user"}
+        exampleSocket.send(JSON.stringify(firstUser))
+    }
+
     exampleSocket.onopen = function (event) {
         var obj = {"type": "login", "key": "{{mod_key}}"}
         exampleSocket.send(JSON.stringify(obj));

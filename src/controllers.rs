@@ -84,8 +84,10 @@ pub async fn moderator_index(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mute
     let mut data = rr.as_ref().clone();
 
     let result1: String = session.get("moderator").unwrap().unwrap();
-    data.borrow_mut().lock().unwrap().add_key(s.clone(), action::get_moderator(result1, &conn).unwrap().unwrap().id);
+    let moderator = action::get_moderator(result1, &conn).unwrap().unwrap();
+    data.borrow_mut().lock().unwrap().add_key(s.clone(), moderator.id);
     ctx.insert("mod_key", &s);
+    ctx.insert("moderator", &moderator.username.clone());
     ctx.insert("web_socket_url", "ws://127.0.0.1:6742/ws/moderator");
     let result = tera.get_ref().render("moderator.html", &ctx);
     Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
@@ -102,12 +104,14 @@ impl Actor for MyWebSocket {
 }
 
 fn approve_user(user: &str, moderator: &str, client: &RedditClient, conn: &MysqlConnection) {
+    print!("Hey");
     let result = action::get_fuser(user.parse().unwrap(), &conn);
     let option = result.unwrap();
     if option.is_none() {
         return;
     }
-    client.subreddit("royal").invite_member(user.parse().unwrap());
+    client.subreddit("RedditNobility").invite_member(user.parse().unwrap());
+    print!("Updating!");
     action::update_fuser("Approved".to_string(), moderator.to_string(), user.to_string(), conn);
 }
 
@@ -151,7 +155,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     if value2.is_some() {
                         approve_user(value2.unwrap(), value["moderator"].as_str().unwrap(), &self.reddit_royalty.lock().unwrap().reddit, &self.conn);
                     }
-                } else if value1.eq("disapprove") {
+                } else if value1.eq("deny") {
                     let value2 = value["user"].as_str();
                     if value2.is_some() {
                         deny_user(value2.unwrap(), value["moderator"].as_str().unwrap(), &self.conn);
