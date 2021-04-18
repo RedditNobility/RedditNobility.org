@@ -27,6 +27,7 @@ use serde_json::Value;
 use actix::prelude::*;
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
+use new_rawr::errors::APIError;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -192,8 +193,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     if result1.is_err() {
                         let mut values = HashMap::<String, Value>::new();
                         values.insert("type".parse().unwrap(), Value::String("error".parse().unwrap()));
-                        values.insert("error".parse().unwrap(), Value::String(format!("Unable to load user: {}", x1.username.as_str())));
+                        values.insert("error".parse().unwrap(), Value::String(format!("Unable to load user. Deleting record of: {}", x1.username.as_str())));
                         ctx.text(serde_json::to_string(&values).unwrap());
+                        action::delete_user(x1.username.clone(), &self.conn);
                         return;
                     }
                     let final_user = result1.unwrap();

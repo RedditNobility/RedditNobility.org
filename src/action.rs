@@ -28,7 +28,12 @@ pub fn update_fuser(s: String, md: String, name: String, conn: &MysqlConnection)
         .execute(conn);
     Ok(())
 }
+pub fn delete_user(us: String,conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::users::dsl::*;
 
+    diesel::delete(users.filter(username.eq(us))).execute(conn);
+    Ok(())
+}
 pub fn get_found_fusers(conn: &MysqlConnection) -> Result<Vec<models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
 
