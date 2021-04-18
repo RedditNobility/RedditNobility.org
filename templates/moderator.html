@@ -22,40 +22,41 @@
 
 <body>
 <div class="container">
+    <h6 id="users-left">Users left: </h6>
     <div>
-        <div><a id="name" href="https://reddit.com/u/KingTux">KingTuxWH</a><img id="avatar"
-                                                                                src="https://i.redd.it/snoovatar/snoovatars/bf3a69f9-02ef-4670-9ef1-71f1d31236f3.png"
-                                                                                width="100">
+        <div><a id="name" href=""></a><img id="avatar"
+                                           src=""
+                                           width="100">
             <h2>Posts</h2>
         </div>
     </div>
     <div>
         <div style="border-bottom-width: thick; border-color: black; border-style: solid;"><a id="post_link-0" href="#">
-            <h6 id="post_header-0">Type: Comment</h6>
+            <h6 id="post_header-0"></h6>
         </a>
-            <p id="post_content-0">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p><a
-                    id="subreddit-0" href="#">r/dankmemes</a>
+            <p id="post_content-0">Content:<code><br><br><br></code></p><a
+                    id="subreddit-0" href="#"></a>
         </div>
         <div style="border-bottom-width: thick; border-color: black; border-style: solid;"><a id="post_link-1" href="#">
-            <h6 id="post_header-1">Type: Comment</h6>
-        </a><a id="subreddit-1" href="#">r/dankmemes</a>
-            <p id="post_content-1">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
+            <h6 id="post_header-1"></h6>
+        </a><a id="subreddit-1" href="#"></a>
+            <p id="post_content-1">Content:<code><br><br><br></code></p>
         </div>
         <div style="border-bottom-width: thick; border-color: black; border-style: solid; "><a id="post_link-2"
                                                                                                href="#">
-            <h6 id="post_header-2">Type: Comment</h6>
-        </a><a id="subreddit-2" href="#">r/dankmemes</a>
-            <p id="post_content-2">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
+            <h6 id="post_header-2"></h6>
+        </a><a id="subreddit-2" href="#"></a>
+            <p id="post_content-2">Content:<code><br><br><br></code></p>
         </div>
         <div style="border-bottom-width: thick; border-color: black;border-style: solid; "><a id="post_link-3" href="#">
-            <h6 id="post_header-3">Type: Comment</h6>
-        </a><a id="subreddit-3" href="#">r/dankmemes</a>
-            <p id="post_content-3">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
+            <h6 id="post_header-3"></h6>
+        </a><a id="subreddit-3" href="#"></a>
+            <p id="post_content-3">Content:<code><br><br><br></code></p>
         </div>
         <div style="border-bottom-width: thick; border-color: black;border-style: solid; "><a id="post_link-4" href="#">
-            <h6 id="post_header-4">Type: Comment</h6>
-        </a><a id="subreddit-4" href="#">r/dankmemes</a>
-            <p id="post_content-4">Content:<code><br>I think the format was funnier than the joke.<br><br></code></p>
+            <h6 id="post_header-4"></h6>
+        </a><a id="subreddit-4" href="#"></a>
+            <p id="post_content-4">Content:<code><br><br><br></code></p>
         </div>
     </div>
 </div>
@@ -65,13 +66,13 @@
 <div class="container">
     <div class="row">
         <div class="col-md-4">
-            <h6 id="comment_karma" style="width: 200px;">Comment Karma: 2146</h6>
+            <h6 id="comment_karma" style="width: 200px;"></h6>
         </div>
         <div class="col-md-4">
-            <h6 id="total_karma" style="margin: 0px,0px,0px;width: 200px;">TotalKarma: 7395</h6>
+            <h6 id="total_karma" style="margin: 0px,0px,0px;width: 200px;"></h6>
         </div>
         <div class="col-md-4">
-            <h6 id="created" style="width: 300px;">Created: Wednesday, April 10, 2019 8:06:52 AM</h6>
+            <h6 id="created" style="width: 300px;"></h6>
         </div>
     </div>
 </div>
@@ -84,38 +85,37 @@
     </button>
 </div>
 <script>
-    var exampleSocket = new WebSocket("{{web_socket_url| safe}}?moderator={{mod_key}}", "protocolOne");
+    var serverWebsocket = new WebSocket("{{web_socket_url| safe}}?moderator={{mod_key}}", "protocolOne");
 
     function approve() {
         let name = document.getElementById("name").innerText;
         var deny = {"type": "approve", "user": name, "moderator": "{{moderator}}"}
-        exampleSocket.send(JSON.stringify(deny))
+        serverWebsocket.send(JSON.stringify(deny))
         update_user()
     }
 
     function deny() {
         let name = document.getElementById("name").innerText;
         var deny = {"type": "deny", "user": name, "moderator": "{{moderator}}"}
-        exampleSocket.send(JSON.stringify(deny))
+        serverWebsocket.send(JSON.stringify(deny))
         update_user()
 
     }
 
     function update_user() {
         var firstUser = {"type": "user"}
-        exampleSocket.send(JSON.stringify(firstUser))
+        serverWebsocket.send(JSON.stringify(firstUser))
     }
 
-    exampleSocket.onopen = function (event) {
+    serverWebsocket.onopen = function (event) {
         var obj = {"type": "login", "key": "{{mod_key}}"}
-        exampleSocket.send(JSON.stringify(obj));
-        var firstUser = {"type": "user"}
-        exampleSocket.send(JSON.stringify(firstUser))
+        serverWebsocket.send(JSON.stringify(obj));
+        update_user()
     };
-    exampleSocket.onmessage = function (event) {
+    serverWebsocket.onmessage = function (event) {
         const msg = JSON.parse(event.data);
         if (msg.type === "user") {
-
+            document.getElementById("users-left").innerText = "Users left: " + msg.usersleft;
             const user = msg.data;
             let elementById = document.getElementById("name");
             elementById.innerText = user.name
@@ -127,6 +127,12 @@
             date.setUTCSeconds(user.created);
             document.getElementById("created").innerText = "Created On: " + date.toLocaleDateString("en-US");
             for (let i = 0; i < 5; i++) {
+                if (i >= user.topFivePosts.length) {
+                    document.getElementById("post_link-" + i).href = ""
+                    document.getElementById("post_header-" + i).innerText = ""
+                    document.getElementById("post_content-" + i).innerText = ""
+                    document.getElementById("subreddit-" + i).innerText = ""
+                }
                 let post = user.topFivePosts[i];
                 document.getElementById("post_link-" + i).href = post.url
                 document.getElementById("post_header-" + i).innerText = post.title

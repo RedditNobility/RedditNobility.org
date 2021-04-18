@@ -225,6 +225,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     };
                     let mut values = HashMap::<String, Value>::new();
                     values.insert("type".parse().unwrap(), Value::String("user".parse().unwrap()));
+                    values.insert("usersleft".parse().unwrap(), Value::String(vec.len().to_string()));
                     values.insert("data".parse().unwrap(), serde_json::to_value(&user).unwrap());
                     ctx.text(serde_json::to_string(&values).unwrap())
                 } else if value1.eq("login") {
