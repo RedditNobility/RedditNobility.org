@@ -187,6 +187,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     }
                     let x1: &User = option.unwrap();
                     let user = client.user(x1.username.as_str());
+   
                     let result1 = user.about();
                     if result1.is_err() {
                         let mut values = HashMap::<String, Value>::new();
