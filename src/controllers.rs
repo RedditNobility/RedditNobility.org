@@ -191,7 +191,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     if result1.is_err() {
                         let mut values = HashMap::<String, Value>::new();
                         values.insert("type".parse().unwrap(), "error".parse().unwrap());
-                        values.insert("error".parse().unwrap(), Value::String(format!("Unable to load user: {}", value2.unwrap())));
+                        values.insert("error".parse().unwrap(), Value::String(format!("Unable to load user: {}", x1.username.as_str())));
                         ctx.text(serde_json::to_string(&values).unwrap());
                         return;
                     }
