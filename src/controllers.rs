@@ -210,7 +210,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     }
                     let user = RedditUser {
                         name: final_user.data.name,
-                        avatar: final_user.data.icon_img,
+                        avatar: final_user.data.icon_img.unwrap_or("".parse().unwrap()),
                         commentKarma: final_user.data.comment_karma,
                         total_karma: final_user.data.total_karma,
                         created: final_user.data.created as i64,

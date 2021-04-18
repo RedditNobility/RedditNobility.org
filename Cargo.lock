@@ -527,9 +527,9 @@ checksum = "23b62fc65de8e4e7f52534fb52b0f3ed04746ae267519eef2a83941e8085068b"
 
 [[package]]
 name = "async-trait"
-version = "0.1.49"
+version = "0.1.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "589652ce7ccb335d1e7ecb3be145425702b290dbcb7029bbeaae263fc1d87b48"
+checksum = "0b98e84bbb4cbcdd97da190ba0c58a1bb0de2c1fdf67d159e192ed766aeca722"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2030,7 +2030,7 @@ dependencies = [
 [[package]]
 name = "new-rawr"
 version = "0.0.1"
-source = "git+https://github.com/wherkamp/new-rawr.git#8ed250337b889ad75466428e502f73e017bd83a2"
+source = "git+https://github.com/wherkamp/new-rawr.git#b445d508323659001d8afcbd13e9c7fbd3d59178"
 dependencies = [
  "base64 0.13.0",
  "futures",
