@@ -165,7 +165,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                         let user1 = approve_user(value2.unwrap(), value["moderator"].as_str().unwrap(), &self.reddit_royalty.lock().unwrap().reddit, &self.conn);
                         if !user1 {
                             let mut values = HashMap::<String, Value>::new();
-                            values.insert("type".parse().unwrap(), "error".parse().unwrap());
+                            values.insert("type".parse().unwrap(), Value::String("error".parse().unwrap()));
                             values.insert("error".parse().unwrap(), Value::String(format!("Unable to approve user: {}", value2.unwrap())));
                             ctx.text(serde_json::to_string(&values).unwrap())
                         }
@@ -187,11 +187,11 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     }
                     let x1: &User = option.unwrap();
                     let user = client.user(x1.username.as_str());
-   
+
                     let result1 = user.about();
                     if result1.is_err() {
                         let mut values = HashMap::<String, Value>::new();
-                        values.insert("type".parse().unwrap(), "error".parse().unwrap());
+                        values.insert("type".parse().unwrap(), Value::String("error".parse().unwrap()));
                         values.insert("error".parse().unwrap(), Value::String(format!("Unable to load user: {}", x1.username.as_str())));
                         ctx.text(serde_json::to_string(&values).unwrap());
                         return;
