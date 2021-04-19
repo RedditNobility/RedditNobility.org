@@ -25,13 +25,13 @@ pub fn update_fuser(s: String, md: String, name: String, conn: &MysqlConnection)
 
     diesel::update(users.filter(username.eq(name)))
         .set((moderator.eq(md), status.eq(s)))
-        .execute(conn);
+        .execute(conn).unwrap();
     Ok(())
 }
 pub fn delete_user(us: String,conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
 
-    diesel::delete(users.filter(username.eq(us))).execute(conn);
+    diesel::delete(users.filter(username.eq(us))).execute(conn).unwrap();
     Ok(())
 }
 pub fn get_found_fusers(conn: &MysqlConnection) -> Result<Vec<models::User>, diesel::result::Error> {
