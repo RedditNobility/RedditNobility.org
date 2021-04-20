@@ -36,7 +36,7 @@ pub async fn user(pool: web::Data<DbPool>, web::Path((user)): web::Path<( String
     if result1.is_none() {
         let mut map = HashMap::<String, Value>::new();
         map.insert("error".parse()?, Value::from(Number::from(404)));
-        return Err(HttpResponse::NotFound().content_type("application/json").body(serde_json::to_string(&map).unwrap())).unwrap();
+        return Ok(HttpResponse::NotFound().content_type("application/json").body(serde_json::to_string(&map).unwrap()));
     }
     let fuser = result1.unwrap();
     Ok(HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&fuser).unwrap()))
