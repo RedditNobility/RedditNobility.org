@@ -114,6 +114,7 @@
     };
     serverWebsocket.onerror = function (event){
         alert("Unable to connect to websocket")
+        console.log("Error: ", event)
     }
 
     serverWebsocket.onclose = function (event){
