@@ -112,6 +112,13 @@
         serverWebsocket.send(JSON.stringify(obj));
         update_user()
     };
+    serverWebsocket.onerror = function (event){
+        alert("Unable to connect to websocket")
+    }
+
+    serverWebsocket.onclose = function (event){
+        alert("Connection Closed")
+    }
     serverWebsocket.onmessage = function (event) {
         const msg = JSON.parse(event.data);
         if (msg.type === "user") {
