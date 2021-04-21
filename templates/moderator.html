@@ -85,7 +85,7 @@
     </button>
 </div>
 <script>
-    var serverWebsocket = new WebSocket("{{web_socket_url| safe}}?moderator={{mod_key}}", "protocolOne");
+    var serverWebsocket = new WebSocket("{{web_socket_url| safe}}?moderator={{mod_key}}", ["protocolOne", "protocolTwo"]);
 
     function approve() {
         let name = document.getElementById("name").innerText;
