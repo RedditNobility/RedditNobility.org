@@ -139,6 +139,7 @@
                     document.getElementById("post_header-" + i).innerText = ""
                     document.getElementById("post_content-" + i).innerText = ""
                     document.getElementById("subreddit-" + i).innerText = ""
+                    continue;
                 }
                 let post = user.topFivePosts[i];
                 document.getElementById("post_link-" + i).href = post.url
