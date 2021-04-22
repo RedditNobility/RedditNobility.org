@@ -75,7 +75,7 @@ pub async fn moderator_index(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mute
 
     let result2: Option<String> = session.get("moderator").unwrap();
     if result2.is_none() {
-        return Err(HttpResponse::Unauthorized().into());
+        return Ok(HttpResponse::Unauthorized().finish());
     }
     let s: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -228,14 +228,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     values.insert("usersleft".parse().unwrap(), Value::String(vec.len().to_string()));
                     values.insert("data".parse().unwrap(), serde_json::to_value(&user).unwrap());
                     ctx.text(serde_json::to_string(&values).unwrap())
-                } else if value1.eq("login") {
-                    let x = self.set_key(value["key"].as_str().unwrap().to_string());
-                    if !x {
-                        ctx.close(Option::from(CloseReason::from(CloseCode::Invalid)));
-                        ctx.stop();
-                    } else {
-                        println!("Logged in moderator")
-                    }
                 }
             }
             Ok(ws::Message::Binary(bin)) => ctx.binary(bin),

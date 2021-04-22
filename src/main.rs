@@ -171,7 +171,7 @@ pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequ
     let result = tera.get_ref().render("index.html", &ctx);
     if result.is_err() {
         let error = result.err().unwrap();
-        return Err(HttpResponse::InternalServerError().into());
+        return Ok(HttpResponse::InternalServerError().finish());
     }
     Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
 }
@@ -199,7 +199,7 @@ pub async fn submit(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpReq
     let result = tera.get_ref().render("index.html", &ctx);
     if result.is_err() {
         let error = result.err().unwrap();
-        return Err(HttpResponse::InternalServerError().into());
+        return Ok(HttpResponse::InternalServerError().finish());
     }
     Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
 }
@@ -212,7 +212,7 @@ pub async fn get_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: Http
     let result = tera.get_ref().render("login.html", &ctx);
     if result.is_err() {
         let error = result.err().unwrap();
-        return Err(HttpResponse::InternalServerError().into());
+        return Ok(HttpResponse::InternalServerError().finish());
     }
     Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
 }
@@ -222,15 +222,15 @@ pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session:
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = action::get_moderator(form.username.clone(), &conn).unwrap();
     if result.is_none() {
-        return HttpResponse::Found().header("Location", "/login").finish();
+        return HttpResponse::Found().header("Location", "/login").finish().into_body();
     }
     let moderator = result.unwrap();
     if verify(&form.password, &moderator.password).unwrap() {
         println!("Worked!");
         let result1 = session.set("moderator", moderator.username);
-        return HttpResponse::Found().header("Location", "/moderator").finish();
+        return HttpResponse::Found().header("Location", "/moderator").finish().into_body();
     }
-    return HttpResponse::Found().header("Location", "/login").finish();
+    return HttpResponse::Found().header("Location", "/login").finish().into_body();
 }
 
 
