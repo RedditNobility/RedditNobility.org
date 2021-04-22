@@ -118,6 +118,8 @@
 
     serverWebsocket.onclose = function (event) {
         alert("Connection Closed")
+        console.log("Closed: ", event)
+
     }
     serverWebsocket.onmessage = function (event) {
         const msg = JSON.parse(event.data);

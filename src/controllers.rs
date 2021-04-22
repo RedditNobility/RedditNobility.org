@@ -66,7 +66,7 @@ pub async fn ws_index(r: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, 
     if !data.clone().lock().unwrap().is_key_valid(info.moderator.clone()) {
         return Ok(HttpResponse::Unauthorized().finish());
     }
-    let res = ws::start(MyWebSocket::new(data), &r, stream);
+    let res = ws::start_with_protocols(MyWebSocket::new(data), &["protocolOne", "protocolTwo"], &r, stream);
     res
 }
 
@@ -91,7 +91,6 @@ pub async fn moderator_index(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mute
     ctx.insert("mod_key", &s);
     ctx.insert("moderator", &moderator.username.clone());
     let string = std::env::var("WEBSOCKET_URL").unwrap();
-    println!("{}", &string);
     ctx.insert("web_socket_url", &format!("{}/ws/moderator", string));
     let result = tera.get_ref().render("moderator.html", &ctx);
     Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
@@ -233,14 +232,14 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
             }
             Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
             Ok(ws::Message::Close(reason)) => {
-                ctx.close(reason);
-                ctx.stop();
+                // ctx.close(reason);
+                //   ctx.stop();
                 if self.key.is_some() {
                     self.reddit_royalty.lock().unwrap().drop_key(self.get_key())
                 }
             }
             _ => {
-                ctx.stop();
+                //  ctx.stop();
                 if self.key.is_some() {
                     self.reddit_royalty.lock().unwrap().drop_key(self.get_key())
                 }
