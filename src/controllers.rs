@@ -61,9 +61,11 @@ pub struct WebsocketRequest {
 }
 
 /// do websocket handshake and start `MyWebSocket` actor
-pub async fn ws_index(r: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, stream: web::Payload) -> Result<HttpResponse, Error> {
+pub async fn ws_index(r: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, stream: web::Payload, info: web::Query<WebsocketRequest>) -> Result<HttpResponse, Error> {
     let data = rr.as_ref().clone();
-
+    if !data.clone().lock().unwrap().is_key_valid(info.moderator.clone()) {
+        return Ok(HttpResponse::Unauthorized().finish());
+    }
     let res = ws::start(MyWebSocket::new(data), &r, stream);
     res
 }
@@ -77,8 +79,7 @@ pub async fn moderator_index(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mute
     if result2.is_none() {
         return Ok(HttpResponse::Unauthorized().finish());
     }
-    let s: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
+    let s: String = rand::thread_rng().sample_iter(&Alphanumeric)
         .take(25)
         .map(char::from)
         .collect();

@@ -89,24 +89,28 @@
 
     function approve() {
         let name = document.getElementById("name").innerText;
-        var deny = {"type": "approve", "user": name, "moderator": "{{moderator}}", "key": "{{mod_key}}"}
+        var deny = {"type": "approve", "user": name, "moderator": "{{moderator}}"}
         serverWebsocket.send(JSON.stringify(deny))
         update_user()
     }
 
     function deny() {
         let name = document.getElementById("name").innerText;
-        var deny = {"type": "deny", "user": name, "moderator": "{{moderator}}", "key": "{{mod_key}}"}
+        var deny = {"type": "deny", "user": name, "moderator": "{{moderator}}"}
         serverWebsocket.send(JSON.stringify(deny))
         update_user()
 
     }
 
     function update_user() {
-        var firstUser = {"type": "user", "key": "{{mod_key}}"}
+        var firstUser = {"type": "user"}
         serverWebsocket.send(JSON.stringify(firstUser))
     }
 
+    serverWebsocket.onopen = function (event) {
+
+        update_user()
+    };
     serverWebsocket.onerror = function (event) {
         alert("Unable to connect to websocket")
         console.log("Error: ", event)

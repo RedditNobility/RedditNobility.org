@@ -4,7 +4,7 @@ extern crate diesel;
 extern crate diesel_migrations;
 extern crate dotenv;
 extern crate bcrypt;
-
+use log::{error, info, warn};
 use dotenv::dotenv;
 use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer, HttpRequest, error, Responder};
 use std::{env, thread};
@@ -45,6 +45,7 @@ mod controllers;
 mod api;
 mod morecontrollers;
 mod utils;
+mod siteerror;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
@@ -82,7 +83,7 @@ async fn main() -> std::io::Result<()> {
     println!("{}", is_valid("PrincessCow".parse().unwrap()));
     println!("{}", is_valid("KingTux".parse().unwrap()));
     std::env::set_var("RUST_LOG", "actix_web=debug");
-    env_logger::init();
+    log4rs::init_file( Path::new("resources").join("log.yml"), Default::default()).unwrap();
     dotenv::dotenv().ok();
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
     let manager = ConnectionManager::<MysqlConnection>::new(connspec);
@@ -91,7 +92,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to create pool.");
     let connection = pool.get().unwrap();
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
-
+info!("Test");
 
     let arc = PasswordAuthenticator::new(
         std::env::var("CLIENT_KEY").unwrap().as_str(),

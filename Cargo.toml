@@ -32,3 +32,5 @@ rand = "0.8.3"
 futures-util = "0.3.14"
 actix-web = {version="3", features = ["openssl"]}
 openssl = { version = "0.10", features = ["v110"] }
+log4rs = "1.0.0"
+log = "0.4.14"

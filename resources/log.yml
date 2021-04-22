@@ -1,0 +1,34 @@
+appenders:
+  stdout:
+    kind: console
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  requests:
+    kind: file
+    path: "log/requests.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  error:
+    kind: file
+    path: "log/error.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  site:
+    kind: file
+    path: "log/site.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}"
+root:
+  level: info
+  appenders:
+    - stdout
+    - all
+loggers:
+  actix_web:
+    level: info
+    appenders:
+      - requests
+  RedditNobility:
+    level: trace
+    appenders:
+      - site
