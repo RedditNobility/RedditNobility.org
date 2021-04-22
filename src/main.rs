@@ -110,8 +110,10 @@ info!("Test");
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(CookieSession::signed(&[0; 32]).secure(false))
-            .data(pool.clone()).data(Arc::clone(&reddit_royalty)).data(tera).service(fs::Files::new("static", "static").show_files_listing())
-            .service(index).
+            .data(pool.clone()).data(Arc::clone(&reddit_royalty)).data(tera).
+            service(fs::Files::new("static", "static").show_files_listing()).
+            service(favicon).
+            service(index).
             service(submit).
             service(get_login).
             service(post_login).
@@ -163,7 +165,10 @@ pub struct SubmitUser {
     pub username: String,
 
 }
-
+#[get("/favicon.ico")]
+async fn favicon() -> actix_web::Result<actix_files::NamedFile> {
+    Ok(actix_files::NamedFile::open("static/favicon.ico")?)
+}
 #[get("/")]
 pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> Result<HttpResponse, Error> {
     let mut ctx = tera::Context::new();

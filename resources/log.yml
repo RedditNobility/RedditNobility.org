@@ -18,6 +18,11 @@ appenders:
     path: "log/site.log"
     encoder:
       pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}"
+  all:
+    kind: file
+    path: "log/all.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}"
 root:
   level: info
   appenders:
