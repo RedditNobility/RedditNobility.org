@@ -34,3 +34,4 @@ actix-web = {version="3", features = ["openssl"]}
 openssl = { version = "0.10", features = ["v110"] }
 log4rs = "1.0.0"
 log = "0.4.14"
+strum = "0.20.0"

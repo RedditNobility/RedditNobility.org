@@ -1,6 +1,6 @@
 use crate::action;
 use diesel::MysqlConnection;
-use crate::models::User;
+use crate::models::{User, Level};
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::siteerror::SiteError;
 use actix_session::Session;
@@ -27,23 +27,22 @@ pub fn quick_add(username: String, conn: &MysqlConnection) {
     }
 }
 
-pub fn is_authorized(session: Session, conn: &MysqlConnection, admin: bool) -> Result<bool, SiteError> {
-    let result = action::get_moderators(&conn);
+///A standardized method for deciding rather a user is allowed to be where they are
+pub fn is_authorized(api_token: String, level: Level, conn: &MysqlConnection) -> Result<bool, SiteError> {
+    let result = action::get_user_from_auth_token(api_token, &conn);
     if result.is_err() {
         return Err(SiteError::DBError(result.err().unwrap()));
     }
-    if admin && result.unwrap().is_empty() {
-        return Ok(true);
-    }
-    let result = session.get("moderator");
-    if result.is_err() {}
-    let option: Option<String> = result.unwrap();
-    if option.is_none() {
+    let user = result.unwrap();
+    if user.is_none() {
         return Ok(false);
     }
-    let result = action::get_moderator(option.unwrap(), conn);
-    if result.is_err() {
-        return Err(SiteError::DBError(result.err().unwrap()));
+    let user = user.unwrap();
+
+
+    let user_level: Level = Level::from_str(user.level.as_str()).unwrap();
+    if user_level.level() >= level.level() {
+        Ok(true)
     }
-    return Ok(result.unwrap().is_some());
+    Ok(false)
 }

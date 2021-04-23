@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use diesel::Queryable;
 use serde::{Deserialize, Serialize};
-
+use strum_macros::EnumString;
 use crate::schema::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
@@ -11,12 +11,14 @@ pub struct AuthToken {
     pub id: i64,
     pub user: i64,
     pub token: String,
+    pub created: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 pub struct APIKey {
     pub id: i64,
     pub api_key: String,
+    pub created: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
@@ -39,8 +41,32 @@ pub struct User {
     //When the data was created
     pub created: u64,
 }
-//Found, Approved, Denied, Banned
 
+//Found, Approved, Denied, Banned
+#[derive(Debug, PartialEq, EnumString)]
+pub enum Level {
+    Admin,
+    Moderator,
+    User,
+}
+
+
+impl Level {
+    pub fn name(&self) -> &str {
+        match *self {
+            Level::Admin => "ADMIN",
+            Level::Moderator => "MODERATOR",
+            Level::User => "USER",
+        }
+    }
+    pub fn level(&self) -> i32 {
+        match *self {
+            Level::Admin => 3,
+            Level::Moderator => 2,
+            Level::User => 1,
+        }
+    }
+}
 
 impl User {
     pub fn set_status(&mut self, status: String) {

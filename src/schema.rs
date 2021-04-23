@@ -16,11 +16,13 @@ table! {
         id -> Bigint,
         user -> Bigint,
         token -> Text,
+        created ->Bigint,
     }
 }
 table! {
     api_keys (id) {
         id -> Bigint,
         api_key -> Text,
+        created ->Bigint,
     }
 }

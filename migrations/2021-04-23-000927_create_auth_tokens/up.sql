@@ -2,5 +2,7 @@ CREATE TABLE auth_tokens
 (
     id   BIGINT AUTO_INCREMENT PRIMARY KEY,
     user BIGINT,
-    token  TEXT
+    token  TEXT,
+    created BIGINT
+
 )
