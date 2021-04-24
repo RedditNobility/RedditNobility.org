@@ -11,14 +11,14 @@ pub struct AuthToken {
     pub id: i64,
     pub user: i64,
     pub token: String,
-    pub created: u64,
+    pub created: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
-pub struct APIKey {
+pub struct ClientKey {
     pub id: i64,
     pub api_key: String,
-    pub created: u64,
+    pub created: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
@@ -33,13 +33,13 @@ pub struct User {
     //FOUND, DENIED, APPROVED, BANNED
     pub status: String,
     //When was their status changed from FOUND to DENIED or APPROVED
-    pub status_changed: u64,
+    pub status_changed: i64,
     //Who found the user BOT if bot
     pub discoverer: String,
     //The Moderator who approved them or denied them. If the user was banned it will still be set to who approved them
     pub moderator: String,
     //When the data was created
-    pub created: u64,
+    pub created: i64,
 }
 
 //Found, Approved, Denied, Banned

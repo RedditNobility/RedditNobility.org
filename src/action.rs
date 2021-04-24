@@ -45,8 +45,8 @@ pub fn add_new_auth_token(t: &AuthToken, conn: &MysqlConnection) -> Result<(), d
 }
 //API Key
 
-pub fn get_api_key(key: String, conn: &MysqlConnection) -> Result<Option<models::AuthToken>, diesel::result::Error> {
-    use crate::schema::api_keys::dsl::*;
-    let found_key = api_key.filter(api_key.eq(key)).first::<models::APIKey>(conn).optional()?;
+pub fn get_client_key(key: String, conn: &MysqlConnection) -> Result<Option<models::AuthToken>, diesel::result::Error> {
+    use crate::schema::client_keys::dsl::*;
+    let found_key = client_keys.filter(api_key.eq(key)).first::<models::ClientKey>(conn).optional()?;
     Ok(found_key)
 }

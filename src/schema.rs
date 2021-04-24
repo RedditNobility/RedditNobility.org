@@ -20,7 +20,7 @@ table! {
     }
 }
 table! {
-    api_keys (id) {
+    client_keys (id) {
         id -> Bigint,
         api_key -> Text,
         created ->Bigint,

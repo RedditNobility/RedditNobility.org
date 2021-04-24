@@ -32,7 +32,10 @@ use serde_json::Number;
 pub async fn user(pool: web::Data<DbPool>, web::Path((user)): web::Path<( String)>, r: HttpRequest) -> Result<HttpResponse, Error> {
     let conn = pool.get().expect("couldn't get db connection from pool");
 
-    let result1 = action::get_fuser(user, &conn).unwrap();
+    let result1 = action::get_user_by_name(user, &conn);
+    if result1.is_err(){
+
+    }
     if result1.is_none() {
         let mut map = HashMap::<String, Value>::new();
         map.insert("error".parse()?, Value::from(Number::from(404)));

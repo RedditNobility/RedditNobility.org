@@ -13,7 +13,7 @@ use diesel::r2d2::{self, ConnectionManager};
 use tera::Tera;
 use actix_files as fs;
 use actix_web::web::{Form, BytesMut};
-use crate::models::{User, Moderator};
+use crate::models::{User};
 use serde::{Serialize, Deserialize};
 use core::time;
 use new_rawr::client::RedditClient;
@@ -46,6 +46,11 @@ mod api;
 mod morecontrollers;
 mod utils;
 mod siteerror;
+mod admincontrollers;
+mod usercontrollers;
+mod moderatorcontrollers;
+mod usererror;
+mod websiteerror;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
@@ -113,13 +118,6 @@ info!("Test");
             .data(pool.clone()).data(Arc::clone(&reddit_royalty)).data(tera).
             service(fs::Files::new("static", "static").show_files_listing()).
             service(favicon).
-            service(index).
-            service(submit).
-            service(get_login).
-            service(post_login).
-            service(admin).
-            service(admin_del_user).
-            service(admin_create_user).
             service(controllers::moderator_index).
             service(api::user).
             service(morecontrollers::file_upload).
@@ -160,196 +158,8 @@ fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
         .collect()
 }
 
-#[derive(Deserialize)]
-pub struct SubmitUser {
-    pub username: String,
 
-}
 #[get("/favicon.ico")]
 async fn favicon() -> actix_web::Result<actix_files::NamedFile> {
     Ok(actix_files::NamedFile::open("static/favicon.ico")?)
-}
-#[get("/")]
-pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> Result<HttpResponse, Error> {
-    let mut ctx = tera::Context::new();
-
-
-    let result = tera.get_ref().render("index.html", &ctx);
-    if result.is_err() {
-        let error = result.err().unwrap();
-        return Ok(HttpResponse::InternalServerError().finish());
-    }
-    Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
-}
-
-#[post("/submit")]
-pub async fn submit(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest, form: Form<SubmitUser>) -> Result<HttpResponse, Error> {
-    let mut ctx = tera::Context::new();
-    let conn = pool.get().expect("couldn't get db connection from pool");
-    if !form.username.is_empty() {
-        if action::get_fuser(form.username.clone(), &conn).unwrap().is_some() {
-            ctx.insert("already_exists", &true);
-        } else {
-            ctx.insert("success", &true);
-            let fuser = User {
-                id: 0,
-                username: form.username.clone(),
-                moderator: "".to_string(),
-                status: "Found".to_string(),
-                created: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64,
-            };
-            action::add_new_fuser(&fuser, &conn);
-        }
-    }
-
-    let result = tera.get_ref().render("index.html", &ctx);
-    if result.is_err() {
-        let error = result.err().unwrap();
-        return Ok(HttpResponse::InternalServerError().finish());
-    }
-    Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
-}
-
-#[get("/login")]
-pub async fn get_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> Result<HttpResponse, Error> {
-    let mut ctx = tera::Context::new();
-    let conn = pool.get().expect("couldn't get db connection from pool");
-
-    let result = tera.get_ref().render("login.html", &ctx);
-    if result.is_err() {
-        let error = result.err().unwrap();
-        return Ok(HttpResponse::InternalServerError().finish());
-    }
-    Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
-}
-
-#[post("/login")]
-pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, req: HttpRequest, form: Form<CreateMod>) -> HttpResponse {
-    let conn = pool.get().expect("couldn't get db connection from pool");
-    let result = action::get_moderator(form.username.clone(), &conn).unwrap();
-    if result.is_none() {
-        return HttpResponse::Found().header("Location", "/login").finish().into_body();
-    }
-    let moderator = result.unwrap();
-    if verify(&form.password, &moderator.password).unwrap() {
-        println!("Worked!");
-        let result1 = session.set("moderator", moderator.username);
-        return HttpResponse::Found().header("Location", "/moderator").finish().into_body();
-    }
-    return HttpResponse::Found().header("Location", "/login").finish().into_body();
-}
-
-
-#[get("/admin")]
-pub async fn admin(pool: web::Data<DbPool>, session: Session, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
-    let mut ctx = tera::Context::new();
-    let conn = pool.get().expect("couldn't get db connection from pool");
-
-    let result1 = action::get_moderators(&conn);
-    if (result1.is_err()) {
-        //TODO handle
-    }
-    println!("Test");
-    let result1 = result1.unwrap();
-    let mut approved = false;
-    if !result1.is_empty() {
-        println!("1");
-
-        let moderator = session.get("moderator");
-        let option = moderator.unwrap();
-        if option.is_some() {
-            println!("2");
-            let value: String = option.unwrap();
-            for x in result1 {
-                println!("3");
-                if x.username.eq(&value) {
-                    if x.admin {
-                        println!("4");
-                        approved = true;
-                    }
-                }
-            }
-        }
-    } else {
-        println!("Test Approved");
-
-        approved = true;
-    }
-    if !approved {
-        return HttpResponse::Unauthorized().header("Location", "/").finish();
-    }
-    let result = tera.get_ref().render("admin.html", &ctx);
-    if result.is_err() {
-        let error = result.err().unwrap();
-        return HttpResponse::InternalServerError().into();
-    }
-    HttpResponse::Ok().content_type("text/html").body(&result.unwrap())
-}
-
-
-#[derive(Deserialize)]
-pub struct CreateMod {
-    pub username: String,
-    pub password: String,
-
-}
-
-#[post("/admin/user/del")]
-pub async fn admin_del_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, req: HttpRequest) -> HttpResponse {
-    HttpResponse::Found().header("Location", "/admin").finish()
-}
-
-#[post("/admin/user/create")]
-pub async fn admin_create_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, form: Form<CreateMod>, req: HttpRequest) -> HttpResponse {
-    let conn = pool.get().expect("couldn't get db connection from pool");
-    println!("1");
-    let result1 = action::get_moderators(&conn);
-    if (result1.is_err()) {
-        println!("Hey");
-        return HttpResponse::InternalServerError().finish();
-    }
-    let result1 = result1.unwrap();
-    let mut approved = false;
-
-    println!("1");
-
-    if !result1.is_empty() {
-        let moderator = session.get("moderator");
-        let option = moderator.unwrap();
-        if option.is_some() {
-            let value: String = option.unwrap();
-            for x in result1 {
-                if x.username.eq(&value) {
-                    if x.admin {
-                        approved = true;
-                    }
-                }
-            }
-        }
-    } else {
-        approved = true;
-    }
-    println!("1");
-    if !approved {
-        return HttpResponse::Unauthorized().header("Location", "/").finish();
-    }
-    let result1 = action::get_moderators(&conn);
-    let result1 = result1.unwrap();
-
-    for x in result1 {
-        if x.username.eq(&form.username) {
-            return HttpResponse::Found().header("Location", "/admin").finish();
-        }
-    }
-    println!("1");
-    let moderator1 = Moderator {
-        id: 0,
-        username: form.username.clone(),
-        password: hash(&form.password.clone(), DEFAULT_COST).unwrap(),
-        admin: false,
-    };
-    action::add_moderator(&moderator1, &conn);
-    println!("1");
-
-    HttpResponse::Found().header("Location", "/admin").finish()
 }

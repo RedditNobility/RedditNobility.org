@@ -1,4 +1,4 @@
-CREATE TABLE api_keys
+CREATE TABLE client_keys
 (
     id      BIGINT AUTO_INCREMENT PRIMARY KEY,
     api_key TEXT,
