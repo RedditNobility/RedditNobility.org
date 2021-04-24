@@ -120,4 +120,24 @@ pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session:
     return HttpResponse::Found().header("Location", "/login?status=NOT_FOUND").finish().into_body();
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct KeyLogin {
+    pub key: String,
+}
+
+#[get("/login/key")]
+pub async fn key_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: Form<KeyLogin>) -> HttpResponse {
+    let conn = pool.get().expect("couldn't get db connection from pool");
+    let result = action::get_auth_token(form.key.clone(), &conn);
+    if result.is_err() {
+        return SiteError::DBError(result.err().unwrap()).site_error(tera);
+    }
+    let token = result.unwrap();
+    if utokenser.is_none() {
+        return HttpResponse::Found().header(http::header::LOCATION, "/login?status=NOT_FOUND").finish().into_body();
+    }
+    let token = token.unwrap();
+    session.set("auth_token", token.token.clone());
+    return HttpResponse::Found().header("Location", "/").finish().into_body();
+}
 
