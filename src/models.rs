@@ -42,6 +42,7 @@ pub struct User {
     pub created: i64,
 }
 
+
 //Found, Approved, Denied, Banned
 #[derive(Debug, PartialEq, EnumString)]
 pub enum Level {
@@ -75,6 +76,9 @@ impl User {
 
     pub fn set_moderator(&mut self, moderator: String) {
         self.moderator = moderator;
+    }
+    pub fn set_password(&mut self, password: String) {
+        self.password = password;
     }
 }
 

@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use actix::prelude::*;
 use actix_files as fs;
-use actix_web::{middleware, get, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{middleware, get, web, App, Error, HttpRequest, HttpResponse, HttpServer, http};
 use actix_web_actors::ws;
 use crate::{DbPool, RedditRoyalty, action, utils};
 use tera::Tera;
@@ -28,6 +28,10 @@ use actix::prelude::*;
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use actix_web::web::Form;
+use crate::siteerror::SiteError;
+use crate::websiteerror::WebsiteError;
+use bcrypt::verify;
+
 #[derive(Deserialize)]
 pub struct SubmitUser {
     pub username: String,
@@ -87,20 +91,33 @@ pub async fn get_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: Http
     Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
 }
 
-#[post("/login")]
-pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, req: HttpRequest, form: Form<CreateMod>) -> HttpResponse {
+#[derive(Serialize, Deserialize)]
+pub struct LoginRequest {
+    pub username: String,
+    pub password: Option<String>,
+}
+
+#[post("/login/post")]
+pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: Form<LoginRequest>) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
-    let result = action::get_moderator(form.username.clone(), &conn).unwrap();
-    if result.is_none() {
-        return HttpResponse::Found().header("Location", "/login").finish().into_body();
+    let result = action::get_user_by_name(form.username.clone(), &conn);
+    if result.is_err() {
+        return SiteError::DBError(result.err().unwrap()).site_error(tera);
     }
-    let moderator = result.unwrap();
-    if verify(&form.password, &moderator.password).unwrap() {
-        println!("Worked!");
-        let result1 = session.set("moderator", moderator.username);
-        return HttpResponse::Found().header("Location", "/moderator").finish().into_body();
+    let user = result.unwrap();
+    if user.is_none() {
+        return HttpResponse::Found().header(http::header::LOCATION, "/login?status=NOT_FOUND").finish().into_body();
     }
-    return HttpResponse::Found().header("Location", "/login").finish().into_body();
+    let user = user.unwrap();
+    if form.password.is_none() {
+        utils::send_login(&user, &conn, rr.clone());
+        return HttpResponse::Found().header(http::header::LOCATION, "/login?status=LOGIN_SENT").finish().into_body();
+    }
+    if verify(&form.password, &user.password).unwrap() {
+        session.set("auth_token", utils::create_token(&user, &conn).token.clone());
+        return HttpResponse::Found().header("Location", "/").finish().into_body();
+    }
+    return HttpResponse::Found().header("Location", "/login?status=NOT_FOUND").finish().into_body();
 }
 
 

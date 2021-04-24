@@ -23,6 +23,20 @@ pub fn get_user_by_id(l_id: i64, conn: &MysqlConnection) -> Result<Option<models
     Ok(found_user)
 }
 
+pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::users::dsl::*;
+
+    diesel::update(users.filter(id.eq(user.id)))
+        .set(
+            (password.eq(user.password.clone()),
+             status.eq(user.status.clone()),
+             status_changed.eq(user.status_changed.clone()),
+             level.eq(user.level.clone()),
+             discoverer.eq(user.discoverer.clone())))
+        .execute(conn).unwrap();
+    Ok(())
+}
+
 pub fn get_user_from_auth_token(token: String, conn: &MysqlConnection) -> Result<Option<models::User>, diesel::result::Error> {
     let result = get_auth_token(token, conn);
     if result.is_err() {
