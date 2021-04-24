@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use actix::prelude::*;
 use actix_files as fs;
-use actix_web::{middleware, get, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{middleware, get,post, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 use crate::{DbPool, RedditRoyalty, action, utils};
 use tera::Tera;

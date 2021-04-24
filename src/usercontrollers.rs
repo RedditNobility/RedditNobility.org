@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use actix::prelude::*;
 use actix_files as fs;
-use actix_web::{middleware, get, web, App, Error, HttpRequest, HttpResponse, HttpServer, http};
+use actix_web::{middleware, get,post, web, App, Error, HttpRequest, HttpResponse, HttpServer, http};
 use actix_web_actors::ws;
 use crate::{DbPool, RedditRoyalty, action, utils};
 use tera::Tera;
@@ -110,7 +110,7 @@ pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session:
     }
     let user = user.unwrap();
     if form.password.is_none() {
-        utils::send_login(&user, &conn, rr.clone());
+        utils::send_login(&user, **&conn, rr.clone());
         return HttpResponse::Found().header(http::header::LOCATION, "/login?status=LOGIN_SENT").finish().into_body();
     }
     if verify(&form.password, &user.password).unwrap() {

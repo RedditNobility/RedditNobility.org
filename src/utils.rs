@@ -10,6 +10,7 @@ use rand::distributions::Alphanumeric;
 use actix_web::web::{Data, Path};
 use std::sync::{Arc, Mutex};
 use std::fs;
+use crate::websiteerror::WebsiteError;
 
 pub fn quick_add(username: String, conn: &MysqlConnection) {
     let mut status = "Found";
@@ -33,7 +34,7 @@ pub fn quick_add(username: String, conn: &MysqlConnection) {
 }
 
 ///A standardized method for deciding rather a user is allowed to be where they are
-pub fn is_authorized(api_token: String, level: Level, conn: &MysqlConnection) -> Result<bool, SiteError> {
+pub fn is_authorized(api_token: String, level: Level, conn: &MysqlConnection) -> Result<bool, dyn WebsiteError> {
     let result = action::get_user_from_auth_token(api_token, &conn);
     if result.is_err() {
         return Err(SiteError::DBError(result.err().unwrap()));

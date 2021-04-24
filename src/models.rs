@@ -49,6 +49,7 @@ pub enum Level {
     Admin,
     Moderator,
     User,
+    Client,
 }
 
 
@@ -58,6 +59,7 @@ impl Level {
             Level::Admin => "ADMIN",
             Level::Moderator => "MODERATOR",
             Level::User => "USER",
+            Level::Client => "CLIENT",
         }
     }
     pub fn level(&self) -> i32 {
@@ -65,6 +67,7 @@ impl Level {
             Level::Admin => 3,
             Level::Moderator => 2,
             Level::User => 1,
+            Level::Client => 4,
         }
     }
 }
