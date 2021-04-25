@@ -8,6 +8,7 @@ extern crate bcrypt;
 extern crate strum_macros;
 #[macro_use]
 extern crate strum;
+
 use log::{error, info, warn};
 use dotenv::dotenv;
 use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer, HttpRequest, error, Responder};
@@ -40,6 +41,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::sync::{Mutex, Arc};
 use actix_multipart_derive::MultipartForm;
 use openssl::ssl::{SslAcceptor, SslMethod, SslFiletype};
+use std::thread::sleep;
+use chrono::{Local, DateTime, Duration};
+use std::ops::Sub;
 
 pub mod models;
 pub mod schema;
@@ -58,27 +62,22 @@ mod apiresponse;
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
 pub struct RedditRoyalty {
-    pub active_keys: HashMap<String, i64>,
+    pub users_being_worked_on: HashMap<i64, DateTime<Local>>,
     pub reddit: RedditClient,
 }
 
 impl RedditRoyalty {
     fn new(client: RedditClient) -> RedditRoyalty {
         RedditRoyalty {
-            active_keys: HashMap::new(),
+            users_being_worked_on: HashMap::new(),
             reddit: client,
         }
     }
-    pub fn add_key(&mut self, key: String, moderator: i64) {
-        self.active_keys.insert(key, moderator);
+    pub fn add_id(&mut self, id: i64) {
+        self.users_being_worked_on.insert(id, Local::now());
     }
-
-    pub fn drop_key(&mut self, key: String) {
-        self.active_keys.remove(&*key);
-    }
-
-    pub fn is_key_valid(&self, key: String) -> bool {
-        self.active_keys.contains_key(&*key)
+    fn remove_id(&mut self, i: &i64) {
+        self.users_being_worked_on.remove(i);
     }
 }
 embed_migrations!();
@@ -110,7 +109,24 @@ async fn main() -> std::io::Result<()> {
 
     let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", arc);
     let reddit_royalty = Arc::new(Mutex::new(RedditRoyalty::new(client)));
-
+    let arc2 = reddit_royalty.clone();
+    thread::spawn(move || {
+        let arc1 = arc2.clone();
+        loop {
+            let result = arc1.lock();
+            if result.is_err() {
+                panic!("The Site Core has been poisoned. Tux you dumb fuck!")
+            }
+            let mut rr = result.unwrap();
+            for x in rr.users_being_worked_on.clone() {
+                let x1: Duration = Local::now().sub(x.1.clone());
+                if x1.num_minutes() > 5 {
+                    rr.remove_id(&x.0);
+                }
+            }
+            sleep(Duration::minutes(5).to_std().unwrap())
+        }
+    });
     let mut server = HttpServer::new(move || {
         let tera =
             Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*")).unwrap();

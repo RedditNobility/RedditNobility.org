@@ -12,6 +12,7 @@ dependencies = [
  "actix-web",
  "actix-web-actors",
  "bcrypt",
+ "chrono",
  "derive_more",
  "diesel",
  "diesel_migrations",

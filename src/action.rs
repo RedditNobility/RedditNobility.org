@@ -23,6 +23,18 @@ pub fn get_user_by_id(l_id: i64, conn: &MysqlConnection) -> Result<Option<models
     Ok(found_user)
 }
 
+pub fn get_found_users(conn: &MysqlConnection) -> Result<Vec<models::User>, diesel::result::Error> {
+    use crate::schema::users::dsl::*;
+    let values = users.filter(status.eq("FOUND")).load::<models::User>(conn).expect("Error loading mods");
+
+    Ok(values)
+}
+pub fn delete_user(us: String, conn: &MysqlConnection)-> Result<(), diesel::result::Error> {
+    use crate::schema::users::dsl::*;
+
+    diesel::delete(users.filter(username.eq(us))).execute(conn).unwrap();
+    Ok(())
+}
 pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
 
@@ -63,5 +75,4 @@ pub fn get_client_key_by_id(key: i64, conn: &MysqlConnection) -> Result<Option<m
     let found_key = client_keys.filter(id.eq(key)).first::<models::ClientKey>(conn).optional()?;
     Ok(found_key)
 }
-
 

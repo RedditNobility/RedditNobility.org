@@ -37,7 +37,7 @@ use crate::siteerror::SiteError;
 use bcrypt::verify;
 use crate::usererror::UserError;
 use crate::siteerror::SiteError::DBError;
-use crate::apiresponse::APIResponse;
+use crate::apiresponse::{APIResponse, APIError};
 use std::str::FromStr;
 
 fn api_validate(header_map: &HeaderMap, level: Level, conn: &MysqlConnection) -> Result<bool, Box<dyn WebsiteError>> {
@@ -52,7 +52,7 @@ fn api_validate(header_map: &HeaderMap, level: Level, conn: &MysqlConnection) ->
     let split = header.split(" ").collect::<Vec<&str>>();
     let option = split.get(0);
     if option.is_none() {
-       return Ok(false);
+        return Ok(false);
     }
     let value = split.get(1);
     if value.is_none() {
@@ -149,7 +149,6 @@ pub async fn get_user(pool: web::Data<DbPool>, web::Path((user)): web::Path<( St
     let user = result1.unwrap();
     let response = APIResponse::<User> {
         success: true,
-        error: None,
         data: Some(user),
     };
     HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap())
@@ -220,7 +219,7 @@ pub async fn user_login(pool: web::Data<DbPool>, login: web::Form<APILoginReques
         map.insert("success".to_string(), Value::from(true));
         map.insert("status".to_string(), Value::from("SENT"));
         return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&map).unwrap());
-    }else {
+    } else {
         let string = login.password.as_ref().unwrap();
         if verify(&string, &user.password).unwrap() {
             let x = utils::create_token(&user, &conn);
@@ -280,9 +279,12 @@ pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeSta
     if str.is_err() {
         return UserError::InvalidRequest.api_error();
     }
-
+    let status: Status = str.unwrap();
+    if status == Status::APPROVED {
+        //TODO approve user
+    }
     let mut user = result1.unwrap();
-    user.set_status(str.unwrap().to_string());
+    user.set_status(status.to_string());
     user.set_moderator(moderator.username.clone());
     let result = action::update_user(&user, &conn);
     if result.is_err() {
@@ -290,7 +292,6 @@ pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeSta
     }
     let response = APIResponse::<User> {
         success: true,
-        error: None,
         data: None,
     };
     return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
@@ -337,9 +338,111 @@ pub async fn change_level(pool: web::Data<DbPool>, suggest: web::Form<ChangeLeve
     }
     let response = APIResponse::<User> {
         success: true,
-        error: None,
         data: None,
     };
     info!("{}", format!("{} has changed the level of {} to {}", moderator.username.clone(), user.username.clone(), level.unwrap().name()));
     return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RedditUser {
+    pub name: String,
+    pub avatar: String,
+    pub commentKarma: i64,
+    pub total_karma: i64,
+    pub created: i64,
+    pub topFivePosts: Vec<RedditPost>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RedditPost {
+    pub subreddit: String,
+    pub url: String,
+    pub id: String,
+    pub title: String,
+    pub content: String,
+    pub score: i64,
+
+}
+
+
+#[post("/api/moderator/next/user")]
+pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>) -> HttpResponse {
+    let conn = pool.get().expect("couldn't get db connection from pool");
+    let result = api_validate(r.headers(), Level::Moderator, &conn);
+    if result.is_err() {
+        return result.err().unwrap().api_error();
+    }
+    if !result.unwrap() {
+        return UserError::NotFound.api_error();
+    }
+    let result = action::get_found_users(&conn);
+    if result.is_err() {}
+    let mut vec = result.unwrap();
+    vec.sort_by_key(|x| x.created);
+    let rr = rr.lock();
+    if rr.is_err() {
+        actix::System::current().stop();
+        panic!("The Site Core has been poisoned. Tux you dumb fuck!");
+    }
+    let mut rr = rr.unwrap();
+    let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
+    let mut option: Option<User> = Option::None;
+    for x in vec {
+        if !rr.users_being_worked_on.contains_key(&x.id) {
+            option = Some(x.clone());
+        }
+    }
+    if option.is_none() {
+        return UserError::NotFound.api_error();
+    }
+    let x1: User = option.unwrap();
+    rr.add_id(x1.id.clone());
+    let user = client.user(x1.username.as_str());
+
+    let result1 = user.about();
+    if result1.is_err() {
+        let error = APIError {
+            status_code: None,
+            user_friendly_message: None,
+            error_code: Some("USER_WAS_UNABLE_TO_BE_RETRIEVED".to_string()),
+        };
+        let response = APIResponse::<APIError> {
+            success: false,
+            data: Some(error),
+        };
+        action::delete_user(x1.username.clone(), &conn);
+        return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+    }
+    let final_user = result1.unwrap();
+    let user = client.user(x1.username.as_str());
+
+    let submissions = user.submissions().unwrap().take(5).collect::<Vec<Submission>>();
+    let mut user_posts = Vec::<RedditPost>::new();
+
+    for x in submissions {
+        let post = RedditPost {
+            subreddit: x.subreddit().name,
+            url: format!("https://reddit.com{}", x.data.permalink),
+            id: x.data.id.clone(),
+            title: x.title().clone().to_string(),
+            content: x.data.selftext.clone().to_string(),
+            score: x.score(),
+        };
+        user_posts.push(post);
+    }
+    let user = RedditUser {
+        name: final_user.data.name,
+        avatar: final_user.data.icon_img.unwrap_or("".parse().unwrap()),
+        commentKarma: final_user.data.comment_karma,
+        total_karma: final_user.data.total_karma,
+        created: final_user.data.created as i64,
+        topFivePosts: user_posts,
+    };
+    let response = APIResponse::<RedditUser> {
+        success: true,
+        data: Some(user),
+    };
+    return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+
 }

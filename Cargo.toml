@@ -37,3 +37,4 @@ log = "0.4.14"
 strum = { version = "0.20.0", features = ["derive"] }
 strum_macros = "0.20.1"
 derive_more = "0.99.13"
+chrono = "0.4.19"

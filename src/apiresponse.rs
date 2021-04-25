@@ -10,7 +10,6 @@ use crate::websiteerror::WebsiteError;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct APIResponse<T> {
     pub success: bool,
-    pub error: Option<APIError>,
     pub data: Option<T>,
 }
 

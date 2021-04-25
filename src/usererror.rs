@@ -60,8 +60,7 @@ impl WebsiteError for UserError {
         };
         let response = APIResponse::<APIError> {
             success: false,
-            error: Some(error),
-            data: None,
+            data: Some(error),
         };
         HttpResponse::Ok().status(self.status_code()).content_type("application/json").body(serde_json::to_string(&response).unwrap())
     }
