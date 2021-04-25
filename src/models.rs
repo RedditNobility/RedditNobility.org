@@ -1,5 +1,4 @@
 use std::fmt::{Display, Error, Formatter};
-use std::str::FromStr;
 
 use diesel::Queryable;
 use serde::{Deserialize, Serialize};
@@ -51,6 +50,8 @@ pub enum Status {
     BANNED,
 }
 
+
+
 //Found, Approved, Denied, Banned
 #[derive(Debug, PartialEq, EnumString)]
 pub enum Level {
@@ -84,7 +85,9 @@ impl User {
     pub fn set_status(&mut self, status: String) {
         self.status = status;
     }
-
+    pub fn set_level(&mut self, level: String) {
+        self.level = level;
+    }
     pub fn set_moderator(&mut self, moderator: String) {
         self.moderator = moderator;
     }

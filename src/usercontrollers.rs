@@ -50,33 +50,7 @@ pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequ
     Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
 }
 
-#[post("/submit/post  ")]
-pub async fn submit(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest, form: Form<SubmitUser>) -> Result<HttpResponse, Error> {
-    let mut ctx = tera::Context::new();
-    let conn = pool.get().expect("couldn't get db connection from pool");
-    if !form.username.is_empty() {
-        if action::get_fuser(form.username.clone(), &conn).unwrap().is_some() {
-            ctx.insert("already_exists", &true);
-        } else {
-            ctx.insert("success", &true);
-            let fuser = User {
-                id: 0,
-                username: form.username.clone(),
-                moderator: "".to_string(),
-                status: "Found".to_string(),
-                created: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64,
-            };
-            action::add_new_fuser(&fuser, &conn);
-        }
-    }
 
-    let result = tera.get_ref().render("index.html", &ctx);
-    if result.is_err() {
-        let error = result.err().unwrap();
-        return Ok(HttpResponse::InternalServerError().finish());
-    }
-    Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
-}
 
 #[get("/login")]
 pub async fn get_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> Result<HttpResponse, Error> {
@@ -110,12 +84,14 @@ pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session:
     }
     let user = user.unwrap();
     if form.password.is_none() {
-        utils::send_login(&user, **&conn, rr.clone());
+        utils::send_login(&user, &conn, rr.clone());
         return HttpResponse::Found().header(http::header::LOCATION, "/login?status=LOGIN_SENT").finish().into_body();
-    }
-    if verify(&form.password, &user.password).unwrap() {
-        session.set("auth_token", utils::create_token(&user, &conn).token.clone());
-        return HttpResponse::Found().header("Location", "/").finish().into_body();
+    }else {
+        let string = form.password.as_ref().unwrap();
+        if verify(string, &user.password).unwrap() {
+            session.set("auth_token", utils::create_token(&user, &conn).unwrap().token.clone());
+            return HttpResponse::Found().header("Location", "/").finish().into_body();
+        }
     }
     return HttpResponse::Found().header("Location", "/login?status=NOT_FOUND").finish().into_body();
 }
@@ -133,7 +109,7 @@ pub async fn key_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: 
         return SiteError::DBError(result.err().unwrap()).site_error(tera);
     }
     let token = result.unwrap();
-    if utokenser.is_none() {
+    if token.is_none() {
         return HttpResponse::Found().header(http::header::LOCATION, "/login?status=NOT_FOUND").finish().into_body();
     }
     let token = token.unwrap();

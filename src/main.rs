@@ -4,6 +4,10 @@ extern crate diesel;
 extern crate diesel_migrations;
 extern crate dotenv;
 extern crate bcrypt;
+#[macro_use]
+extern crate strum_macros;
+#[macro_use]
+extern crate strum;
 use log::{error, info, warn};
 use dotenv::dotenv;
 use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer, HttpRequest, error, Responder};
@@ -33,7 +37,6 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::controllers::{RedditPost, RedditUser};
 use std::sync::{Mutex, Arc};
 use actix_multipart_derive::MultipartForm;
 use openssl::ssl::{SslAcceptor, SslMethod, SslFiletype};
@@ -41,7 +44,6 @@ use openssl::ssl::{SslAcceptor, SslMethod, SslFiletype};
 pub mod models;
 pub mod schema;
 mod action;
-mod controllers;
 mod api;
 mod morecontrollers;
 mod utils;
@@ -89,7 +91,7 @@ async fn main() -> std::io::Result<()> {
     println!("{}", is_valid("PrincessCow".parse().unwrap()));
     println!("{}", is_valid("KingTux".parse().unwrap()));
     std::env::set_var("RUST_LOG", "actix_web=debug");
-    log4rs::init_file( Path::new("resources").join("log.yml"), Default::default()).unwrap();
+    log4rs::init_file(Path::new("resources").join("log.yml"), Default::default()).unwrap();
     dotenv::dotenv().ok();
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
     let manager = ConnectionManager::<MysqlConnection>::new(connspec);
@@ -98,7 +100,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to create pool.");
     let connection = pool.get().unwrap();
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
-info!("Test");
+    info!("Test");
 
     let arc = PasswordAuthenticator::new(
         std::env::var("CLIENT_KEY").unwrap().as_str(),
@@ -119,10 +121,13 @@ info!("Test");
             .data(pool.clone()).data(Arc::clone(&reddit_royalty)).data(tera).
             service(fs::Files::new("static", "static").show_files_listing()).
             service(favicon).
-            service(controllers::moderator_index).
-            service(api::user).
-            service(morecontrollers::file_upload).
-            service(web::resource("/ws/moderator").route(web::get().to(controllers::ws_index)))
+            service(api::change_level).
+            service(api::change_status).
+            service(api::get_user).
+            service(api::submit_user).
+            service(api::user_login).
+            service(api::validate_key).
+            service(morecontrollers::file_upload)
     });
     if std::env::var("PRIVATE_KEY").is_ok() {
         let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();

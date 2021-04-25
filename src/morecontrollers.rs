@@ -21,7 +21,7 @@ pub async fn file_upload(pool: web::Data<DbPool>, file: Form, session: Session, 
     let result = String::from_utf8(file.file.to_vec()).unwrap();
     let split = result.split("\n");
     for x in split {
-        quick_add(x.to_string(), &conn);
+        quick_add(x.to_string(), "KingTux".to_string(),&conn);
     }
     HttpResponse::Found().header("Location", "/admin").finish()
 }

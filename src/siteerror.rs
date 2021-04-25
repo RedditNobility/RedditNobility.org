@@ -9,11 +9,11 @@ use log::{error, info, warn};
 use serde_json::Value;
 use std::collections::HashMap;
 use tera::Tera;
-use crate::websiteerror::WebsiteError;
+use crate::websiteerror::{WebsiteError, json_error_message};
 use crate::apiresponse::{APIError, APIResponse};
 
 /// Error type that occurs when an API request fails for some reason.
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Display)]
 pub enum SiteError {
     #[display(fmt = "An internal error occurred. Please try again later.")]
     JSONError(serde_json::Error),
@@ -27,10 +27,13 @@ impl SiteError{
         error!("{}", self)
     }
 }
+impl Error for SiteError{
+
+}
 impl WebsiteError for SiteError {
     fn site_error(&self, tera: web::Data<Tera>) -> HttpResponse {
         let mut ctx = tera::Context::new();
-        let x = self.json_error_message();
+        let x = json_error_message(Box::new(self));
         ctx.insert("error", x["user_message"].as_str().unwrap());
         let result = tera.get_ref().render("error.html", &ctx);
         if result.is_err() {
@@ -47,7 +50,7 @@ impl WebsiteError for SiteError {
             user_friendly_message: Some(self.user_message().to_string()),
             error_code: None,
         };
-        let response = APIResponse {
+        let response = APIResponse::<APIError> {
             success: false,
             error: Some(error),
             data: None,

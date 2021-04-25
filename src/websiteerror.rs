@@ -10,7 +10,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use tera::Tera;
 
-pub trait WebsiteError {
+pub trait WebsiteError: Error {
     fn status_code(&self) -> StatusCode;
 
     fn user_message(&self) -> &str;
@@ -19,11 +19,9 @@ pub trait WebsiteError {
     fn api_error(&self) -> HttpResponse;
 }
 
-impl dyn WebsiteError {
-    pub fn json_error_message(&self) -> Value {
-        let mut values = HashMap::<String, Value>::new();
-        values.insert("status".parse().unwrap(), Value::Number(self.status_code().as_u16().into()));
-        values.insert("user_message".parse().unwrap(), Value::String(self.user_message().to_string()));
-        serde_json::to_value(values).unwrap()
-    }
+pub fn json_error_message(error: Box<&dyn WebsiteError>) -> Value {
+    let mut values = HashMap::<String, Value>::new();
+    values.insert("status".parse().unwrap(), Value::Number(error.status_code().as_u16().into()));
+    values.insert("user_message".parse().unwrap(), Value::String(error.user_message().to_string()));
+    serde_json::to_value(values).unwrap()
 }

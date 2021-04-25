@@ -11,6 +11,9 @@ use actix_web::web::{Data, Path};
 use std::sync::{Arc, Mutex};
 use std::fs;
 use crate::websiteerror::WebsiteError;
+use std::path::PathBuf;
+use std::str::FromStr;
+use bcrypt::{hash, DEFAULT_COST};
 
 pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
     let mut status = "Found";
@@ -20,7 +23,7 @@ pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
         status = "Denied";
     }
     let username = username.replace("=T", "").replace("=F", "").replace("\r", "");
-    if action::get_fuser(username.clone(), &conn).unwrap().is_none() {
+    if action::get_user_by_name(username.clone(), &conn).unwrap().is_none() {
         let user = User {
             id: 0,
             username: username.clone(),
@@ -32,15 +35,15 @@ pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
             level: Level::User.name().to_string(),
             discoverer,
         };
-        action::add_new_fuser(&user, &conn);
+        action::add_new_user(&user, &conn);
     }
 }
 
 ///A standardized method for deciding rather a user is allowed to be where they are
-pub fn is_authorized(api_token: String, level: Level, conn: &MysqlConnection) -> Result<bool, dyn WebsiteError> {
+pub fn is_authorized(api_token: String, target_level: Level, conn: &MysqlConnection) -> Result<bool, Box<dyn WebsiteError>> {
     let result = action::get_user_from_auth_token(api_token, &conn);
     if result.is_err() {
-        return Err(SiteError::DBError(result.err().unwrap()));
+        return Err(Box::new(SiteError::DBError(result.err().unwrap())));
     }
     let user = result.unwrap();
     if user.is_none() {
@@ -49,11 +52,11 @@ pub fn is_authorized(api_token: String, level: Level, conn: &MysqlConnection) ->
     let user = user.unwrap();
 
 
-    let user_level: Level = Level::from_str(user.level.as_str()).unwrap();
-    if user_level.level() >= level.level() {
-        Ok(true)
+    let level: Result<Level, strum::ParseError> = Level::from_str(user.level.as_str());
+    if level.unwrap().level() >= target_level.level() {
+        return Ok(true);
     }
-    Ok(false)
+    return Ok(false);
 }
 
 pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthToken, Error> {
@@ -76,18 +79,18 @@ fn get_current_time() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64
 }
 
-pub fn send_login(user: &User, conn: MysqlConnection, rr: Data<Arc<Mutex<RedditRoyalty>>>) {
+pub fn send_login(user: &User, conn: &MysqlConnection, rr: Data<Arc<Mutex<RedditRoyalty>>>) {
     let password: String = rand::thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
     let mut user = user.clone();
-    user.set_password(password);
+    user.set_password(hash(&password.clone(), DEFAULT_COST).unwrap(),);
     let result = action::update_user(&user, &conn);
     let token = create_token(&user, &conn).unwrap();
-    let result1 = rr.lock().unwrap().reddit.messages().compose(user.username.as_str(), "RedditNobility Login", build_message(&user, &password, &token));
+    let result1 = rr.lock().unwrap().reddit.messages().compose(user.username.as_str(), "RedditNobility Login", build_message(&user, &password, &token).as_str());
 }
 
-fn build_message(user: &User, password: &String, token: &AuthToken) -> &str {
+fn build_message(user: &User, password: &String, token: &AuthToken) -> String {
     let url = std::env::var("URL").unwrap();
-    let string = fs::read_to_string(Path::new("resources").join("login-message"));
+    let string = fs::read_to_string(PathBuf::new().join("resources").join("login-message"));
     if string.is_err() {
         todo!();
     }
@@ -95,5 +98,5 @@ fn build_message(user: &User, password: &String, token: &AuthToken) -> &str {
         replace("{{URL}}", format!("{}/login/key?token={}", url, token.token.as_str()).as_str()).
         replace("{{PASSWORD}}", &password).
         replace("{{USERNAME}}", user.username.clone().as_str());
-    return string.as_str();
+    return string;
 }

@@ -46,7 +46,7 @@ pub async fn admin(pool: web::Data<DbPool>, session: Session, tera: web::Data<Te
         //No Auth
     }
     let token = token.unwrap();
-    if !utils::is_authorized(token, Level::Admin, &conn){
+    if !utils::is_authorized(token, Level::Admin, &conn).unwrap(){
         //No Auth
     }
     let result = tera.get_ref().render("admin.html", &ctx);
@@ -58,69 +58,3 @@ pub async fn admin(pool: web::Data<DbPool>, session: Session, tera: web::Data<Te
 }
 
 
-#[derive(Deserialize)]
-pub struct CreateMod {
-    pub username: String,
-    pub password: String,
-
-}
-
-#[post("/admin/user/del")]
-pub async fn admin_del_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, req: HttpRequest) -> HttpResponse {
-    HttpResponse::Found().header("Location", "/admin").finish()
-}
-
-#[post("/admin/user/create")]
-pub async fn admin_create_user(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, form: Form<CreateMod>, req: HttpRequest) -> HttpResponse {
-    let conn = pool.get().expect("couldn't get db connection from pool");
-    println!("1");
-    let result1 = action::get_moderators(&conn);
-    if (result1.is_err()) {
-        println!("Hey");
-        return HttpResponse::InternalServerError().finish();
-    }
-    let result1 = result1.unwrap();
-    let mut approved = false;
-
-    println!("1");
-
-    if !result1.is_empty() {
-        let moderator = session.get("moderator");
-        let option = moderator.unwrap();
-        if option.is_some() {
-            let value: String = option.unwrap();
-            for x in result1 {
-                if x.username.eq(&value) {
-                    if x.admin {
-                        approved = true;
-                    }
-                }
-            }
-        }
-    } else {
-        approved = true;
-    }
-    println!("1");
-    if !approved {
-        return HttpResponse::Unauthorized().header("Location", "/").finish();
-    }
-    let result1 = action::get_moderators(&conn);
-    let result1 = result1.unwrap();
-
-    for x in result1 {
-        if x.username.eq(&form.username) {
-            return HttpResponse::Found().header("Location", "/admin").finish();
-        }
-    }
-    println!("1");
-    let moderator1 = Moderator {
-        id: 0,
-        username: form.username.clone(),
-        password: hash(&form.password.clone(), DEFAULT_COST).unwrap(),
-        admin: false,
-    };
-    action::add_moderator(&moderator1, &conn);
-    println!("1");
-
-    HttpResponse::Found().header("Location", "/admin").finish()
-}
