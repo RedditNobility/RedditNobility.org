@@ -383,8 +383,8 @@ pub struct RedditPost {
 }
 
 
-#[post("/api/moderator/next/user")]
-pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>) -> HttpResponse {
+#[get("/api/moderator/review/{user}")]
+pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, web::Path((user)): web::Path<( String)>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Moderator, &conn);
     if result.is_err() {
@@ -393,10 +393,6 @@ pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, rr: web::Data<Ar
     if !result.unwrap() {
         return UserError::NotFound.api_error();
     }
-    let result = action::get_found_users(&conn);
-    if result.is_err() {}
-    let mut vec = result.unwrap();
-    vec.sort_by_key(|x| x.created);
     let rr = rr.lock();
     if rr.is_err() {
         actix::System::current().stop();
@@ -405,10 +401,27 @@ pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, rr: web::Data<Ar
     let mut rr = rr.unwrap();
     let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
     let mut option: Option<User> = Option::None;
-    for x in vec {
-        if !rr.users_being_worked_on.contains_key(&x.id) {
-            option = Some(x.clone());
+    if user.eq("next") {
+        let result = action::get_found_users(&conn);
+        if result.is_err() {}
+        let mut vec = result.unwrap();
+        vec.sort_by_key(|x| x.created);
+
+        for x in vec {
+            if !rr.users_being_worked_on.contains_key(&x.id) {
+                option = Some(x.clone());
+            }
         }
+    } else {
+        let result1 = action::get_user_by_name(user, &conn);
+        if result1.is_err() {
+            return DBError(result1.err().unwrap()).api_error();
+        }
+        let result1 = result1.unwrap();
+        if result1.is_none() {
+            return UserError::NotFound.api_error();
+        }
+        option = result1;
     }
     if option.is_none() {
         return UserError::NotFound.api_error();
