@@ -18,7 +18,7 @@ use actix_web_actors::ws::{CloseReason, CloseCode};
 use crate::schema::users::dsl::created;
 use new_rawr::client::RedditClient;
 use new_rawr::auth::AnonymousAuthenticator;
-use crate::models::{User, Level};
+use crate::models::{User, Level, Status};
 use new_rawr::structures::submission::Submission;
 use new_rawr::traits::{Votable, Content};
 use rand::Rng;
@@ -151,7 +151,7 @@ pub struct UserSuggest {
 #[post("/api/user/submit")]
 pub async fn submit_user(pool: web::Data<DbPool>, suggest: web::Form<UserSuggest>, r: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
-    let result = api_validate(r.headers(), Level::Client, **&conn);
+    let result = api_validate(r.headers(), Level::User, **&conn);
     if result.is_err() {
         return result.err().unwrap().api_error();
     }
@@ -167,7 +167,11 @@ pub async fn submit_user(pool: web::Data<DbPool>, suggest: web::Form<UserSuggest
     let mut user = result1.unwrap();
     map.insert("success".to_string(), Value::from("true"));
     if user.is_none() {
-        utils::quick_add(suggest.username.clone(), &conn);
+        let discoverer = get_user_by_header(&r.headers(), **&conn);
+        if discoverer.is_err() {
+            return DBError(result1.err().unwrap()).api_error();
+        }
+        utils::quick_add(suggest.username.clone(), discoverer.unwrap().unwrap().username.clone(), &conn);
         let result1 = action::get_user_by_name(suggest.username.clone(), &conn);
         if result1.is_err() {
             return DBError(result1.err().unwrap()).api_error();
@@ -226,4 +230,50 @@ pub async fn validate_key(pool: web::Data<DbPool>, r: HttpRequest) -> Result<Htt
     let mut map = HashMap::<String, Value>::new();
     map.insert("success".parse()?, Value::from(true));
     return Ok(HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&map).unwrap()));
+}
+
+pub struct ChangeStatus {
+    pub username: String,
+    pub status: String,
+}
+
+#[post("/api/user/change/status")]
+pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeStatus>, r: HttpRequest) -> HttpResponse {
+    let conn = pool.get().expect("couldn't get db connection from pool");
+    let result = api_validate(r.headers(), Level::Moderator, **&conn);
+    if result.is_err() {
+        return result.err().unwrap().api_error();
+    }
+    if !result.unwrap() {
+        Ok(UserError::NotFound.api_error());
+    }
+    let moderator = get_user_by_header(&r.headers(), **&conn);
+    if moderator.is_err() {
+        return DBError(result1.err().unwrap()).api_error();
+    }
+    let moderator = moderator.unwrap().unwrap();
+    let result1 = action::get_user_by_name(suggest.username.clone(), &conn);
+    if result1.is_err() {
+        return DBError(result1.err().unwrap()).api_error();
+    }
+    let result1 = result1.unwrap();
+    if result1.is_none() {
+        let mut map = HashMap::<String, Value>::new();
+        map.insert("error".parse()?, Value::from(Number::from(404)));
+        return HttpResponse::NotFound().content_type("application/json").body(serde_json::to_string(&map).unwrap());
+    }
+    let str: Result<Status, Self::Err> = Status::from_str(suggest.status.as_str());
+    if str.is_err() {
+        return UserError::InvalidRequest.api_error();
+    }
+    let mut user = result1.unwrap();
+    user.set_status(str.unwrap().to_string());
+    user.set_moderator(moderator.username.clone());
+    let result = action::update_user(&user, &conn);
+    if result.is_err() {
+        return DBError(result1.err().unwrap()).api_error();
+    }
+    let mut map = HashMap::<String, Value>::new();
+    map.insert("success".parse()?, Value::from(true));
+    return HttpResponse::NotFound().content_type("application/json").body(serde_json::to_string(&map).unwrap());
 }

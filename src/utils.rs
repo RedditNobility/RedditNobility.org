@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 use std::fs;
 use crate::websiteerror::WebsiteError;
 
-pub fn quick_add(username: String, conn: &MysqlConnection) {
+pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
     let mut status = "Found";
     if username.contains("=T") {
         status = "Approved";
@@ -21,15 +21,18 @@ pub fn quick_add(username: String, conn: &MysqlConnection) {
     }
     let username = username.replace("=T", "").replace("=F", "").replace("\r", "");
     if action::get_fuser(username.clone(), &conn).unwrap().is_none() {
-        let fuser = User {
+        let user = User {
             id: 0,
             username: username.clone(),
+            password: "".to_string(),
             moderator: "".to_string(),
             status: status.to_string(),
+            status_changed: 0,
             created: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64,
+            level: Level::User.name().to_string(),
+            discoverer,
         };
-        println!("Adding {}", &fuser);
-        action::add_new_fuser(&fuser, &conn);
+        action::add_new_fuser(&user, &conn);
     }
 }
 

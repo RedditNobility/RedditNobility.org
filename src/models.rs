@@ -4,6 +4,7 @@ use std::str::FromStr;
 use diesel::Queryable;
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumString;
+use strum_macros::Display;
 use crate::schema::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
@@ -42,6 +43,13 @@ pub struct User {
     pub created: i64,
 }
 
+#[derive(Debug, Display, PartialEq, EnumString)]
+pub enum Status {
+    FOUND,
+    DENIED,
+    APPROVED,
+    BANNED,
+}
 
 //Found, Approved, Denied, Banned
 #[derive(Debug, PartialEq, EnumString)]

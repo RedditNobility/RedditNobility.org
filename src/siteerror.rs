@@ -10,6 +10,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use tera::Tera;
 use crate::websiteerror::WebsiteError;
+use crate::apiresponse::{APIError, APIResponse};
 
 /// Error type that occurs when an API request fails for some reason.
 #[derive(Debug, Display, Error)]
@@ -41,9 +42,17 @@ impl WebsiteError for SiteError {
         HttpResponse::Ok().status(self.status_code()).content_type("text/html").body(&result.unwrap())
     }
     fn api_error(&self) -> HttpResponse {
-        self.error();
-
-        HttpResponse::Ok().status(self.status_code()).content_type("application/json").body(serde_json::to_string(self.json_error_message()).unwrap())
+        let error = APIError {
+            status_code: Some(self.status_code().as_u16()),
+            user_friendly_message: Some(self.user_message().to_string()),
+            error_code: None,
+        };
+        let response = APIResponse {
+            success: false,
+            error: Some(error),
+            data: None,
+        };
+        HttpResponse::Ok().status(self.status_code()).content_type("application/json").body(serde_json::to_string(&response).unwrap())
     }
     fn status_code(&self) -> StatusCode {
         match *self {

@@ -51,6 +51,7 @@ mod usercontrollers;
 mod moderatorcontrollers;
 mod usererror;
 mod websiteerror;
+mod apiresponse;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
