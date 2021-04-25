@@ -15,7 +15,7 @@ use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer
 use std::{env, thread};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use tera::Tera;
+use tera::{Tera, Function, Value, from_value};
 use actix_files as fs;
 use actix_web::web::{Form, BytesMut};
 use crate::models::{User};
@@ -34,7 +34,7 @@ use actix_web::http::header::LOCATION;
 use actix_web::http::StatusCode;
 use actix_web::body::Body;
 use bcrypt::{DEFAULT_COST, hash, verify};
-use std::collections::HashMap;
+use std::collections::{HashMap, BTreeMap};
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -44,6 +44,10 @@ use openssl::ssl::{SslAcceptor, SslMethod, SslFiletype};
 use std::thread::sleep;
 use chrono::{Local, DateTime, Duration};
 use std::ops::Sub;
+use std::str::FromStr;
+use diesel_migrations::name;
+use crate::websiteerror::WebsiteError;
+use crate::siteerror::SiteError;
 
 pub mod models;
 pub mod schema;
@@ -79,6 +83,16 @@ impl RedditRoyalty {
     fn remove_id(&mut self, i: &i64) {
         self.users_being_worked_on.remove(i);
     }
+}
+
+fn url(args: &HashMap<String, Value>) -> Result<Value, tera::Error> {
+    let option = args.get("path");
+    return if option.is_some() {
+        let x = option.unwrap().as_str().unwrap();
+        Ok(Value::from_str(&*format!("{}/{}", std::env::var("url").unwrap().as_str(), x)).unwrap())
+    } else {
+        Err(tera::Error::from("Missing Param Tera".to_string()))
+    };
 }
 embed_migrations!();
 #[actix_web::main]
@@ -129,13 +143,14 @@ async fn main() -> std::io::Result<()> {
     });
     let mut server = HttpServer::new(move || {
         let tera =
-            Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*")).unwrap();
+            Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/site/templates/**/*")).unwrap().register_function("URL", url);
 
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(CookieSession::signed(&[0; 32]).secure(false))
             .data(pool.clone()).data(Arc::clone(&reddit_royalty)).data(tera).
-            service(fs::Files::new("static", "static").show_files_listing()).
+            service(fs::Files::new("/", "site/static").show_files_listing()).
+            service(fs::Files::new("/", "site/node_modules").show_files_listing()).
             service(favicon).
             service(api::change_level).
             service(api::change_status).
@@ -160,7 +175,6 @@ async fn main() -> std::io::Result<()> {
     }
 }
 
-
 fn is_valid(username: String) -> bool {
     let vec = lines_from_file(Path::new("resources").join("names.txt"));
     let string = username.to_lowercase();
@@ -179,7 +193,6 @@ fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
         .map(|l| l.expect("Could not parse line"))
         .collect()
 }
-
 
 #[get("/favicon.ico")]
 async fn favicon() -> actix_web::Result<actix_files::NamedFile> {
