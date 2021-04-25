@@ -253,7 +253,7 @@ pub struct ChangeStatus {
 }
 
 #[post("/api/moderator/change/status")]
-pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeStatus>, r: HttpRequest) -> HttpResponse {
+pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeStatus>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, r: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Moderator, &conn);
     if result.is_err() {
@@ -280,10 +280,27 @@ pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeSta
         return UserError::InvalidRequest.api_error();
     }
     let status: Status = str.unwrap();
-    if status == Status::APPROVED {
-        //TODO approve user
-    }
+
     let mut user = result1.unwrap();
+    if status == Status::APPROVED {
+        let rr = rr.lock();
+        if rr.is_err() {
+            panic!("The Site Core has been poisoned. Tux you dumb fuck!");
+        }
+        let user1 = utils::approve_user(&user, &rr.unwrap().reddit);
+        if !user1 {
+            let error = APIError {
+                status_code: None,
+                user_friendly_message: None,
+                error_code: Some("FAILED_APPROVE".to_string()),
+            };
+            let response = APIResponse::<APIError> {
+                success: true,
+                data: Some(error),
+            };
+            return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+        }
+    }
     user.set_status(status.to_string());
     user.set_moderator(moderator.username.clone());
     let result = action::update_user(&user, &conn);
@@ -444,5 +461,4 @@ pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, rr: web::Data<Ar
         data: Some(user),
     };
     return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
-
 }

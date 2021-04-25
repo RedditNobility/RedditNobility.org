@@ -1,6 +1,6 @@
 use crate::{action, RedditRoyalty};
 use diesel::MysqlConnection;
-use crate::models::{User, Level, ClientKey, AuthToken};
+use crate::models::{User, Level, ClientKey, AuthToken, Status};
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::siteerror::SiteError;
 use actix_session::Session;
@@ -14,6 +14,7 @@ use crate::websiteerror::WebsiteError;
 use std::path::PathBuf;
 use std::str::FromStr;
 use bcrypt::{hash, DEFAULT_COST};
+use new_rawr::client::RedditClient;
 
 pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
     let mut status = "Found";
@@ -82,7 +83,7 @@ fn get_current_time() -> i64 {
 pub fn send_login(user: &User, conn: &MysqlConnection, rr: Data<Arc<Mutex<RedditRoyalty>>>) {
     let password: String = rand::thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
     let mut user = user.clone();
-    user.set_password(hash(&password.clone(), DEFAULT_COST).unwrap(),);
+    user.set_password(hash(&password.clone(), DEFAULT_COST).unwrap());
     let result = action::update_user(&user, &conn);
     let token = create_token(&user, &conn).unwrap();
     let result1 = rr.lock().unwrap().reddit.messages().compose(user.username.as_str(), "RedditNobility Login", build_message(&user, &password, &token).as_str());
@@ -99,4 +100,12 @@ fn build_message(user: &User, password: &String, token: &AuthToken) -> String {
         replace("{{PASSWORD}}", &password).
         replace("{{USERNAME}}", user.username.clone().as_str());
     return string;
+}
+
+pub fn approve_user(user: &User,client: &RedditClient) -> bool {
+    let result1 = client.subreddit("RedditNobility").invite_member(user.username.clone());
+    if result1.is_err() {
+        return false;
+    }
+    return result1.unwrap();
 }
