@@ -29,7 +29,6 @@ use new_rawr::traits::{Content, Commentable, Votable};
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 use std::path::Path;
-use actix_session::{CookieSession, Session};
 use actix_web::http::header::LOCATION;
 use actix_web::http::StatusCode;
 use actix_web::body::Body;
@@ -148,7 +147,6 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .wrap(middleware::Logger::default())
-            .wrap(CookieSession::signed(&[0; 32]).secure(false))
             .data(pool.clone()).data(Arc::clone(&reddit_royalty)).data(tera).
             service(fs::Files::new("/", "site/static").show_files_listing()).
             service(fs::Files::new("/", "site/node_modules").show_files_listing()).

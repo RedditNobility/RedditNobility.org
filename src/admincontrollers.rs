@@ -3,14 +3,13 @@ use std::time::{Duration, Instant};
 
 use actix::prelude::*;
 use actix_files as fs;
-use actix_web::{middleware, get,post, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{middleware, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, HttpMessage};
 use actix_web_actors::ws;
 use crate::{DbPool, RedditRoyalty, action, utils};
 use tera::Tera;
 use new_rawr::responses::listing::SubmissionData;
 use serde::{Serialize, Deserialize};
 use diesel::{MysqlConnection, Connection};
-use actix_session::{Session, CookieSession};
 use std::rc::Rc;
 use std::sync::{Mutex, Arc};
 use std::cell::RefCell;
@@ -28,25 +27,24 @@ use actix::prelude::*;
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use actix_web::web::Form;
+use actix_web::cookie::Cookie;
 
 #[get("/admin")]
-pub async fn admin(pool: web::Data<DbPool>, session: Session, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
+pub async fn admin(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
     let mut ctx = tera::Context::new();
     let conn = pool.get();
     if conn.is_err() {
         //Return Error
     }
     let conn = conn.unwrap();
-    let token = session.get("auth_token");
-    if token.is_err() {
-        //Return err
-    }
-    let token: Option<String> = token.unwrap();
+
+    let token: Option<Cookie> = req.cookie("auth_token");
+
     if token.is_none() {
         //No Auth
     }
-    let token = token.unwrap();
-    if !utils::is_authorized(token, Level::Admin, &conn).unwrap(){
+    let token = token.unwrap().value().to_string();
+    if !utils::is_authorized(token, Level::Admin, &conn).unwrap() {
         //No Auth
     }
     let result = tera.get_ref().render("admin.html", &ctx);

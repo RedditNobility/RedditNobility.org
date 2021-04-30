@@ -3,7 +3,6 @@ use diesel::MysqlConnection;
 use crate::models::{User, Level, ClientKey, AuthToken, Status};
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::siteerror::SiteError;
-use actix_session::Session;
 use dotenv::Error;
 use rand::Rng;
 use rand::distributions::Alphanumeric;

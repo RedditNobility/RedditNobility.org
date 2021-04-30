@@ -1,4 +1,3 @@
-use actix_session::{CookieSession, Session};
 use actix_web::http::header::LOCATION;
 use actix_web::http::StatusCode;
 use actix_web::body::Body;
@@ -15,7 +14,7 @@ struct Form {
 }
 
 #[post("/admin/file/upload")]
-pub async fn file_upload(pool: web::Data<DbPool>, file: Form, session: Session, req: HttpRequest) -> HttpResponse {
+pub async fn file_upload(pool: web::Data<DbPool>, file: Form, req: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
 
     let result = String::from_utf8(file.file.to_vec()).unwrap();

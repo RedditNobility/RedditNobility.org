@@ -13,7 +13,6 @@ use tera::Tera;
 use new_rawr::responses::listing::SubmissionData;
 use serde::{Serialize, Deserialize};
 use diesel::{Connection};
-use actix_session::{Session, CookieSession};
 use std::rc::Rc;
 use std::sync::{Mutex, Arc};
 use std::cell::RefCell;
