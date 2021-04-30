@@ -20,6 +20,8 @@ dependencies = [
  "env_logger",
  "futures",
  "futures-util",
+ "hyper",
+ "hyper-tls",
  "log",
  "log4rs",
  "new-rawr",

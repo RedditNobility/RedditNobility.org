@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use actix::prelude::*;
 use actix_files as fs;
-use actix_web::{middleware, get,post, web, App, Error, HttpRequest, HttpResponse, HttpServer, http};
+use actix_web::{middleware, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, http};
 use actix_web_actors::ws;
 use crate::{DbPool, RedditRoyalty, action, utils};
 use tera::Tera;
@@ -31,6 +31,7 @@ use actix_web::web::Form;
 use crate::siteerror::SiteError;
 use crate::websiteerror::WebsiteError;
 use bcrypt::verify;
+use crate::recaptcha::validate;
 
 #[derive(Deserialize)]
 pub struct SubmitUser {
@@ -51,7 +52,6 @@ pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequ
 }
 
 
-
 #[get("/login")]
 pub async fn get_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> Result<HttpResponse, Error> {
     let mut ctx = tera::Context::new();
@@ -69,10 +69,25 @@ pub async fn get_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: Http
 pub struct LoginRequest {
     pub username: String,
     pub password: Option<String>,
+    pub recaptcha: Option<String>,
 }
 
 #[post("/login/post")]
 pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session: Session, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: Form<LoginRequest>) -> HttpResponse {
+    if form.recaptcha.is_none() {
+        return HttpResponse::Found().header(http::header::LOCATION, "/login?status=BAD_RECAPTCHA").finish().into_body();
+    } else {
+        let string1 = form.recaptcha.as_ref().unwrap().clone();
+        let result1 = std::env::var("RECAPTCHA_SECRET").unwrap();
+        let url = std::env::var("URL").unwrap();
+        let validate1 = validate(result1, string1, url).await;
+        if validate1.is_err(){
+           return validate1.err().unwrap().site_error(tera);
+        }
+        if !validate1.unwrap(){
+            return HttpResponse::Found().header(http::header::LOCATION, "/login?status=BAD_RECAPTCHA").finish().into_body();
+        }
+    }
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = action::get_user_by_name(form.username.clone(), &conn);
     if result.is_err() {
@@ -86,7 +101,7 @@ pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, session:
     if form.password.is_none() {
         utils::send_login(&user, &conn, rr.clone());
         return HttpResponse::Found().header(http::header::LOCATION, "/login?status=LOGIN_SENT").finish().into_body();
-    }else {
+    } else {
         let string = form.password.as_ref().unwrap();
         if verify(string, &user.password).unwrap() {
             session.set("auth_token", utils::create_token(&user, &conn).unwrap().token.clone());

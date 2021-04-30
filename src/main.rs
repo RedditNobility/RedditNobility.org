@@ -62,6 +62,7 @@ mod moderatorcontrollers;
 mod usererror;
 mod websiteerror;
 mod apiresponse;
+mod recaptcha;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
