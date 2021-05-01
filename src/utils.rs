@@ -11,9 +11,12 @@ use std::sync::{Arc, Mutex};
 use std::fs;
 use crate::websiteerror::WebsiteError;
 use std::path::PathBuf;
+use std::path::Path as SysPath;
 use std::str::FromStr;
 use bcrypt::{hash, DEFAULT_COST};
 use new_rawr::client::RedditClient;
+use std::fs::File;
+use std::io::{BufReader, BufRead};
 
 pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
     let mut status = Status::Found;
@@ -27,7 +30,8 @@ pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
     if action::get_user_by_name(username.clone(), &conn).unwrap().is_none() {
         let properties = UserProperties {
             avatar: None,
-            description: None
+            description: None,
+            title: is_valid(username.clone()),
         };
         let user = User {
             id: 0,
@@ -39,7 +43,7 @@ pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
             created: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64,
             level: Level::User,
             discoverer,
-            properties: properties
+            properties: properties,
         };
         action::add_new_user(&user, &conn);
     }
@@ -56,7 +60,6 @@ pub fn is_authorized(api_token: String, target_level: Level, conn: &MysqlConnect
         return Ok(false);
     }
     let user = user.unwrap();
-
 
 
     if user.level.level() >= target_level.level() {
@@ -107,10 +110,29 @@ fn build_message(user: &User, password: &String, token: &AuthToken) -> String {
     return string;
 }
 
-pub fn approve_user(user: &User,client: &RedditClient) -> bool {
+pub fn approve_user(user: &User, client: &RedditClient) -> bool {
     let result1 = client.subreddit("RedditNobility").invite_member(user.username.clone());
     if result1.is_err() {
         return false;
     }
     return result1.unwrap();
+}
+
+fn lines_from_file(filename: impl AsRef<SysPath>) -> Vec<String> {
+    let file = File::open(filename).expect("no such file");
+    let buf = BufReader::new(file);
+    buf.lines()
+        .map(|l| l.expect("Could not parse line"))
+        .collect()
+}
+
+pub fn is_valid(username: String) -> Option<String> {
+    let vec = lines_from_file(SysPath::new("resources").join("names.txt"));
+    let string = username.to_lowercase();
+    for x in vec {
+        if string.contains(&x) {
+            return Some(x);
+        }
+    }
+    return None;
 }

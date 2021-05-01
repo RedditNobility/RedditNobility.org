@@ -43,6 +43,7 @@ pub struct ClientKey {
 pub struct UserProperties {
     pub avatar: Option<String>,
     pub description: Option<String>,
+    pub title: Option<String>,
 }
 
 impl FromSql<Text, Mysql> for UserProperties {
@@ -91,8 +92,6 @@ pub struct User {
 }
 
 
-
-
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString)]
 #[sql_type = "Text"]
 pub enum Status {
@@ -132,6 +131,7 @@ impl Level {
         }
     }
 }
+
 impl ToSql<Text, Mysql> for Level {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
         let s = self.to_string();

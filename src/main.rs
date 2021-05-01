@@ -11,14 +11,14 @@ extern crate strum;
 
 use log::{error, info, warn};
 use dotenv::dotenv;
-use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer, HttpRequest, error, Responder};
+use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer, HttpRequest, error, Responder, HttpMessage, http};
 use std::{env, thread};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use tera::{Tera, Function, Value, from_value};
 use actix_files as fs;
 use actix_web::web::{Form, BytesMut};
-use crate::models::{User};
+use crate::models::{User, UserProperties, Level, Status};
 use serde::{Serialize, Deserialize};
 use core::time;
 use new_rawr::client::RedditClient;
@@ -47,6 +47,7 @@ use std::str::FromStr;
 use diesel_migrations::name;
 use crate::websiteerror::WebsiteError;
 use crate::siteerror::SiteError;
+use crate::usererror::UserError;
 
 pub mod models;
 pub mod schema;
@@ -96,12 +97,6 @@ fn url(args: &HashMap<String, Value>) -> Result<Value, tera::Error> {
 embed_migrations!();
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("{}", is_valid("KingTux".parse().unwrap()));
-    println!("{}", is_valid("Lord_Darth_Dan".parse().unwrap()));
-    println!("{}", is_valid("LordZorthan".parse().unwrap()));
-    println!("{}", is_valid("PrinceCow".parse().unwrap()));
-    println!("{}", is_valid("PrincessCow".parse().unwrap()));
-    println!("{}", is_valid("KingTux".parse().unwrap()));
     std::env::set_var("RUST_LOG", "actix_web=debug");
     log4rs::init_file(Path::new("resources").join("log.yml"), Default::default()).unwrap();
     dotenv::dotenv().ok();
@@ -142,7 +137,7 @@ async fn main() -> std::io::Result<()> {
     });
     let mut server = HttpServer::new(move || {
         let result1 = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/site/templates/**/*"));
-        if result1.is_err(){
+        if result1.is_err() {
             panic!("Unable to create Tera")
         }
         let mut tera =
@@ -178,33 +173,77 @@ async fn main() -> std::io::Result<()> {
     }
 }
 
-fn is_valid(username: String) -> bool {
-    let vec = lines_from_file(Path::new("resources").join("names.txt"));
-    let string = username.to_lowercase();
-    for x in vec {
-        if string.contains(&x) {
-            return true;
-        }
-    }
-    return false;
-}
-
-fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
-    let file = File::open(filename).expect("no such file");
-    let buf = BufReader::new(file);
-    buf.lines()
-        .map(|l| l.expect("Could not parse line"))
-        .collect()
-}
 
 #[get("/")]
-pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>) -> Result<HttpResponse, Error> {
+pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
     let mut ctx = tera::Context::new();
     let conn = pool.get().expect("couldn't get db connection from pool");
+    let option = action::get_setting("installed".to_string(), &conn);
+    if option.is_err() {
+        return SiteError::DBError(option.err().unwrap()).site_error(tera);
+    }
+    if option.unwrap().is_none() {
+        let result = tera.get_ref().render("install.html", &ctx);
+        if result.is_err() {
+            return SiteError::Other("Tera".to_string()).site_error(tera);
+        }
+        return HttpResponse::Ok().content_type("text/html").body(&result.unwrap());
+    }
+    let option1 = req.cookie("auth_token");
+    if option1.is_some() {
+        let result1 = action::get_user_from_auth_token(option1.unwrap().value().to_string(), &conn);
+        if result1.is_err() {
+            return SiteError::DBError(result1.err().unwrap()).site_error(tera);
+        }
+        let option2 = result1.unwrap();
+        if option2.is_none() {
+            //Handle need new login
+        } else {
+            ctx.insert("user", &option2.unwrap())
+        }
+    }
+    let result = tera.get_ref().render("index.html", &ctx);
+    if result.is_err() {
+        return SiteError::Other("Tera".to_string()).site_error(tera);
+    }
+    return HttpResponse::Ok().content_type("text/html").body(&result.unwrap());
+}
 
-    utils::quick_add("KingTuxWH".to_string(), "OG".to_string(), &conn);
+#[derive(Serialize, Deserialize)]
+pub struct InstallRequest {
+    pub username: String,
+    pub password: String,
+}
 
-    Ok(HttpResponse::Ok().content_type("text/html").body(""))
+#[post("/install")]
+pub async fn install(pool: web::Data<DbPool>, form: Form<InstallRequest>, req: HttpRequest) -> HttpResponse {
+    let conn = pool.get().expect("couldn't get db connection from pool");
+    let option = action::get_setting("installed".to_string(), &conn);
+    if option.is_err() {
+        return SiteError::DBError(option.err().unwrap()).site_error(tera);
+    }
+    if option.unwrap().is_some() {
+        return HttpResponse::Found().header(http::header::LOCATION, "/").finish().into_body();
+    }
+    let properties = UserProperties {
+        avatar: None,
+        description: Some("OG User".to_string()),
+        title: utils::is_valid(form.username.clone()),
+    };
+    let user = User {
+        id: 0,
+        username: form.username.clone(),
+        password: hash(&form.password.clone(), DEFAULT_COST).unwrap(),
+        level: Level::Admin,
+        status: Status::Found,
+        status_changed: utils::get_current_time(),
+        discoverer: "OG".to_string(),
+        moderator: "OG".to_string(),
+        properties,
+        created: utils::get_current_time(),
+    };
+    action::add_new_user(&user, &conn).unwrap();
+    return HttpResponse::Found().header(http::header::LOCATION, "/").finish().into_body();
 }
 
 #[get("/favicon.ico")]
