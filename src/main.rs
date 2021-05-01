@@ -216,7 +216,7 @@ pub struct InstallRequest {
 }
 
 #[post("/install")]
-pub async fn install(pool: web::Data<DbPool>, form: Form<InstallRequest>, req: HttpRequest) -> HttpResponse {
+pub async fn install(pool: web::Data<DbPool>, form: Form<InstallRequest>,tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let option = action::get_setting("installed".to_string(), &conn);
     if option.is_err() {

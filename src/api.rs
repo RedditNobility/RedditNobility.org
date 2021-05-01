@@ -38,6 +38,7 @@ use crate::usererror::UserError;
 use crate::siteerror::SiteError::DBError;
 use crate::apiresponse::{APIResponse, APIError};
 use std::str::FromStr;
+use crate::action::{get_user_by_name, update_user};
 
 fn api_validate(header_map: &HeaderMap, level: Level, conn: &MysqlConnection) -> Result<bool, Box<dyn WebsiteError>> {
     let option = header_map.get("Authorization");
@@ -319,6 +320,65 @@ pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeSta
 }
 
 #[derive(Deserialize)]
+pub struct ChangeRequest {
+    pub username: String,
+    pub property: String,
+    pub value: String,
+}
+
+#[post("/api/user/change")]
+pub async fn change_property(pool: web::Data<DbPool>, request: web::Form<ChangeRequest>, r: HttpRequest) -> HttpResponse {
+    let conn = pool.get().expect("couldn't get db connection from pool");
+    let result = api_validate(r.headers(), Level::User, &conn);
+    if result.is_err() {
+        return result.err().unwrap().api_error();
+    }
+    if !result.unwrap() {
+        return UserError::NotAuthorized.api_error();
+    }
+    let user = get_user_by_header(&r.headers(), &conn);
+    if user.is_err() {
+        return user.err().unwrap().api_error();
+    }
+    let user = user.unwrap().unwrap();
+    if !user.username.eq(&request.username) {
+        let result = api_validate(r.headers(), Level::Moderator, &conn);
+        if result.is_err() {
+            return result.err().unwrap().api_error();
+        }
+        if !result.unwrap() {
+            return UserError::NotAuthorized.api_error();
+        }
+    }
+    let modifying_user = get_user_by_name(request.username.clone(), &conn);
+    if modifying_user.is_err() {
+        return SiteError::DBError(modifying_user.err().unwrap()).api_error();
+    }
+    let modifying_user = modifying_user.unwrap();
+    if modifying_user.is_none() {
+        return UserError::NotFound.api_error();
+    }
+    let mut modifying_user = modifying_user.unwrap();
+
+    if request.property.eq("avatar") {
+        modifying_user.properties.set_avatar(request.value.clone());
+    } else if request.property.eq("description") {
+        modifying_user.properties.set_description(request.value.clone());
+    } else {
+        return UserError::InvalidRequest.api_error();
+    }
+    let result1 = update_user(&modifying_user, &conn);
+    if result1.is_err() {
+        return SiteError::DBError(result1.err().unwrap()).api_error();
+    }
+    let response = APIResponse::<User> {
+        success: true,
+        data: None,
+    };
+    return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+}
+
+#[derive(Deserialize)]
 pub struct ChangeLevel {
     pub username: String,
     pub level: String,
@@ -386,7 +446,6 @@ pub struct RedditPost {
     pub score: i64,
 
 }
-
 
 #[get("/api/moderator/review/{user}")]
 pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, web::Path((user)): web::Path<( String)>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>) -> HttpResponse {

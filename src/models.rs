@@ -46,6 +46,15 @@ pub struct UserProperties {
     pub title: Option<String>,
 }
 
+impl UserProperties {
+    pub fn set_avatar(&mut self, avatar: String) {
+        self.avatar = Some(avatar);
+    }
+    pub fn set_description(&mut self, description: String) {
+        self.description = Some(description);
+    }
+}
+
 impl FromSql<Text, Mysql> for UserProperties {
     fn from_sql(bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>) -> deserialize::Result<UserProperties> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes);
