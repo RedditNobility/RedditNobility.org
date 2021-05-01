@@ -286,7 +286,7 @@ pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeSta
     let status: Status = str.unwrap();
 
     let mut user = result1.unwrap();
-    if status == Status::APPROVED {
+    if status == Status::Approved {
         let rr = rr.lock();
         if rr.is_err() {
             panic!("The Site Core has been poisoned. Tux you dumb fuck!");

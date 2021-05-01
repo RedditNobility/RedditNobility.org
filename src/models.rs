@@ -96,10 +96,10 @@ pub struct User {
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString)]
 #[sql_type = "Text"]
 pub enum Status {
-    FOUND,
-    DENIED,
-    APPROVED,
-    BANNED,
+    Found,
+    Denied,
+    Approved,
+    Banned,
 }
 
 

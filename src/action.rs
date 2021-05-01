@@ -25,7 +25,7 @@ pub fn get_user_by_id(l_id: i64, conn: &MysqlConnection) -> Result<Option<models
 
 pub fn get_found_users(conn: &MysqlConnection) -> Result<Vec<models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let values = users.filter(status.eq("FOUND")).load::<models::User>(conn).expect("Error loading mods");
+    let values = users.filter(status.eq("Found")).load::<models::User>(conn).expect("Error loading mods");
 
     Ok(values)
 }

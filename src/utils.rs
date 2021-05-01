@@ -16,11 +16,11 @@ use bcrypt::{hash, DEFAULT_COST};
 use new_rawr::client::RedditClient;
 
 pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
-    let mut status = Status::FOUND;
+    let mut status = Status::Found;
     if username.contains("=T") {
-        status = Status::APPROVED;
+        status = Status::Approved;
     } else if username.contains("=F") {
-        status = Status::DENIED
+        status = Status::Denied
     }
     let username = username.replace("=T", "").replace("=F", "").replace("\r", "");
 
