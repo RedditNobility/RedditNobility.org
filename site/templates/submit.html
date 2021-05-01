@@ -31,7 +31,7 @@
 
     <h5>Submit your username here</h5>
     {% if success %}
-    <div class="success">Username added!</div>
+    <div hidden id="success" class="success">Username added!</div>
     {% endif %}
     {% if already_exists %}
     <div class="error">Username already exists!</div>
@@ -48,13 +48,41 @@
     <br/><br/>
 
 </div>
+<script src=`{{url(path="node_modules/ajax/lib/ajax.js")}}`></script>
+
 <script>
+    const auth_token = getCookie("auth_token");
+
     function submit() {
         let elementById = document.getElementById("submit_username");
         let value = elementById.value;
+        fetch('{{url(path="/api/user/submit")}}', {
+            method: "POST",
+            body: "username=" + data,
+            headers: {
+                "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "Authorization": "Bearer" + auth_token
+            }
+        }).then(response => response.json())
+            .then(msg => {
+                if (msg.success == true) {
+                    let success = document.getElementById("success");
+                    success.hidden = false;
+                    success.value = value + " has been submitted";
+                } else {
+                    window.alert("Unable to submit user")
+                }
+            })
+            .catch(err => console.log(err));
+
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
     }
 </script>
-
 </body>
 
 </html>

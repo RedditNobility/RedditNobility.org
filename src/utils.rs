@@ -75,7 +75,7 @@ pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthTok
     return Ok(token);
 }
 
-fn get_current_time() -> i64 {
+pub(crate) fn get_current_time() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64
 }
 

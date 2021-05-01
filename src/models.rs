@@ -7,6 +7,15 @@ use strum_macros::Display;
 use crate::schema::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
+pub struct Setting {
+    pub id: i64,
+    pub setting_key: String,
+    pub value: String,
+    pub updated: i64,
+
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 pub struct AuthToken {
     pub id: i64,
     pub user: i64,
@@ -49,7 +58,6 @@ pub enum Status {
     APPROVED,
     BANNED,
 }
-
 
 
 //Found, Approved, Denied, Banned

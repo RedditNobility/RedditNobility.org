@@ -172,10 +172,8 @@ pub async fn submit_user(pool: web::Data<DbPool>, suggest: web::Form<UserSuggest
     if result1.is_err() {
         return DBError(result1.err().unwrap()).api_error();
     }
-    let mut map = HashMap::<String, Value>::new();
 
     let mut user = result1.unwrap();
-    map.insert("success".to_string(), Value::from("true"));
     if user.is_none() {
         let discoverer = get_user_by_header(&r.headers(), &conn);
         if discoverer.is_err() {
@@ -187,11 +185,18 @@ pub async fn submit_user(pool: web::Data<DbPool>, suggest: web::Form<UserSuggest
             return DBError(result1.err().unwrap()).api_error();
         }
         user = result1.unwrap();
-        map.insert("status".to_string(), Value::from("added"));
+        let response = APIResponse::<String> {
+            success: true,
+            data: Some("ADDED".parse().unwrap()),
+        };
+        return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
     } else {
-        map.insert("status".to_string(), Value::from("already_added"));
+        let response = APIResponse::<String> {
+            success: true,
+            data: Some("ALREADY_ADDED".parse().unwrap()),
+        };
+        return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
     }
-    HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&map).unwrap())
 }
 
 #[derive(Serialize, Deserialize)]

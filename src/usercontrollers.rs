@@ -72,7 +72,7 @@ pub struct LoginRequest {
 }
 
 #[post("/login/post")]
-pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>,request: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: Form<LoginRequest>) -> HttpResponse {
+pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: Form<LoginRequest>) -> HttpResponse {
     if form.recaptcha.is_none() {
         return HttpResponse::Found().header(http::header::LOCATION, "/login?status=BAD_RECAPTCHA").finish().into_body();
     } else {
@@ -120,7 +120,7 @@ pub struct KeyLogin {
 }
 
 #[get("/login/key")]
-pub async fn key_login(pool: web::Data<DbPool>, tera: web::Data<Tera>,request: HttpRequest ,rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: Form<KeyLogin>) -> HttpResponse {
+pub async fn key_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: Form<KeyLogin>) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = action::get_auth_token(form.key.clone(), &conn);
     if result.is_err() {
@@ -131,7 +131,7 @@ pub async fn key_login(pool: web::Data<DbPool>, tera: web::Data<Tera>,request: H
         return HttpResponse::Found().header(http::header::LOCATION, "/login?status=NOT_FOUND").finish().into_body();
     }
     let token = token.unwrap();
-    return HttpResponse::Found().header("Location", "/").cookie(http::Cookie::build("auth_token",token.token.clone())
+    return HttpResponse::Found().header("Location", "/").cookie(http::Cookie::build("auth_token", token.token.clone())
         .domain(request.headers().get("HOST").unwrap().to_str().unwrap())
         .path("/")
         .secure(true)
