@@ -1,6 +1,6 @@
 use crate::{action, RedditRoyalty};
 use diesel::MysqlConnection;
-use crate::models::{User, Level, ClientKey, AuthToken, Status};
+use crate::models::{User, Level, ClientKey, AuthToken, Status, UserProperties};
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::siteerror::SiteError;
 use dotenv::Error;
@@ -16,24 +16,30 @@ use bcrypt::{hash, DEFAULT_COST};
 use new_rawr::client::RedditClient;
 
 pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
-    let mut status = "Found";
+    let mut status = Status::FOUND;
     if username.contains("=T") {
-        status = "Approved";
+        status = Status::APPROVED;
     } else if username.contains("=F") {
-        status = "Denied";
+        status = Status::DENIED
     }
     let username = username.replace("=T", "").replace("=F", "").replace("\r", "");
+
     if action::get_user_by_name(username.clone(), &conn).unwrap().is_none() {
+        let properties = UserProperties {
+            avatar: None,
+            description: None
+        };
         let user = User {
             id: 0,
             username: username.clone(),
             password: "".to_string(),
             moderator: "".to_string(),
-            status: status.to_string(),
+            status: status,
             status_changed: 0,
             created: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64,
-            level: Level::User.name().to_string(),
+            level: Level::User,
             discoverer,
+            properties: properties
         };
         action::add_new_user(&user, &conn);
     }
@@ -52,8 +58,8 @@ pub fn is_authorized(api_token: String, target_level: Level, conn: &MysqlConnect
     let user = user.unwrap();
 
 
-    let level: Result<Level, strum::ParseError> = Level::from_str(user.level.as_str());
-    if level.unwrap().level() >= target_level.level() {
+
+    if user.level.level() >= target_level.level() {
         return Ok(true);
     }
     return Ok(false);

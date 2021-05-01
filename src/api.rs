@@ -305,7 +305,7 @@ pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeSta
             return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
         }
     }
-    user.set_status(status.to_string());
+    user.set_status(status);
     user.set_moderator(moderator.username.clone());
     let result = action::update_user(&user, &conn);
     if result.is_err() {
@@ -352,7 +352,8 @@ pub async fn change_level(pool: web::Data<DbPool>, suggest: web::Form<ChangeLeve
         return UserError::InvalidRequest.api_error();
     }
     let mut user = result1.unwrap();
-    user.set_level(suggest.level.clone());
+    let level1 = level.unwrap();
+    user.set_level(level1.clone());
     let result = action::update_user(&user, &conn);
     if result.is_err() {
         return DBError(result.err().unwrap()).api_error();
@@ -361,7 +362,7 @@ pub async fn change_level(pool: web::Data<DbPool>, suggest: web::Form<ChangeLeve
         success: true,
         data: None,
     };
-    info!("{}", format!("{} has changed the level of {} to {}", moderator.username.clone(), user.username.clone(), level.unwrap().name()));
+    info!("{}", format!("{} has changed the level of {} to {}", moderator.username.clone(), user.username.clone(), level1.name()));
     return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
 }
 

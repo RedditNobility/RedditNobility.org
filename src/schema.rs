@@ -8,6 +8,7 @@ table! {
         status_changed ->Bigint,
         discoverer -> Text,
         moderator ->Text,
+        properties ->Text,
         created ->Bigint,
     }
 }

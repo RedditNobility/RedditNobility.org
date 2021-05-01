@@ -52,7 +52,6 @@ pub mod models;
 pub mod schema;
 mod action;
 mod api;
-mod morecontrollers;
 mod utils;
 mod siteerror;
 mod admincontrollers;
@@ -142,22 +141,27 @@ async fn main() -> std::io::Result<()> {
         }
     });
     let mut server = HttpServer::new(move || {
-        let tera =
-            Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/site/templates/**/*")).unwrap().register_function("URL", url);
+        let result1 = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/site/templates/**/*"));
+        if result1.is_err(){
+            panic!("Unable to create Tera")
+        }
+        let mut tera =
+            result1.unwrap();
+        tera.register_function("URL", url);
 
         App::new()
             .wrap(middleware::Logger::default())
             .data(pool.clone()).data(Arc::clone(&reddit_royalty)).data(tera).
-            service(fs::Files::new("/", "site/static").show_files_listing()).
-            service(fs::Files::new("/", "site/node_modules").show_files_listing()).
             service(favicon).
+            service(index).
             service(api::change_level).
             service(api::change_status).
             service(api::get_user).
             service(api::submit_user).
             service(api::user_login).
             service(api::validate_key).
-            service(morecontrollers::file_upload)
+            service(fs::Files::new("/", "site/static").show_files_listing()).
+            service(fs::Files::new("/", "site/node_modules").show_files_listing())
     });
     if std::env::var("PRIVATE_KEY").is_ok() {
         let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
@@ -193,7 +197,17 @@ fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
         .collect()
 }
 
+#[get("/")]
+pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>) -> Result<HttpResponse, Error> {
+    let mut ctx = tera::Context::new();
+    let conn = pool.get().expect("couldn't get db connection from pool");
+
+    utils::quick_add("KingTuxWH".to_string(), "OG".to_string(), &conn);
+
+    Ok(HttpResponse::Ok().content_type("text/html").body(""))
+}
+
 #[get("/favicon.ico")]
 async fn favicon() -> actix_web::Result<actix_files::NamedFile> {
-    Ok(actix_files::NamedFile::open("static/favicon.ico")?)
+    Ok(actix_files::NamedFile::open("site/static/favicon.ico")?)
 }
