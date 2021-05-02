@@ -160,8 +160,10 @@ async fn main() -> std::io::Result<()> {
             service(usercontrollers::get_login).
             service(usercontrollers::post_login).
             service(usercontrollers::key_login).
+            service(usercontrollers::me).
             service(usercontrollers::submit).
             service(moderatorcontrollers::review_users).
+            service(moderatorcontrollers::user_page).
             service(api::change_level).
             service(api::change_status).
             service(api::get_user).

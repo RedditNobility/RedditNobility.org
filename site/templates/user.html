@@ -46,34 +46,48 @@
 <div class="container">
     <div class="row">
         <div class="col-md-6">
-            <h1 style="width: 468px;">KingTuxWH's Profile</h1>
+            <h1 style="width: 468px;">{{user.username}}'s Profile</h1>
         </div>
-        <div class="col-md-6"><img src="https://i.redd.it/snoovatar/snoovatars/60319383-f0c9-4844-819c-8c2a04c00484.png"
+        <div class="col-md-6"><img src="{{avatar}}"
                                    style="width: 61px;"></div>
     </div>
     <div class="row">
         <div class="col">
-            <h4>Custom Avatar</h4><input type="url">
+            <h4>Custom Avatar</h4><input id="avatar" placeholder="Enter a custom URL" type="url">
         </div>
         <div class="col">
             <h4>User Level</h4>
             <div class="dropdown">
-                <button class="btn btn-primary dropdown-toggle" aria-expanded="false" data-bs-toggle="dropdown"
-                        type="button">Admin
+                <button class="btn btn-primary dropdown-toggle" aria-expanded="false" value="{{user.level}}" id="level"
+                        data-bs-toggle="dropdown"
+                        type="button">{{user.level}}
                 </button>
-                <div class="dropdown-menu"><a class="dropdown-item" href="#">User</a><a class="dropdown-item" href="#">Moderator</a><a
-                        class="dropdown-item" href="#">Admin</a></div>
+
+                <div class="dropdown-menu">
+                    {% if level == "Admin" %}
+                    <a class="dropdown-item" onclick="setLevel('User')" href="#">User</a>
+                    <a class="dropdown-item" onclick="setLevel('Moderator')" href="#">Moderator</a>
+                    <a class="dropdown-item" onclick="setLevel('Admin')" href="#">Admin</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
         <div class="col">
             <h4>User Status</h4>
             <div class="dropdown">
-                <button class="btn btn-primary dropdown-toggle" aria-expanded="false" data-bs-toggle="dropdown"
-                        type="button">Approved
+                <button class="btn btn-primary dropdown-toggle" aria-expanded="false" value="{{user.status}}"
+                        id="status" data-bs-toggle="dropdown"
+                        type="button">{{user.status}}
                 </button>
-                <div class="dropdown-menu"><a class="dropdown-item" href="#">Approved</a><a class="dropdown-item"
-                                                                                            href="#">Denied</a><a
-                        class="dropdown-item" href="#">Banned</a><a class="dropdown-item" href="#">Found</a></div>
+                <div class="dropdown-menu">
+                    {% if level == "Moderator" or level =="Admin" %}
+
+                    <a class="dropdown-item" onclick="setStatus('Approved')" href="#">Approved</a>
+                    <a class="dropdown-item" onclick="setStatus('Denied')" href="#">Denied</a><a
+                        class="dropdown-item" onclick="setStatus('Banned')" href="#">Banned</a>
+                    <a class="dropdown-item" onclick="setStatus('Found')" href="#">Found</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -81,7 +95,7 @@
         <div class="col"></div>
         <div class="col">
             <h4>Update User</h4>
-            <button class="btn btn-primary" type="button">Update</button>
+            <button class="btn btn-primary" onclick="updateUser()" type="button">Update</button>
         </div>
     </div>
     <div class="row">
@@ -97,27 +111,27 @@
                     <tbody>
                     <tr>
                         <td>Discoverer</td>
-                        <td>OG</td>
+                        <td>{{user.discoverer}}</td>
                     </tr>
                     <tr>
                         <td>Discord Member</td>
-                        <td>true</td>
+                        <td>UNKOWN</td>
                     </tr>
                     <tr>
                         <td>Created</td>
-                        <td>05/01/2021</td>
+                        <td>{{created}}</td>
                     </tr>
                     <tr>
                         <td>Status Changed</td>
-                        <td>05/01/2021</td>
+                        <td>{{status_changed }}</td>
                     </tr>
                     <tr>
                         <td>Moderator</td>
-                        <td>OG</td>
+                        <td>{{user.moderator}}</td>
                     </tr>
                     <tr>
                         <td>Qualifying Title</td>
-                        <td>King</td>
+                        <td>{{user.properties.title | upper}}</td>
                     </tr>
                     </tbody>
                 </table>
@@ -135,6 +149,106 @@
     </div>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/js/bootstrap.bundle.min.js"></script>
+{% if level == "Admin" %}
+
+<script>
+    let newLevel;
+    const level_url = "{{url(path='api/admin/change/level')|safe}}";
+
+    function setLevel(level) {
+        newLevel = level;
+        let levelE = document.getElementById("level");
+        levelE.innerText = newLevel;
+    }
+</script>
+{% endif %}
+
+{% if level == "Moderator" or level =="Admin" %}
+
+<script>
+
+    let newStatus;
+    const status_url = "{{url(path='api/moderator/change/status')|safe}}";
+
+    function setStatus(status) {
+        newStatus = status;
+        let statusE = document.getElementById("status");
+        statusE.innerText = status;
+    }
+
+</script>
+{% endif %}
+<script>
+    const property = "{{url(path='api/change/user')|safe}}";
+    const auth_token = getCookie("auth_token");
+    const username = "{{user.username}}";
+
+    function updateUser() {
+        if (typeof newStatus !== 'undefined') {
+            fetch(status_url, {
+                method: "POST",
+                body: "username=" + username + "&status=" + newStatus,
+                headers: {
+                    "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "Authorization": "Bearer " + auth_token
+                }
+            }).then(response => response.json())
+                .then(msg => {
+                    if (msg.success == true) {
+                    } else {
+                        alert("Failed to update status.");
+                    }
+                })
+                .catch(err => console.log(err));
+        }
+        if (typeof newLevel !== 'undefined') {
+            fetch(level_url, {
+                method: "POST",
+                body: "username=" + username + "&level=" + newLevel,
+                headers: {
+                    "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "Authorization": "Bearer " + auth_token
+                }
+            }).then(response => response.json())
+                .then(msg => {
+                    if (msg.success == true) {
+                    } else {
+                        alert("Failed to update level.");
+                    }
+                })
+                .catch(err => console.log(err));
+        }
+        let avatar = document.getElementById("avatar");
+        let value = avatar.value;
+        console.log(value)
+        if (value.length != 0) {
+            fetch(property, {
+                method: "POST",
+                body: "username=" + username + "&property=avatar&value=" + value,
+                headers: {
+                    "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "Authorization": "Bearer " + auth_token
+                }
+            }).then(response => response.json())
+                .then(msg => {
+                    if (msg.success == true) {
+                    } else {
+                        alert("Failed to update avatar.");
+                    }
+                })
+                .catch(err => console.log(err));
+        }
+
+
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+</script>
+
 </body>
 
 </html>

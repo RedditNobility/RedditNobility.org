@@ -354,12 +354,14 @@ pub async fn change_property(pool: web::Data<DbPool>, request: web::Form<ChangeR
     if !result.unwrap() {
         return UserError::NotAuthorized.api_error();
     }
+    println!("Reverse3");
     let user = get_user_by_header(&r.headers(), &conn);
     if user.is_err() {
         return user.err().unwrap().api_error();
     }
     let user = user.unwrap().unwrap();
     if !user.username.eq(&request.username) {
+        println!("Reverse2");
         let result = api_validate(r.headers(), Level::Moderator, &conn);
         if result.is_err() {
             return result.err().unwrap().api_error();
@@ -377,7 +379,7 @@ pub async fn change_property(pool: web::Data<DbPool>, request: web::Form<ChangeR
         return UserError::NotFound.api_error();
     }
     let mut modifying_user = modifying_user.unwrap();
-
+    println!("Reverse1");
     if request.property.eq("avatar") {
         modifying_user.properties.set_avatar(request.value.clone());
     } else if request.property.eq("description") {
@@ -404,6 +406,7 @@ pub struct ChangeLevel {
 
 #[post("/api/admin/change/level")]
 pub async fn change_level(pool: web::Data<DbPool>, suggest: web::Form<ChangeLevel>, r: HttpRequest) -> HttpResponse {
+    println!("Test1");
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Admin, &conn);
     if result.is_err() {
@@ -427,6 +430,7 @@ pub async fn change_level(pool: web::Data<DbPool>, suggest: web::Form<ChangeLeve
     }
     let level: Result<Level, strum::ParseError> = Level::from_str(suggest.level.as_str());
     if level.is_err() {
+        println!("{}", suggest.level.as_str());
         return UserError::InvalidRequest.api_error();
     }
     let mut user = result1.unwrap();

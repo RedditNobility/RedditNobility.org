@@ -1,7 +1,7 @@
 use crate::{action, RedditRoyalty};
 use diesel::MysqlConnection;
 use crate::models::{User, Level, ClientKey, AuthToken, Status, UserProperties};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use crate::siteerror::SiteError;
 use dotenv::Error;
 use rand::Rng;
@@ -17,6 +17,8 @@ use bcrypt::{hash, DEFAULT_COST};
 use new_rawr::client::RedditClient;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
+use new_rawr::auth::AnonymousAuthenticator;
+use chrono::{NaiveDateTime, DateTime, Utc};
 
 pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
     let mut status = Status::Found;
@@ -149,4 +151,36 @@ pub fn is_valid(username: String) -> Option<String> {
         }
     }
     return None;
+}
+
+pub fn to_date(time: i64) -> String {
+    let d = UNIX_EPOCH + Duration::from_millis(time as u64);
+    let datetime = DateTime::<Utc>::from(d);
+    return datetime.format("%m/%d/%Y").to_string();
+}
+
+pub fn get_avatar(user: &User) -> String {
+    let option1 = user.properties.avatar.as_ref();
+    if option1.is_some() {
+        if !option1.unwrap().is_empty() {
+            return option1.unwrap().clone();
+        }
+    }
+
+    let client = RedditClient::new("Robotic Monarch by u/KingTuxWH", AnonymousAuthenticator::new());
+    let user1 = client.user(user.username.as_str());
+    let result = user1.about();
+    if result.is_err() {
+        return "".to_string();
+    }
+    let about = result.unwrap();
+    let option = about.data.snoovatar_img;
+    if option.is_some() {
+        return option.unwrap().clone();
+    }
+    let option = about.data.icon_img;
+    if option.is_some() {
+        return option.unwrap().clone();
+    }
+    return "".to_string();
 }

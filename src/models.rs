@@ -84,6 +84,7 @@ pub struct User {
     //The Reddit Username
     pub username: String,
     // The users password. If they are just going to use the Reddit login feature. This will be changed to the latest login token
+    #[serde(skip_serializing)]
     pub password: String,
     //USER, MODERATOR, ADMIN
     pub level: Level,

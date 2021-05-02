@@ -31,6 +31,7 @@ use bcrypt::verify;
 use crate::recaptcha::validate;
 use actix_web::cookie::SameSite;
 use actix_web::http::header::LOCATION;
+use crate::usererror::UserError;
 
 #[derive(Deserialize)]
 pub struct SubmitUser {
@@ -116,7 +117,7 @@ pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request:
         return HttpResponse::Found().header(http::header::LOCATION, "/login?status=NOT_FOUND").finish().into_body();
     }
     let user = user.unwrap();
-    if user.status != Status::Approved{
+    if user.status != Status::Approved {
         return HttpResponse::Found().header(http::header::LOCATION, "/login?status=NOT_FOUND").finish().into_body();
     }
     if form.password.is_some() && !form.password.as_ref().unwrap().is_empty() {
@@ -159,5 +160,35 @@ pub async fn key_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request: 
         .secure(true).same_site(SameSite::None).max_age(time::Duration::weeks(1))
         .http_only(false)
         .finish()).finish().into_body();
+}
+
+#[get("/me")]
+pub async fn me(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
+    let mut ctx = tera::Context::new();
+    let conn = pool.get().expect("couldn't get db connection from pool");
+    let option1 = req.cookie("auth_token");
+    if option1.is_none() {
+        return UserError::NotAuthorized.site_error(tera);
+    }
+    let cookie = option1.unwrap().value().to_string();
+    let user = action::get_user_from_auth_token(cookie, &conn);
+    if user.is_err() {
+        return SiteError::DBError(user.err().unwrap()).site_error(tera);
+    }
+    let user = user.unwrap();
+    if user.is_none() {
+        return UserError::NotAuthorized.site_error(tera);
+    }
+    let user = user.unwrap();
+    ctx.insert("user", &user);
+    ctx.insert("level", "user");
+    ctx.insert("avatar", &utils::get_avatar(&user));
+    ctx.insert("created", &utils::to_date(user.created));
+    ctx.insert("status_changed", &utils::to_date(user.status_changed));
+    let result = tera.get_ref().render("user.html", &ctx);
+    if result.is_err() {
+        return SiteError::TeraError(result.err().unwrap()).site_error(tera);
+    }
+    return HttpResponse::Ok().content_type("text/html").body(&result.unwrap());
 }
 
