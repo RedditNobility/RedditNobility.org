@@ -134,6 +134,21 @@ pub struct GetUser {
     pub username: String,
 }
 
+#[get("/api/moderators")]
+pub async fn get_moderators(pool: web::Data<DbPool>, r: HttpRequest) -> HttpResponse {
+    let conn = pool.get().expect("couldn't get db connection from pool");
+    let result = action::get_moderators(&conn);
+    if result.is_err() {
+        return SiteError::DBError(result.err().unwrap()).api_error();
+    }
+    let response = APIResponse::<Vec<User>> {
+        success: true,
+        data: Some(result.unwrap()),
+    };
+    HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap())
+
+}
+
 #[get("/api/user/{user}")]
 pub async fn get_user(pool: web::Data<DbPool>, web::Path((user)): web::Path<( String)>, r: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");

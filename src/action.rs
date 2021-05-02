@@ -31,6 +31,13 @@ pub fn get_found_users(conn: &MysqlConnection) -> Result<Vec<models::User>, dies
     Ok(values)
 }
 
+pub fn get_moderators(conn: &MysqlConnection) -> Result<Vec<models::User>, diesel::result::Error> {
+    use crate::schema::users::dsl::*;
+    let values = users.filter(level.eq_any(vec!["Moderator", "Admin"])).load::<models::User>(conn).expect("Error loading mods");
+
+    Ok(values)
+}
+
 pub fn delete_user(us: String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
 

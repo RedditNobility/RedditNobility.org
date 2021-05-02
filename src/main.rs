@@ -172,6 +172,7 @@ async fn main() -> std::io::Result<()> {
             service(api::validate_key).
             service(api::change_status).
             service(api::change_property).
+            service(api::get_moderators).
             service(api::change_level).
             service(api::next_user).
             service(fs::Files::new("/", "site/static").show_files_listing()).
@@ -192,6 +193,11 @@ async fn main() -> std::io::Result<()> {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Moderator {
+    pub user: User,
+    pub avatar: String,
+}
 
 #[get("/")]
 pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
@@ -225,6 +231,17 @@ pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequ
             ctx.insert("user", &option2.unwrap())
         }
     }
+    let mut moderators = Vec::new();
+    let vec = action::get_moderators(&conn).unwrap();
+    for x in vec {
+        let avatar = utils::get_avatar(&x);
+        let moderator = Moderator {
+            user: x,
+            avatar: avatar,
+        };
+        moderators.push(moderator)
+    }
+    ctx.insert("moderators", &moderators);
     let result = tera.get_ref().render("index.html", &ctx);
     if result.is_err() {
         return SiteError::TeraError(result.err().unwrap()).site_error(tera);

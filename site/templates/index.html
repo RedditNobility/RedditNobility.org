@@ -68,32 +68,13 @@
         </div><!-- End: Intro -->
     </div><!-- Start: People -->
     <div class="row people">
+        {% for mod in moderators %}
         <div class="col-md-6 col-lg-4 item"><img class="rounded-circle"
-                                                 src="https://i.redd.it/snoovatar/snoovatars/60319383-f0c9-4844-819c-8c2a04c00484.png">
-            <h3 class="name">KingTuxWH</h3>
-            <p class="description">Creator of RedditNobility, developer of bot, and an overall cool guy. Also runs a
-                Minecraft Server</p>
-        </div>
-        <div class="col-md-6 col-lg-4 item"><img class="rounded-circle"
-                                                 src="https://cdn.discordapp.com/avatars/241114159230484481/f8d45be2e41e3e124af950cc1f6635d7.png">
-            <h3 class="name">Lord_Darth_Dan</h3>
-            <p class="description">Co-creator of RedditNobility. Runs the modded MC server.&nbsp;</p>
-        </div>
-        <div class="col-md-6 col-lg-4 item"><img class="rounded-circle"
-                                                 src="https://styles.redditmedia.com/t5_bmni1/styles/profileIcon_5rn71a8joxv51.png?width=256&amp;height=256&amp;crop=256:256,smart&amp;s=5157483d351fb54cecedae31e53e5d9c7593c695">
-            <h3 class="name">SirLorducus</h3>
+                                                 src="{{mod.avatar}}">
+            <h3 class="name">{{mod.user.username}}</h3>
             <p class="description"></p>
         </div>
-        <div class="col-md-6 col-lg-4 item"><img class="rounded-circle"
-                                                 src="https://i.redd.it/snoovatar/snoovatars/a11ae6b8-ef12-42de-bef9-68b0b8462480.png">
-            <h3 class="name">NorseSnowQueen</h3>
-            <p class="description"></p>
-        </div>
-        <div class="col-md-6 col-lg-4 item"><img class="rounded-circle"
-                                                 src="https://i.redd.it/snoovatar/snoovatars/e1078fa8-ff40-4029-8440-50c17c65ee46.png">
-            <h3 class="name">TheSmartKing</h3>
-            <p class="description"></p>
-        </div>
+        {% endfor %}
     </div><!-- End: People -->
 </section><!-- End: Team Clean -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/js/bootstrap.bundle.min.js"></script>
