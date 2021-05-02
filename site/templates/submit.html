@@ -26,14 +26,14 @@
         <div class="collapse navbar-collapse" id="navcol-1">
             <ul class="navbar-nav">
                 {% if user %}
-                <li class="nav-item"><a class="nav-link active" href="#">Submit</a></li>
+                <li class="nav-item"><a class="nav-link active" href="{{url(path='submit')}}">Submit</a></li>
                 <li class="nav-item dropdown"><a class="dropdown-toggle nav-link" aria-expanded="false"
                                                  data-bs-toggle="dropdown" href="#">Welcome, {{user.username}}</a>
                     <div class="dropdown-menu">
                         {% if user.level == "Moderator" or user.level == "Admin" %}
-                        <a class="dropdown-item" href="#">Moderator Panel</a>
+                        <a class="dropdown-item" href="{{url(path='moderator')}}">Moderator Panel</a>
                         {% endif%}
-                        <a class="dropdown-item" href="#">Profile</a>
+                        <a class="dropdown-item" href="{{url(path='me')}}">Profile</a>
                     </div>
                 </li>
                 {% else %}

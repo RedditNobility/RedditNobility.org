@@ -164,6 +164,7 @@ async fn main() -> std::io::Result<()> {
             service(usercontrollers::submit).
             service(moderatorcontrollers::review_users).
             service(moderatorcontrollers::user_page).
+            service(moderatorcontrollers::mod_index).
             service(api::change_level).
             service(api::change_status).
             service(api::get_user).

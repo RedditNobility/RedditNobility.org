@@ -32,7 +32,24 @@ use crate::recaptcha::validate;
 use actix_web::cookie::SameSite;
 use actix_web::http::header::LOCATION;
 use crate::usererror::UserError;
+#[get("/moderator")]
+pub async fn mod_index(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
+    let mut ctx = tera::Context::new();
+    let conn = pool.get().expect("couldn't get db connection from pool");
 
+    let option1 = req.cookie("auth_token");
+    let result2 = utils::is_authorized(option1.unwrap().value().to_string(), Level::Moderator, &conn);
+    if result2.is_err() {
+        return result2.err().unwrap().site_error(tera);
+    }
+    if !result2.unwrap() {
+        return UserError::NotAuthorized.site_error(tera);
+    }
+
+
+    let result = tera.get_ref().render("moderator.html", &ctx);
+    return HttpResponse::Ok().content_type("text/html").body(&result.unwrap());
+}
 #[get("/moderator/review/{user}")]
 pub async fn review_users(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>, web::Path((user)): web::Path<( String)>, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
     let mut ctx = tera::Context::new();
