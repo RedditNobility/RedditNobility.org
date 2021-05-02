@@ -14,11 +14,10 @@ r2d2 = "0.8.9"
 r2d2_mysql = "*"
 dotenv = "0.15.0"
 actix = "0.10"
-actix-web-actors = "3"
-actix-multipart = "0.3.0"
-actix-multipart-derive = "0.1.0"
-serde = { version = "1.0", features = ["derive"] }
+
+serde = { version = "1.0.125", features = ["derive"] }
 serde_json = "1.0.64"
+serde_qs = "0.8.3"
 zip = "0.5.11"
 futures = "0.3.1"
 sanitize-filename = "0.3"
@@ -29,7 +28,7 @@ new-rawr = { git = "https://github.com/wherkamp/new-rawr.git" }
 bcrypt = "0.9.0"
 rand = "0.8.3"
 futures-util = "0.3.14"
-actix-web = { version = "3", features = ["openssl"] }
+actix-web = { version = "3.3.2", features = ["openssl"] }
 openssl = { version = "0.10", features = ["v110"] }
 log4rs = "1.0.0"
 log = "0.4.14"
@@ -37,5 +36,6 @@ strum = { version = "0.20.0", features = ["derive"] }
 strum_macros = "0.20.1"
 derive_more = "0.99.13"
 chrono = "0.4.19"
-hyper = {version = "0.14.4",features = ["full"]}
-hyper-tls = "0.5.0"
+hyper = "0.13.9"
+hyper-tls = "0.4.3"
+time = "0.2.26"

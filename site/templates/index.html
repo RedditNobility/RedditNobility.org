@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>RedditNobility</title>
+    <meta property="og:image" content="https://redditnobility.org/assets/img/TuxCrown.png">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/css/bootstrap.min.css">
+    <link rel="stylesheet" href='{{url(path="css/Login-Form-Clean.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/styles.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/Team-Clean.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/Team-Grid.css")}}'>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+<nav class="navbar navbar-light navbar-expand-md">
+    <div class="container-fluid"><a class="navbar-brand" href="#">RedditNobility</a>
+        <button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span
+                class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navcol-1">
+            <ul class="navbar-nav">
+                {% if user %}
+                <li class="nav-item"><a class="nav-link active" href="#">Submit</a></li>
+                <li class="nav-item dropdown"><a class="dropdown-toggle nav-link" aria-expanded="false"
+                                                 data-bs-toggle="dropdown" href="#">Welcome, {{user.username}}</a>
+                    <div class="dropdown-menu">
+                        {% if user.level == "Moderator" or user.level == "Admin" %}
+                        <a class="dropdown-item" href="#">Moderator Panel</a>
+                        {% endif%}
+                        <a class="dropdown-item" href="#">Profile</a>
+                    </div>
+                </li>
+                {% else %}
+                <li class="nav-item"><a class="nav-link active" href="#">Login</a></li>
+                {% endif%}
+            </ul>
+        </div>
+    </div>
+</nav><!-- Start: Team Clean -->
+<section class="team-clean">
+    <div class="container">
+        <h2>What is this?</h2>
+        <p>RedditNobility is a Reddit Community for users who have a noble title in their username.&nbsp;</p>
+        <h3>Mission Statement</h3>
+        <p><br>Royalty of Reddit: For too long our nobility has failed to garner the respect and dignity it should be
+            afforded. Some of you may have been scorned, others banished, others forsaken, and some of you have no idea
+            what the hell I'm talking about. A once proud kingdom and community turned on itself due to the vision of
+            one man, and we wish to make this right. <br><br>We have built a new Kingdom for all of the Royal court of
+            Reddit. Because you are special. You are royalty. And we welcome you to the community with open arms,
+            pictures of pets, and friendships you can find only here. So whether ye be Philosopher or Jester, General or
+            Politician, Active or Lurker: You have your crown, your throne, and your community. Welcome to Reddit
+            Nobility!<br><br></p>
+        <h3>Why does this site exist?</h3>
+        <p>This site exists to help the moderator team track down users and allow other members to submit users to join
+            this subreddit</p>
+    </div>
+    <div class="container">
+        <!-- Start: Intro -->
+        <div class="intro">
+            <h2 class="text-center">Moderator Team</h2>
+            <p class="text-center">The team behind RedditNobility</p>
+        </div><!-- End: Intro -->
+    </div><!-- Start: People -->
+    <div class="row people">
+        <div class="col-md-6 col-lg-4 item"><img class="rounded-circle"
+                                                 src="https://i.redd.it/snoovatar/snoovatars/60319383-f0c9-4844-819c-8c2a04c00484.png">
+            <h3 class="name">KingTuxWH</h3>
+            <p class="description">Creator of RedditNobility, developer of bot, and an overall cool guy. Also runs a
+                Minecraft Server</p>
+        </div>
+        <div class="col-md-6 col-lg-4 item"><img class="rounded-circle"
+                                                 src="https://cdn.discordapp.com/avatars/241114159230484481/f8d45be2e41e3e124af950cc1f6635d7.png">
+            <h3 class="name">Lord_Darth_Dan</h3>
+            <p class="description">Co-creator of RedditNobility. Runs the modded MC server.&nbsp;</p>
+        </div>
+        <div class="col-md-6 col-lg-4 item"><img class="rounded-circle"
+                                                 src="https://styles.redditmedia.com/t5_bmni1/styles/profileIcon_5rn71a8joxv51.png?width=256&amp;height=256&amp;crop=256:256,smart&amp;s=5157483d351fb54cecedae31e53e5d9c7593c695">
+            <h3 class="name">SirLorducus</h3>
+            <p class="description"></p>
+        </div>
+        <div class="col-md-6 col-lg-4 item"><img class="rounded-circle"
+                                                 src="https://i.redd.it/snoovatar/snoovatars/a11ae6b8-ef12-42de-bef9-68b0b8462480.png">
+            <h3 class="name">NorseSnowQueen</h3>
+            <p class="description"></p>
+        </div>
+        <div class="col-md-6 col-lg-4 item"><img class="rounded-circle"
+                                                 src="https://i.redd.it/snoovatar/snoovatars/e1078fa8-ff40-4029-8440-50c17c65ee46.png">
+            <h3 class="name">TheSmartKing</h3>
+            <p class="description"></p>
+        </div>
+    </div><!-- End: People -->
+</section><!-- End: Team Clean -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

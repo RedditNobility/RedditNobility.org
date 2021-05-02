@@ -19,6 +19,7 @@ pub fn get_user_by_name(user: String, conn: &MysqlConnection) -> Result<Option<m
 
 pub fn get_user_by_id(l_id: i64, conn: &MysqlConnection) -> Result<Option<models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
+    println!("{}", l_id);
     let found_user = users.filter(id.eq(l_id)).first::<models::User>(conn).optional()?;
     Ok(found_user)
 }
@@ -57,7 +58,12 @@ pub fn get_user_from_auth_token(token: String, conn: &MysqlConnection) -> Result
     if result.is_err() {
         return Err(result.err().unwrap());
     }
-    return get_user_by_id(result.unwrap().unwrap().id, conn);
+    let result = result.unwrap();
+    if result.is_none() {
+        return Ok(None);
+    }
+    let result = result.unwrap();
+    return get_user_by_id(result.user, conn);
 }
 
 //Auth Token

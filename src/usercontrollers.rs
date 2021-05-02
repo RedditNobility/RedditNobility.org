@@ -3,8 +3,7 @@ use std::time::{Duration, Instant};
 
 use actix::prelude::*;
 use actix_files as fs;
-use actix_web::{middleware, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, http};
-use actix_web_actors::ws;
+use actix_web::{middleware, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, http, HttpMessage};
 use crate::{DbPool, RedditRoyalty, action, utils};
 use tera::Tera;
 use new_rawr::responses::listing::SubmissionData;
@@ -13,7 +12,6 @@ use diesel::{MysqlConnection, Connection};
 use std::rc::Rc;
 use std::sync::{Mutex, Arc};
 use std::cell::RefCell;
-use actix_web_actors::ws::{CloseReason, CloseCode};
 use crate::schema::users::dsl::created;
 use new_rawr::client::RedditClient;
 use new_rawr::auth::AnonymousAuthenticator;
@@ -31,6 +29,8 @@ use crate::siteerror::SiteError;
 use crate::websiteerror::WebsiteError;
 use bcrypt::verify;
 use crate::recaptcha::validate;
+use actix_web::cookie::SameSite;
+use actix_web::http::header::LOCATION;
 
 #[derive(Deserialize)]
 pub struct SubmitUser {
@@ -54,6 +54,7 @@ pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequ
 #[get("/login")]
 pub async fn get_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> Result<HttpResponse, Error> {
     let mut ctx = tera::Context::new();
+    ctx.insert("recaptcha_pub", std::env::var("RECAPTCHA_PUB").unwrap().as_str());
     let conn = pool.get().expect("couldn't get db connection from pool");
 
     let result = tera.get_ref().render("login.html", &ctx);
@@ -68,15 +69,19 @@ pub async fn get_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: Http
 pub struct LoginRequest {
     pub username: String,
     pub password: Option<String>,
-    pub recaptcha: Option<String>,
+    #[serde(rename = "g-recaptcha-response")]
+    pub g_recaptcha_response: Option<String>,
 }
 
 #[post("/login/post")]
-pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: Form<LoginRequest>) -> HttpResponse {
-    if form.recaptcha.is_none() {
-        return HttpResponse::Found().header(http::header::LOCATION, "/login?status=BAD_RECAPTCHA").finish().into_body();
+pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: web::Form<LoginRequest>) -> HttpResponse {
+
+    if form.g_recaptcha_response.is_none() {
+        println!("Nothing");
+        //return HttpResponse::Found().header(http::header::LOCATION, "/login?status=BAD_RECAPTCHA").finish().into_body();
     } else {
-        let string1 = form.recaptcha.as_ref().unwrap().clone();
+        println!("Something");
+        let string1 = form.g_recaptcha_response.as_ref().unwrap().clone();
         let result1 = std::env::var("RECAPTCHA_SECRET").unwrap();
         let url = std::env::var("URL").unwrap();
         let validate1 = validate(result1, string1, url).await;
@@ -97,32 +102,33 @@ pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request:
         return HttpResponse::Found().header(http::header::LOCATION, "/login?status=NOT_FOUND").finish().into_body();
     }
     let user = user.unwrap();
-    if form.password.is_none() {
-        utils::send_login(&user, &conn, rr.clone());
-        return HttpResponse::Found().header(http::header::LOCATION, "/login?status=LOGIN_SENT").finish().into_body();
-    } else {
+    if form.password.is_some() && !form.password.as_ref().unwrap().is_empty() {
         let string = form.password.as_ref().unwrap();
         if verify(string, &user.password).unwrap() {
-            return HttpResponse::Found().header("Location", "/").cookie(http::Cookie::build("auth_token", utils::create_token(&user, &conn).unwrap().token.clone())
-                .domain(request.headers().get("HOST").unwrap().to_str().unwrap())
+            let x = request.headers().get("HOST").unwrap().to_str().unwrap();
+            println!("{}", &x);
+            return HttpResponse::Found().header(LOCATION, "/").cookie(http::Cookie::build("auth_token", utils::create_token(&user, &conn).unwrap().token.clone())
                 .path("/")
-                .secure(true)
-                .http_only(true)
+                .secure(true).same_site(SameSite::None).max_age(time::Duration::weeks(1))
+                .http_only(false)
                 .finish()).finish().into_body();
+        } else {
+            return HttpResponse::Found().header("Location", "/login?status=NOT_FOUND").finish().into_body();
         }
     }
-    return HttpResponse::Found().header("Location", "/login?status=NOT_FOUND").finish().into_body();
+    utils::send_login(&user, &conn, &rr.try_lock().unwrap().reddit);
+    return HttpResponse::Found().header(http::header::LOCATION, "/login?status=LOGIN_SENT").finish().into_body();
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct KeyLogin {
-    pub key: String,
+    pub token: String,
 }
 
 #[get("/login/key")]
-pub async fn key_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: Form<KeyLogin>) -> HttpResponse {
+pub async fn key_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: web::Query<KeyLogin>) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
-    let result = action::get_auth_token(form.key.clone(), &conn);
+    let result = action::get_auth_token(form.token.clone(), &conn);
     if result.is_err() {
         return SiteError::DBError(result.err().unwrap()).site_error(tera);
     }
@@ -131,11 +137,10 @@ pub async fn key_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request: 
         return HttpResponse::Found().header(http::header::LOCATION, "/login?status=NOT_FOUND").finish().into_body();
     }
     let token = token.unwrap();
-    return HttpResponse::Found().header("Location", "/").cookie(http::Cookie::build("auth_token", token.token.clone())
-        .domain(request.headers().get("HOST").unwrap().to_str().unwrap())
+    return HttpResponse::Found().header(LOCATION, "/").cookie(http::Cookie::build("auth_token", token.token.clone())
         .path("/")
-        .secure(true)
-        .http_only(true)
+        .secure(true).same_site(SameSite::None).max_age(time::Duration::weeks(1))
+        .http_only(false)
         .finish()).finish().into_body();
 }
 

@@ -1,88 +1,50 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
-
-    <meta charset="UTF-8">
-
-    <title>Sign Up</title>
-
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-
-    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>RedditNobility</title>
+    <meta property="og:image" content="https://redditnobility.org/assets/img/TuxCrown.png">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/css/bootstrap.min.css">
+    <link rel="stylesheet" href='{{url(path="css/Login-Form-Clean.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/styles.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/Team-Clean.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/Team-Grid.css")}}'>
+<link rel="preconnect" href="https://fonts.gstatic.com">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="static/index.css"/>
-
 </head>
 
 <body>
-
-
-<div class="login-area">
-
-    <a href="/"><img src="static/TuxCrown.png" alt="KingTux"></a>
-
-    <h2>Name yourself</h2>
-
-    <h5>Submit your username here</h5>
-    {% if success %}
-    <div hidden id="success" class="success">Username added!</div>
-    {% endif %}
-    {% if already_exists %}
-    <div class="error">Username already exists!</div>
-    {% endif %}
-
-    <label for="submit_username">Username</label><br/>
-
-    <input type="text" name="username" autofocus id="submit_username">
-
-    <br/><br/><br/>
-
-    <button onclick="submit()" type="submit">Submit</button>
-
-    <br/><br/>
-
-</div>
-<script src=`{{url(path="node_modules/ajax/lib/ajax.js")}}`></script>
-
-<script>
-    const auth_token = getCookie("auth_token");
-
-    function submit() {
-        let elementById = document.getElementById("submit_username");
-        let value = elementById.value;
-        fetch('{{url(path="/api/user/submit")}}', {
-            method: "POST",
-            body: "username=" + data,
-            headers: {
-                "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-                "Authorization": "Bearer" + auth_token
-            }
-        }).then(response => response.json())
-            .then(msg => {
-                if (msg.success == true) {
-                    let success = document.getElementById("success");
-                    success.hidden = false;
-                    success.value = value + " has been submitted";
-                } else {
-                    window.alert("Unable to submit user")
-                }
-            })
-            .catch(err => console.log(err));
-
-    }
-
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-    }
-</script>
+    <nav class="navbar navbar-light navbar-expand-md">
+        <div class="container-fluid"><a class="navbar-brand" href="#">RedditNobility</a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navcol-1">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link active" href="#">Login</a></li>
+                    <li class="nav-item"></li>
+                    <li class="nav-item"></li>
+                    <li class="nav-item"><a class="nav-link active" href="#">Submit</a></li>
+                    <li class="nav-item dropdown"><a class="dropdown-toggle nav-link" aria-expanded="false" data-bs-toggle="dropdown" href="#">Welcome, KingTuxWH</a>
+                        <div class="dropdown-menu"><a class="dropdown-item" href="#">Moderator Panel</a><a class="dropdown-item" href="#">Profile</a></div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="alert alert-success" role="alert"><span><strong>KingTuxWH has been suggested!</strong><br></span></div><!-- Start: Login Form Clean -->
+        <section class="login-clean">
+            <form method="post">
+                <h2 class="visually-hidden">Login Form</h2>
+                <div class="illustration"><img src="../../../../site/assets/img/TuxCrown.png" style="width: 176px;"></div>
+                <div class="mb-3"><input class="form-control" type="email" name="username" placeholder="Username"></div>
+                <div class="mb-3"><button class="btn btn-primary d-block w-100" type="submit">Submit</button></div>
+            </form>
+        </section><!-- End: Login Form Clean -->
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

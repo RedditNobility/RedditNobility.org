@@ -7,7 +7,6 @@ use actix::prelude::*;
 use log::{error, info, warn};
 use actix_files as fs;
 use actix_web::{middleware, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, http};
-use actix_web_actors::ws;
 use crate::{DbPool, RedditRoyalty, action, utils};
 use tera::Tera;
 use new_rawr::responses::listing::SubmissionData;
@@ -16,7 +15,6 @@ use diesel::{Connection};
 use std::rc::Rc;
 use std::sync::{Mutex, Arc};
 use std::cell::RefCell;
-use actix_web_actors::ws::{CloseReason, CloseCode};
 use crate::schema::users::dsl::created;
 use new_rawr::client::RedditClient;
 use new_rawr::auth::AnonymousAuthenticator;
@@ -127,18 +125,23 @@ fn get_user_by_header(header_map: &HeaderMap, conn: &MysqlConnection) -> Result<
     }
     Ok(None)
 }
+#[derive(Serialize, Deserialize)]
+pub struct GetUser {
+    pub username: String,
+}
 
 #[get("/api/user/{user}")]
-pub async fn get_user(pool: web::Data<DbPool>, web::Path((user)): web::Path<( String)>, r: HttpRequest) -> HttpResponse {
+pub async fn get_user(pool: web::Data<DbPool>, user: web::Path<GetUser>, r: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Client, &conn);
     if result.is_err() {
         return result.err().unwrap().api_error();
     }
+
     if !result.unwrap() {
         return UserError::NotFound.api_error();
     }
-    let result1 = action::get_user_by_name(user, &conn);
+    let result1 = action::get_user_by_name(user.username.clone(), &conn);
     if result1.is_err() {
         return DBError(result1.err().unwrap()).api_error();
     }
@@ -219,7 +222,7 @@ pub async fn user_login(pool: web::Data<DbPool>, login: web::Form<APILoginReques
     }
     let user = user.unwrap();
     if login.password.is_none() {
-        utils::send_login(&user, &conn, rr.clone());
+        utils::send_login(&user, &conn, &rr.clone().lock().unwrap().reddit);
         let mut map = HashMap::<String, Value>::new();
         map.insert("success".to_string(), Value::from(true));
         map.insert("status".to_string(), Value::from("SENT"));
@@ -448,7 +451,7 @@ pub struct RedditPost {
 }
 
 #[get("/api/moderator/review/{user}")]
-pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, web::Path((user)): web::Path<( String)>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>) -> HttpResponse {
+pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, user: web::Path<GetUser>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Moderator, &conn);
     if result.is_err() {
@@ -465,7 +468,7 @@ pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, web::Path((user)
     let mut rr = rr.unwrap();
     let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
     let mut option: Option<User> = Option::None;
-    if user.eq("next") {
+    if user.username.eq("next") {
         let result = action::get_found_users(&conn);
         if result.is_err() {}
         let mut vec = result.unwrap();
@@ -477,7 +480,7 @@ pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, web::Path((user)
             }
         }
     } else {
-        let result1 = action::get_user_by_name(user, &conn);
+        let result1 = action::get_user_by_name(user.username.clone(), &conn);
         if result1.is_err() {
             return DBError(result1.err().unwrap()).api_error();
         }

@@ -22,6 +22,7 @@ pub async fn validate(secret: String, response: String, remote_address: String) 
     let response1 = result.unwrap();
     let bytes = hyper::body::to_bytes(response1.into_body()).await;
     let string = String::from_utf8(bytes.unwrap().to_vec()).unwrap();
+    println!("{}", &string);
     let result1: Result<RecaptchaResponse, serde_json::Error> = serde_json::from_str(string.as_str());
     if result1.is_err() {
         return Err(Box::new(SiteError::JSONError(result1.err().unwrap())));

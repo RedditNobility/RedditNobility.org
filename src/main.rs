@@ -18,7 +18,7 @@ use diesel::r2d2::{self, ConnectionManager};
 use tera::{Tera, Function, Value, from_value};
 use actix_files as fs;
 use actix_web::web::{Form, BytesMut};
-use crate::models::{User, UserProperties, Level, Status};
+use crate::models::{User, UserProperties, Level, Status, Setting};
 use serde::{Serialize, Deserialize};
 use core::time;
 use new_rawr::client::RedditClient;
@@ -38,7 +38,6 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::sync::{Mutex, Arc};
-use actix_multipart_derive::MultipartForm;
 use openssl::ssl::{SslAcceptor, SslMethod, SslFiletype};
 use std::thread::sleep;
 use chrono::{Local, DateTime, Duration};
@@ -85,11 +84,15 @@ impl RedditRoyalty {
     }
 }
 
-fn url(args: &HashMap<String, Value>) -> Result<Value, tera::Error> {
+fn url(args: &HashMap<String, Value>) -> Result<tera::Value, tera::Error> {
     let option = args.get("path");
     return if option.is_some() {
         let x = option.unwrap().as_str().unwrap();
-        Ok(Value::from_str(&*format!("{}/{}", std::env::var("url").unwrap().as_str(), x)).unwrap())
+        let x1 = std::env::var("URL").unwrap();
+        let string = format!("{}/{}", x1, x);
+        println!("{}", &string);
+        let result = tera::Value::from(&*string);
+        Ok(result)
     } else {
         Err(tera::Error::from("Missing Param Tera".to_string()))
     };
@@ -97,7 +100,8 @@ fn url(args: &HashMap<String, Value>) -> Result<Value, tera::Error> {
 embed_migrations!();
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "actix_web=debug");
+    std::env::set_var("RUST_LOG", "actix_web=trace");
+    std::env::set_var("RUST_BACKTRACE", "1");
     log4rs::init_file(Path::new("resources").join("log.yml"), Default::default()).unwrap();
     dotenv::dotenv().ok();
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
@@ -119,17 +123,19 @@ async fn main() -> std::io::Result<()> {
     let reddit_royalty = Arc::new(Mutex::new(RedditRoyalty::new(client)));
     let arc2 = reddit_royalty.clone();
     thread::spawn(move || {
-        let arc1 = arc2.clone();
         loop {
-            let result = arc1.lock();
-            if result.is_err() {
-                panic!("The Site Core has been poisoned. Tux you dumb fuck!")
-            }
-            let mut rr = result.unwrap();
-            for x in rr.users_being_worked_on.clone() {
-                let x1: Duration = Local::now().sub(x.1.clone());
-                if x1.num_minutes() > 5 {
-                    rr.remove_id(&x.0);
+            {
+                let arc1 = arc2.clone();
+                let result = arc1.lock();
+                if result.is_err() {
+                    panic!("The Site Core has been poisoned. Tux you dumb fuck!")
+                }
+                let mut rr = result.unwrap();
+                for x in rr.users_being_worked_on.clone() {
+                    let x1: Duration = Local::now().sub(x.1.clone());
+                    if x1.num_minutes() > 5 {
+                        rr.remove_id(&x.0);
+                    }
                 }
             }
             sleep(Duration::minutes(5).to_std().unwrap())
@@ -138,17 +144,22 @@ async fn main() -> std::io::Result<()> {
     let mut server = HttpServer::new(move || {
         let result1 = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/site/templates/**/*"));
         if result1.is_err() {
+            println!("{}", result1.err().unwrap());
             panic!("Unable to create Tera")
         }
         let mut tera =
             result1.unwrap();
-        tera.register_function("URL", url);
+        tera.register_function("url", url);
 
         App::new()
             .wrap(middleware::Logger::default())
             .data(pool.clone()).data(Arc::clone(&reddit_royalty)).data(tera).
             service(favicon).
             service(index).
+            service(install).
+            service(usercontrollers::get_login).
+            service(usercontrollers::post_login).
+            service(usercontrollers::key_login).
             service(api::change_level).
             service(api::change_status).
             service(api::get_user).
@@ -185,7 +196,9 @@ pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequ
     if option.unwrap().is_none() {
         let result = tera.get_ref().render("install.html", &ctx);
         if result.is_err() {
-            return SiteError::Other("Tera".to_string()).site_error(tera);
+            let error = result.err().unwrap();
+            println!("{}", &error);
+            return SiteError::TeraError(error).site_error(tera);
         }
         return HttpResponse::Ok().content_type("text/html").body(&result.unwrap());
     }
@@ -198,13 +211,15 @@ pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequ
         let option2 = result1.unwrap();
         if option2.is_none() {
             //Handle need new login
+            println!("not Found User");
         } else {
+            println!("Hey");
             ctx.insert("user", &option2.unwrap())
         }
     }
     let result = tera.get_ref().render("index.html", &ctx);
     if result.is_err() {
-        return SiteError::Other("Tera".to_string()).site_error(tera);
+        return SiteError::TeraError(result.err().unwrap()).site_error(tera);
     }
     return HttpResponse::Ok().content_type("text/html").body(&result.unwrap());
 }
@@ -216,7 +231,7 @@ pub struct InstallRequest {
 }
 
 #[post("/install")]
-pub async fn install(pool: web::Data<DbPool>, form: Form<InstallRequest>,tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
+pub async fn install(pool: web::Data<DbPool>, form: Form<InstallRequest>, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let option = action::get_setting("installed".to_string(), &conn);
     if option.is_err() {
@@ -243,6 +258,13 @@ pub async fn install(pool: web::Data<DbPool>, form: Form<InstallRequest>,tera: w
         created: utils::get_current_time(),
     };
     action::add_new_user(&user, &conn).unwrap();
+    let st = Setting {
+        id: 0,
+        setting_key: "installed".to_string(),
+        value: "true".to_string(),
+        updated: utils::get_current_time(),
+    };
+    action::add_new_setting(&st, &conn);
     return HttpResponse::Found().header(http::header::LOCATION, "/").finish().into_body();
 }
 

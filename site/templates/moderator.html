@@ -1,166 +1,123 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>RedditNobility</title>
+    <meta property="og:image" content="https://redditnobility.org/assets/img/TuxCrown.png">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/css/bootstrap.min.css">
+    <link rel="stylesheet" href='{{url(path="css/Login-Form-Clean.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/styles.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/Team-Clean.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/Team-Grid.css")}}'>
+<link rel="preconnect" href="https://fonts.gstatic.com">
 
-    <meta charset="UTF-8">
-
-    <title>Moderator</title>
-
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="static/moderator.css"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-
-    <link href='{{url(path="node_modules/bootstrap/dist/css/boostrap.css")}}' rel="stylesheet" crossorigin="anonymous">
-
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
-<div class="container">
-    <h6 id="users-left">Users left: </h6>
-    <div>
-        <div><a id="name" href=""></a><img id="avatar"
-                                           src=""
-                                           width="100">
-            <h2>Posts</h2>
+    <nav class="navbar navbar-light navbar-expand-md">
+        <div class="container-fluid"><a class="navbar-brand" href="#">RedditNobility</a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navcol-1">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link active" href="#">Review Users</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="#">Review a User</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="#">User Page</a></li>
+                    <li class="nav-item"></li>
+                    <li class="nav-item"><a class="nav-link active" href="#">Check Reddit</a></li>
+                </ul>
+            </div>
         </div>
-    </div>
-    <div>
-        <div style="border-bottom-width: thick; border-color: black; border-style: solid;"><a id="post_link-0" href="#">
-            <h6 id="post_header-0"></h6>
-        </a>
-            <p id="post_content-0">Content:<code><br><br><br></code></p><a
-                    id="subreddit-0" href="#"></a>
+    </nav><!-- Start: 1 Row 2 Columns -->
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="table-responsive" style="width: 658px;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Community</th>
+                                <th>User Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Discord</td>
+                                <td>70</td>
+                            </tr>
+                            <tr>
+                                <td>SubReddit</td>
+                                <td>153</td>
+                            </tr>
+                            <tr>
+                                <td>Awaiting Approval</td>
+                                <td>16,000</td>
+                            </tr>
+                            <tr></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h5>User Auto Check - If enabled site will look for users every 2 hours.</h5>
+                <div class="dropdown"><button class="btn btn-primary dropdown-toggle" aria-expanded="false" data-bs-toggle="dropdown" type="button">Auto Check: Active</button>
+                    <div class="dropdown-menu"><a class="dropdown-item" href="#">Active</a><a class="dropdown-item" href="#">Disable</a></div>
+                </div>
+            </div>
         </div>
-        <div style="border-bottom-width: thick; border-color: black; border-style: solid;"><a id="post_link-1" href="#">
-            <h6 id="post_header-1"></h6>
-        </a><a id="subreddit-1" href="#"></a>
-            <p id="post_content-1">Content:<code><br><br><br></code></p>
+        <div class="row">
+            <div class="col">
+                <h5>Upload User List</h5><input type="file"><button class="btn btn-primary" type="button">Upload</button>
+            </div>
+            <div class="col"></div>
         </div>
-        <div style="border-bottom-width: thick; border-color: black; border-style: solid; "><a id="post_link-2"
-                                                                                               href="#">
-            <h6 id="post_header-2"></h6>
-        </a><a id="subreddit-2" href="#"></a>
-            <p id="post_content-2">Content:<code><br><br><br></code></p>
+    </div><!-- End: 1 Row 2 Columns -->
+    <!-- Start: Search Reddit -->
+    <div class="modal fade" role="dialog" tabindex="-1">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Check Reddit</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form><label class="form-label">Subreddit</label><input class="form-control" type="text" placeholder="r/Subreddit" value="r/all"><label class="form-label">Number of posts</label><input class="form-control" type="number" max="100" min="1" value="50"><label class="form-label">Number of Comments per post</label><input class="form-control" type="number" max="100" min="1" value="100"></form>
+                </div>
+                <div class="modal-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">Close</button><button class="btn btn-primary" type="button">Search</button></div>
+            </div>
         </div>
-        <div style="border-bottom-width: thick; border-color: black;border-style: solid; "><a id="post_link-3" href="#">
-            <h6 id="post_header-3"></h6>
-        </a><a id="subreddit-3" href="#"></a>
-            <p id="post_content-3">Content:<code><br><br><br></code></p>
+    </div><!-- End: Search Reddit -->
+    <div class="modal fade" role="dialog" tabindex="-1">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Result</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success" role="alert"><span><strong>Search has started</strong></span></div>
+                    <div class="alert alert-success" role="alert"><span><strong>Search is currently happening or happened within the past 10 minutes</strong></span></div>
+                    <div class="alert alert-success" role="alert"><span><strong>User is not found on</strong>&nbsp;Reddit<br></span></div>
+                </div>
+                <div class="modal-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">Close</button></div>
+            </div>
         </div>
-        <div style="border-bottom-width: thick; border-color: black;border-style: solid; "><a id="post_link-4" href="#">
-            <h6 id="post_header-4"></h6>
-        </a><a id="subreddit-4" href="#"></a>
-            <p id="post_content-4">Content:<code><br><br><br></code></p>
+    </div><!-- Start: User Page -->
+    <div class="modal fade" role="dialog" tabindex="-1">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">User Page</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success" role="alert"><span><strong>If user is not already in database the user will be added.</strong></span></div>
+                    <h4>Username</h4><input type="text" placeholder="Username">
+                </div>
+                <div class="modal-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">Close</button><button class="btn btn-primary" type="button">Open</button></div>
+            </div>
         </div>
-    </div>
-</div>
-<div class="container">
-    <h3>Details</h3>
-</div>
-<div class="container">
-    <div class="row">
-        <div class="col-md-4">
-            <h6 id="comment_karma" style="width: 200px;"></h6>
-        </div>
-        <div class="col-md-4">
-            <h6 id="total_karma" style="margin: 0px,0px,0px;width: 200px;"></h6>
-        </div>
-        <div class="col-md-4">
-            <h6 id="created" style="width: 300px;"></h6>
-        </div>
-    </div>
-</div>
-<div class="container">
-    <button class="btn btn-primary" onclick="deny()" id="deny" type="button" style="text-align: left;margin-top: 10px;">
-        Deny
-    </button>
-    <button class="btn btn-primary" onclick="approve()" id="accept" type="button"
-            style="text-align: justify;margin-top: 10px;">Approve
-    </button>
-</div>
-<script>
-    var serverWebsocket = new WebSocket("{{web_socket_url| safe}}?moderator={{mod_key}}", ["protocolOne", "protocolTwo"]);
-
-    function approve() {
-        let name = document.getElementById("name").innerText;
-        var deny = {"type": "approve", "user": name, "moderator": "{{moderator}}"}
-        serverWebsocket.send(JSON.stringify(deny))
-        update_user()
-    }
-
-    function deny() {
-        let name = document.getElementById("name").innerText;
-        var deny = {"type": "deny", "user": name, "moderator": "{{moderator}}"}
-        serverWebsocket.send(JSON.stringify(deny))
-        update_user()
-
-    }
-
-    function update_user() {
-        var firstUser = {"type": "user"}
-        serverWebsocket.send(JSON.stringify(firstUser))
-    }
-
-    serverWebsocket.onopen = function (event) {
-
-        update_user()
-    };
-    serverWebsocket.onerror = function (event) {
-        alert("Unable to connect to websocket")
-        console.log("Error: ", event)
-    }
-
-    serverWebsocket.onclose = function (event) {
-        alert("Connection Closed")
-        console.log("Closed: ", event)
-
-    }
-    serverWebsocket.onmessage = function (event) {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "user") {
-            document.getElementById("users-left").innerText = "Users left: " + msg.usersleft;
-            const user = msg.data;
-            let elementById = document.getElementById("name");
-            elementById.innerText = user.name
-            elementById.href = "https://reddit.com/u/" + user.name
-            document.getElementById("avatar").src = user.avatar
-            document.getElementById("comment_karma").innerText = "Comment Karma: " + user.commentKarma
-            document.getElementById("total_karma").innerText = "Total Karma: " + user.total_karma
-            let date = new Date(0);
-            date.setUTCSeconds(user.created);
-            document.getElementById("created").innerText = "Created On: " + date.toLocaleDateString("en-US");
-            for (let i = 0; i < 5; i++) {
-                if (i >= user.topFivePosts.length) {
-                    document.getElementById("post_link-" + i).href = ""
-                    document.getElementById("post_header-" + i).innerText = ""
-                    document.getElementById("post_content-" + i).innerText = ""
-                    document.getElementById("subreddit-" + i).innerText = ""
-                    continue;
-                }
-                let post = user.topFivePosts[i];
-                document.getElementById("post_link-" + i).href = post.url
-                document.getElementById("post_header-" + i).innerText = post.title
-                document.getElementById("post_content-" + i).innerText = post.content
-                document.getElementById("subreddit-" + i).innerText = post.subreddit
-
-            }
-        } else if (msg.type === "error") {
-            alert(msg.error);
-        }
-    }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"
-        integrity="sha384-SR1sx49pcuLnqZUnnPwx6FCym0wLsk5JZuNx2bPPENzswTNFaQU1RDvt3wT4gWFG"
-        crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.min.js"
-        integrity="sha384-j0CNLUeiqtyaRmlzUHCPZ+Gy5fQu0dQ6eZ/xAww941Ai1SxSY+0EQqNXNE6DZiVc"
-        crossorigin="anonymous"></script>
-
+    </div><!-- End: User Page -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

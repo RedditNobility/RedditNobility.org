@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use actix_web::{dev::HttpResponseBuilder, error, get, http::header, http::StatusCode, App, HttpResponse, HttpServer, web};
+use actix_web::{ error, get, http::header, http::StatusCode, App, HttpResponse, HttpServer, web};
 use derive_more::{Display, Error};
 use serde_json;
 use error::ResponseError;

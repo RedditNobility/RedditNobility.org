@@ -1,70 +1,48 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
-
-    <meta charset="UTF-8">
-
-    <title>Login</title>
-
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>RedditNobility</title>
+    <meta property="og:image" content="https://redditnobility.org/assets/img/TuxCrown.png">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/css/bootstrap.min.css">
+    <link rel="stylesheet" href='{{url(path="css/Login-Form-Clean.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/styles.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/Team-Clean.css")}}'>
+    <link rel="stylesheet" href='{{url(path="css/Team-Grid.css")}}'>
     <link rel="preconnect" href="https://fonts.gstatic.com">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="static/login.css"/>
-
 </head>
 
 <body>
-
-<form method="post" action="/login/post">
-
-    <div class="login-area">
-
-        <a href="/"><img src="static/TuxCrown.png" alt="KingTux"></a>
-
-        <h2>Login</h2>
-
-        <h5>Sign into your account</h5>
-
-        <!--<div class="error">There was an error signing you in</div>-->
-
-        <label for="login_username">Username</label><br/>
-
-        <input type="text" name="username" required autofocus id="login_username">
-
-        <br/><br/>
-
-        <label for="login_password">Password</label><br/>
-
-        <input type="password" name="password" id="login_password">
-
-        <br/><br/><br/>
-        <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">
-        <input type="hidden" name="action" value="validate_captcha">
-        <button type="submit">Log In</button>
-
-        <br/><br/>
-
-    </div>
-
-</form>
-<script src="https://www.google.com/recaptcha/api.js?render={{recaptcha-key}}"></script>
+<!-- Start: Login Form Clean -->
+<section class="login-clean">
+    <form id="form" action='{{url(path="login/post")}}' enctype="application/x-www-form-urlencoded"  method="post">
+        <p style="font-size: 15px;">No Password? Leave the value blank and you will be sent a login link via a Reddit
+            Direct Message.</p>
+        <h2 class="visually-hidden">Login Form</h2>
+        <div class="illustration"><img src={{url(path="TuxCrown.png")}} style="width: 190px;"></div>
+        <div class="mb-3"><input class="form-control" type="text" name="username" placeholder="Username"></div>
+        <div class="mb-3"><input class="form-control" type="password" name="password" placeholder="Password"></div>
+        <div class="mb-3">
+            <button class="btn btn-primary d-block w-100 g-recaptcha" data-sitekey="{{recaptcha_pub}}"
+                    data-callback='onSubmit'
+                    data-action='submit' type="submit">Log In
+            </button>
+        </div>
+    </form>
+</section><!-- End: Login Form Clean -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/js/bootstrap.bundle.min.js"></script>
+<script src="https://www.google.com/recaptcha/api.js"></script>
 <script>
-    grecaptcha.ready(function () {
-        // do request for recaptcha token
-        // response is promise with passed token
-        grecaptcha.execute('your reCAPTCHA site key here', {action: 'validate_captcha'})
-            .then(function (token) {
-                // add token value to form
-                document.getElementById('g-recaptcha-response').value = token;
-            });
-    });
+    function onSubmit(token) {
+        document.getElementById("form").submit();
+    }
 </script>
 
 </body>

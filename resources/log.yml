@@ -30,9 +30,17 @@ root:
     - all
 loggers:
   actix_web:
-    level: info
+    level: trace
     appenders:
-      - requests
+      - stdout
+  actix-web-actors:
+    level: trace
+    appenders:
+      - stdout
+  actix:
+    level: trace
+    appenders:
+      - stdout
   RedditNobility:
     level: trace
     appenders:

@@ -88,13 +88,24 @@ pub(crate) fn get_current_time() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64
 }
 
-pub fn send_login(user: &User, conn: &MysqlConnection, rr: Data<Arc<Mutex<RedditRoyalty>>>) {
+pub fn send_login(user: &User, conn: &MysqlConnection, rr: &RedditClient) {
+    println!("Test0");
     let password: String = rand::thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
+    println!("Test");
     let mut user = user.clone();
     user.set_password(hash(&password.clone(), DEFAULT_COST).unwrap());
+    println!("Test2");
     let result = action::update_user(&user, &conn);
+    println!("Test3");
     let token = create_token(&user, &conn).unwrap();
-    let result1 = rr.lock().unwrap().reddit.messages().compose(user.username.as_str(), "RedditNobility Login", build_message(&user, &password, &token).as_str());
+    println!("Test4");
+    let string = build_message(&user, &password, &token);
+    println!("{}", &string);
+
+    let x = user.username.as_str();
+    println!("{}", &x);
+    let result1 = rr.messages().compose(x, "RedditNobility Login", string.as_str());
+    println!("Test5");
 }
 
 fn build_message(user: &User, password: &String, token: &AuthToken) -> String {

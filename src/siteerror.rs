@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use actix_web::{dev::HttpResponseBuilder, error, get, http::header, http::StatusCode, App, HttpResponse, HttpServer, web};
+use actix_web::{ error, get, http::header, http::StatusCode, App, HttpResponse, HttpServer, web};
 use derive_more::{Display, Error};
 use serde_json;
 use error::ResponseError;
@@ -15,11 +15,9 @@ use crate::apiresponse::{APIError, APIResponse};
 /// Error type that occurs when an API request fails for some reason.
 #[derive(Debug, Display)]
 pub enum SiteError {
-    #[display(fmt = "An internal error occurred. Please try again later.")]
     JSONError(serde_json::Error),
-    #[display(fmt = "An internal error occurred. Please try again later.")]
     DBError(diesel::result::Error),
-    #[display(fmt = "An internal error occurred. Please try again later.")]
+    TeraError(tera::Error),
     Other(String),
 }
 impl SiteError{
@@ -45,6 +43,8 @@ impl WebsiteError for SiteError {
         HttpResponse::Ok().status(self.status_code()).content_type("text/html").body(&result.unwrap())
     }
     fn api_error(&self) -> HttpResponse {
+        self.error();
+
         let error = APIError {
             status_code: Some(self.status_code().as_u16()),
             user_friendly_message: Some(self.user_message().to_string()),
