@@ -12,6 +12,7 @@ use diesel::backend::Backend;
 use diesel::serialize::{ToSql, Output};
 use diesel::mysql::Mysql;
 use std::str::FromStr;
+use crate::utils;
 
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
@@ -188,7 +189,9 @@ impl FromSql<Text, Mysql> for Status {
 impl User {
     pub fn set_status(&mut self, status: Status) {
         self.status = status;
+        self.status_changed = utils::get_current_time();
     }
+
     pub fn set_level(&mut self, level: Level) {
         self.level = level;
     }

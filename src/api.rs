@@ -41,6 +41,7 @@ use crate::action::{get_user_by_name, update_user};
 fn api_validate(header_map: &HeaderMap, level: Level, conn: &MysqlConnection) -> Result<bool, Box<dyn WebsiteError>> {
     let option = header_map.get("Authorization");
     if option.is_none() {
+        println!("Test");
         return Ok(false);
     }
     let x = option.unwrap().to_str();
@@ -88,6 +89,7 @@ fn api_validate(header_map: &HeaderMap, level: Level, conn: &MysqlConnection) ->
         if level == Level::Client {
             return Ok(false);
         }
+        println!("Hey");
         let result1 = utils::is_authorized(value, level, conn);
         if (result1.is_err()) {
             return Err(result1.err().unwrap());
@@ -133,7 +135,7 @@ pub struct GetUser {
 }
 
 #[get("/api/user/{user}")]
-pub async fn get_user(pool: web::Data<DbPool>, user: web::Path<GetUser>, r: HttpRequest) -> HttpResponse {
+pub async fn get_user(pool: web::Data<DbPool>, web::Path((user)): web::Path<( String)>, r: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Client, &conn);
     if result.is_err() {
@@ -143,7 +145,7 @@ pub async fn get_user(pool: web::Data<DbPool>, user: web::Path<GetUser>, r: Http
     if !result.unwrap() {
         return UserError::NotFound.api_error();
     }
-    let result1 = action::get_user_by_name(user.username.clone(), &conn);
+    let result1 = action::get_user_by_name(user.clone(), &conn);
     if result1.is_err() {
         return DBError(result1.err().unwrap()).api_error();
     }
@@ -464,13 +466,14 @@ pub struct RedditPost {
 }
 
 #[get("/api/moderator/review/{user}")]
-pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, user: web::Path<GetUser>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>) -> HttpResponse {
+pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, web::Path((user)): web::Path<( String)>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Moderator, &conn);
     if result.is_err() {
         return result.err().unwrap().api_error();
     }
     if !result.unwrap() {
+        println!("GHey");
         return UserError::NotFound.api_error();
     }
     let rr = rr.lock();
@@ -481,7 +484,7 @@ pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, user: web::Path<
     let mut rr = rr.unwrap();
     let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
     let mut option: Option<User> = Option::None;
-    if user.username.eq("next") {
+    if user.eq("next") {
         let result = action::get_found_users(&conn);
         if result.is_err() {}
         let mut vec = result.unwrap();
@@ -493,7 +496,7 @@ pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, user: web::Path<
             }
         }
     } else {
-        let result1 = action::get_user_by_name(user.username.clone(), &conn);
+        let result1 = action::get_user_by_name(user.clone(), &conn);
         if result1.is_err() {
             return DBError(result1.err().unwrap()).api_error();
         }

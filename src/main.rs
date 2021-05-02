@@ -161,12 +161,17 @@ async fn main() -> std::io::Result<()> {
             service(usercontrollers::post_login).
             service(usercontrollers::key_login).
             service(usercontrollers::submit).
+            service(moderatorcontrollers::review_users).
             service(api::change_level).
             service(api::change_status).
             service(api::get_user).
             service(api::submit_user).
             service(api::user_login).
             service(api::validate_key).
+            service(api::change_status).
+            service(api::change_property).
+            service(api::change_level).
+            service(api::next_user).
             service(fs::Files::new("/", "site/static").show_files_listing()).
             service(fs::Files::new("/", "site/node_modules").show_files_listing())
     });

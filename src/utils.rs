@@ -64,7 +64,7 @@ pub fn is_authorized(api_token: String, target_level: Level, conn: &MysqlConnect
     if user.status != Status::Approved {
         return Ok(false);
     }
-
+    println!("HEY");
     if user.level.level() >= target_level.level() {
         return Ok(true);
     }

@@ -47,6 +47,7 @@ pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::re
              status.eq(user.status.clone()),
              status_changed.eq(user.status_changed.clone()),
              level.eq(user.level.clone()),
+             moderator.eq(user.moderator.clone()),
              properties.eq(user.properties.clone()),
              discoverer.eq(user.discoverer.clone())))
         .execute(conn).unwrap();
