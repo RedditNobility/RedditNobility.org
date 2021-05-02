@@ -7,110 +7,134 @@
     <title>RedditNobility</title>
     <meta property="og:image" content="https://redditnobility.org/assets/img/TuxCrown.png">
     <meta property="og:type" content="website">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/css/bootstrap.min.css">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/css/bootstrap.min.css">
     <link rel="stylesheet" href='{{url(path="css/Login-Form-Clean.css")}}'>
     <link rel="stylesheet" href='{{url(path="css/styles.css")}}'>
     <link rel="stylesheet" href='{{url(path="css/Team-Clean.css")}}'>
     <link rel="stylesheet" href='{{url(path="css/Team-Grid.css")}}'>
-<link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
-    <nav class="navbar navbar-light navbar-expand-md">
-        <div class="container-fluid"><a class="navbar-brand" href="#">RedditNobility</a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
-            <div class="collapse navbar-collapse" id="navcol-1">
-                <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link active" href="#">Login</a></li>
-                    <li class="nav-item"></li>
-                    <li class="nav-item"></li>
-                    <li class="nav-item"><a class="nav-link active" href="#">Submit</a></li>
-                    <li class="nav-item dropdown"><a class="dropdown-toggle nav-link" aria-expanded="false" data-bs-toggle="dropdown" href="#">Welcome, KingTuxWH</a>
-                        <div class="dropdown-menu"><a class="dropdown-item" href="#">Moderator Panel</a><a class="dropdown-item" href="#">Profile</a></div>
-                    </li>
-                </ul>
+<nav class="navbar navbar-light navbar-expand-md">
+    <div class="container-fluid"><a class="navbar-brand" href="#">RedditNobility</a>
+        <button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span
+                class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navcol-1">
+            <ul class="navbar-nav">
+                {% if user %}
+                <li class="nav-item"><a class="nav-link active" href="#">Submit</a></li>
+                <li class="nav-item dropdown"><a class="dropdown-toggle nav-link" aria-expanded="false"
+                                                 data-bs-toggle="dropdown" href="#">Welcome, {{user.username}}</a>
+                    <div class="dropdown-menu">
+                        {% if user.level == "Moderator" or user.level == "Admin" %}
+                        <a class="dropdown-item" href="#">Moderator Panel</a>
+                        {% endif%}
+                        <a class="dropdown-item" href="#">Profile</a>
+                    </div>
+                </li>
+                {% else %}
+                <li class="nav-item"><a class="nav-link active" href="#">Login</a></li>
+                {% endif%}
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h1 style="width: 468px;">KingTuxWH's Profile</h1>
+        </div>
+        <div class="col-md-6"><img src="https://i.redd.it/snoovatar/snoovatars/60319383-f0c9-4844-819c-8c2a04c00484.png"
+                                   style="width: 61px;"></div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <h4>Custom Avatar</h4><input type="url">
+        </div>
+        <div class="col">
+            <h4>User Level</h4>
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" aria-expanded="false" data-bs-toggle="dropdown"
+                        type="button">Admin
+                </button>
+                <div class="dropdown-menu"><a class="dropdown-item" href="#">User</a><a class="dropdown-item" href="#">Moderator</a><a
+                        class="dropdown-item" href="#">Admin</a></div>
             </div>
         </div>
-    </nav><!-- Start: 1 Row 2 Columns -->
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <h1 style="width: 468px;">KingTuxWH's Profile</h1>
-            </div>
-            <div class="col-md-6"><img src="https://i.redd.it/snoovatar/snoovatars/60319383-f0c9-4844-819c-8c2a04c00484.png" style="width: 61px;"></div>
-        </div>
-        <div class="row">
-            <div class="col">
-                <h4>Custom Avatar</h4><input type="url">
-            </div>
-            <div class="col">
-                <h4>User Level</h4>
-                <div class="dropdown"><button class="btn btn-primary dropdown-toggle" aria-expanded="false" data-bs-toggle="dropdown" type="button">Admin</button>
-                    <div class="dropdown-menu"><a class="dropdown-item" href="#">User</a><a class="dropdown-item" href="#">Moderator</a><a class="dropdown-item" href="#">Admin</a></div>
-                </div>
-            </div>
-            <div class="col">
-                <h4>User Status</h4>
-                <div class="dropdown"><button class="btn btn-primary dropdown-toggle" aria-expanded="false" data-bs-toggle="dropdown" type="button">Approved</button>
-                    <div class="dropdown-menu"><a class="dropdown-item" href="#">Approved</a><a class="dropdown-item" href="#">Denied</a><a class="dropdown-item" href="#">Banned</a><a class="dropdown-item" href="#">Found</a></div>
-                </div>
+        <div class="col">
+            <h4>User Status</h4>
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" aria-expanded="false" data-bs-toggle="dropdown"
+                        type="button">Approved
+                </button>
+                <div class="dropdown-menu"><a class="dropdown-item" href="#">Approved</a><a class="dropdown-item"
+                                                                                            href="#">Denied</a><a
+                        class="dropdown-item" href="#">Banned</a><a class="dropdown-item" href="#">Found</a></div>
             </div>
         </div>
-        <div class="row">
-            <div class="col"></div>
-            <div class="col">
-                <h4>Update User</h4><button class="btn btn-primary" type="button">Update</button>
+    </div>
+    <div class="row">
+        <div class="col"></div>
+        <div class="col">
+            <h4>Update User</h4>
+            <button class="btn btn-primary" type="button">Update</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Properties</th>
+                        <th>Value</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>Discoverer</td>
+                        <td>OG</td>
+                    </tr>
+                    <tr>
+                        <td>Discord Member</td>
+                        <td>true</td>
+                    </tr>
+                    <tr>
+                        <td>Created</td>
+                        <td>05/01/2021</td>
+                    </tr>
+                    <tr>
+                        <td>Status Changed</td>
+                        <td>05/01/2021</td>
+                    </tr>
+                    <tr>
+                        <td>Moderator</td>
+                        <td>OG</td>
+                    </tr>
+                    <tr>
+                        <td>Qualifying Title</td>
+                        <td>King</td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-        <div class="row">
-            <div class="col">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Properties</th>
-                                <th>Value</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Discoverer</td>
-                                <td>OG</td>
-                            </tr>
-                            <tr>
-                                <td>Discord Member</td>
-                                <td>true</td>
-                            </tr>
-                            <tr>
-                                <td>Created</td>
-                                <td>05/01/2021</td>
-                            </tr>
-                            <tr>
-                                <td>Status Changed</td>
-                                <td>05/01/2021</td>
-                            </tr>
-                            <tr>
-                                <td>Moderator</td>
-                                <td>OG</td>
-                            </tr>
-                            <tr>
-                                <td>Qualifying Title</td>
-                                <td>King</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div><!-- End: 1 Row 2 Columns -->
-    <footer>
-        <p>Keys: OG = user was created upon database creation</p>
-    </footer>
-    <nav class="navbar navbar-light navbar-expand-md">
-        <div class="container-fluid"><button class="navbar-toggler" data-bs-toggle="collapse"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button></div>
-    </nav>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/js/bootstrap.bundle.min.js"></script>
+    </div>
+</div><!-- End: 1 Row 2 Columns -->
+<footer>
+    <p>Keys: OG = user was created upon database creation</p>
+</footer>
+<nav class="navbar navbar-light navbar-expand-md">
+    <div class="container-fluid">
+        <button class="navbar-toggler" data-bs-toggle="collapse"><span
+                class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+    </div>
+</nav>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

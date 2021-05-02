@@ -59,8 +59,11 @@ pub fn is_authorized(api_token: String, target_level: Level, conn: &MysqlConnect
     if user.is_none() {
         return Ok(false);
     }
-    let user = user.unwrap();
 
+    let user = user.unwrap();
+    if user.status != Status::Approved {
+        return Ok(false);
+    }
 
     if user.level.level() >= target_level.level() {
         return Ok(true);

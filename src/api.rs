@@ -46,6 +46,7 @@ fn api_validate(header_map: &HeaderMap, level: Level, conn: &MysqlConnection) ->
     let x = option.unwrap().to_str();
     if x.is_err() {}
     let header = x.unwrap().to_string();
+    println!("{}", &header);
 
     let split = header.split(" ").collect::<Vec<&str>>();
     let option = split.get(0);
@@ -87,7 +88,7 @@ fn api_validate(header_map: &HeaderMap, level: Level, conn: &MysqlConnection) ->
         if level == Level::Client {
             return Ok(false);
         }
-        let result1 = utils::is_authorized(key, level, conn);
+        let result1 = utils::is_authorized(value, level, conn);
         if (result1.is_err()) {
             return Err(result1.err().unwrap());
         }
@@ -125,6 +126,7 @@ fn get_user_by_header(header_map: &HeaderMap, conn: &MysqlConnection) -> Result<
     }
     Ok(None)
 }
+
 #[derive(Serialize, Deserialize)]
 pub struct GetUser {
     pub username: String,
@@ -162,7 +164,7 @@ pub struct UserSuggest {
     pub username: String,
 }
 
-#[post("/api/user/submit")]
+#[post("/api/submit/user")]
 pub async fn submit_user(pool: web::Data<DbPool>, suggest: web::Form<UserSuggest>, r: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::User, &conn);
@@ -170,6 +172,7 @@ pub async fn submit_user(pool: web::Data<DbPool>, suggest: web::Form<UserSuggest
         return result.err().unwrap().api_error();
     }
     if !result.unwrap() {
+        println!("BAD PERM");
         return UserError::NotFound.api_error();
     }
     let result1 = action::get_user_by_name(suggest.username.clone(), &conn);
@@ -182,6 +185,16 @@ pub async fn submit_user(pool: web::Data<DbPool>, suggest: web::Form<UserSuggest
         let discoverer = get_user_by_header(&r.headers(), &conn);
         if discoverer.is_err() {
             return discoverer.err().unwrap().api_error();
+        }
+        let client = RedditClient::new("RoboticMonarch by u/KingTuxWH", AnonymousAuthenticator::new());
+        let user1 = client.user(suggest.username.as_str());
+        let result2 = user1.about();
+        if result2.is_err() {
+            let response = APIResponse::<String> {
+                success: true,
+                data: Some("NOT_FOUND".parse().unwrap()),
+            };
+            return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
         }
         utils::quick_add(suggest.username.clone(), discoverer.unwrap().unwrap().username.clone(), &conn);
         let result1 = action::get_user_by_name(suggest.username.clone(), &conn);
@@ -329,7 +342,7 @@ pub struct ChangeRequest {
     pub value: String,
 }
 
-#[post("/api/user/change")]
+#[post("/api/change/user")]
 pub async fn change_property(pool: web::Data<DbPool>, request: web::Form<ChangeRequest>, r: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::User, &conn);

@@ -15,7 +15,7 @@ use std::cell::RefCell;
 use crate::schema::users::dsl::created;
 use new_rawr::client::RedditClient;
 use new_rawr::auth::AnonymousAuthenticator;
-use crate::models::{User, Level};
+use crate::models::{User, Level, Status};
 use new_rawr::structures::submission::Submission;
 use new_rawr::traits::{Votable, Content};
 use rand::Rng;
@@ -38,16 +38,31 @@ pub struct SubmitUser {
 }
 
 #[get("/submit")]
-pub async fn index(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> Result<HttpResponse, Error> {
+pub async fn submit(pool: web::Data<DbPool>, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
     let mut ctx = tera::Context::new();
+    let conn = pool.get().expect("couldn't get db connection from pool");
 
-
-    let result = tera.get_ref().render("index.html", &ctx);
+    let option1 = req.cookie("auth_token");
+    if option1.is_some() {
+        let result1 = action::get_user_from_auth_token(option1.unwrap().value().to_string(), &conn);
+        if result1.is_err() {
+            return SiteError::DBError(result1.err().unwrap()).site_error(tera);
+        }
+        let option2 = result1.unwrap();
+        if option2.is_none() {
+            //Handle need new login
+            println!("not Found User");
+        } else {
+            println!("Hey");
+            ctx.insert("user", &option2.unwrap())
+        }
+    }
+    let result = tera.get_ref().render("submit.html", &ctx);
     if result.is_err() {
         let error = result.err().unwrap();
-        return Ok(HttpResponse::InternalServerError().finish());
+        return HttpResponse::InternalServerError().finish();
     }
-    Ok(HttpResponse::Ok().content_type("text/html").body(&result.unwrap()))
+    return HttpResponse::Ok().content_type("text/html").body(&result.unwrap());
 }
 
 
@@ -75,7 +90,6 @@ pub struct LoginRequest {
 
 #[post("/login/post")]
 pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request: HttpRequest, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, form: web::Form<LoginRequest>) -> HttpResponse {
-
     if form.g_recaptcha_response.is_none() {
         println!("Nothing");
         //return HttpResponse::Found().header(http::header::LOCATION, "/login?status=BAD_RECAPTCHA").finish().into_body();
@@ -102,6 +116,9 @@ pub async fn post_login(pool: web::Data<DbPool>, tera: web::Data<Tera>, request:
         return HttpResponse::Found().header(http::header::LOCATION, "/login?status=NOT_FOUND").finish().into_body();
     }
     let user = user.unwrap();
+    if user.status != Status::Approved{
+        return HttpResponse::Found().header(http::header::LOCATION, "/login?status=NOT_FOUND").finish().into_body();
+    }
     if form.password.is_some() && !form.password.as_ref().unwrap().is_empty() {
         let string = form.password.as_ref().unwrap();
         if verify(string, &user.password).unwrap() {

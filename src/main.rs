@@ -160,6 +160,7 @@ async fn main() -> std::io::Result<()> {
             service(usercontrollers::get_login).
             service(usercontrollers::post_login).
             service(usercontrollers::key_login).
+            service(usercontrollers::submit).
             service(api::change_level).
             service(api::change_status).
             service(api::get_user).
@@ -250,7 +251,7 @@ pub async fn install(pool: web::Data<DbPool>, form: Form<InstallRequest>, tera: 
         username: form.username.clone(),
         password: hash(&form.password.clone(), DEFAULT_COST).unwrap(),
         level: Level::Admin,
-        status: Status::Found,
+        status: Status::Approved,
         status_changed: utils::get_current_time(),
         discoverer: "OG".to_string(),
         moderator: "OG".to_string(),
