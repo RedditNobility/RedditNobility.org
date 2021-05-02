@@ -137,7 +137,7 @@ pub struct GetUser {
 #[get("/api/user/{user}")]
 pub async fn get_user(pool: web::Data<DbPool>, web::Path((user)): web::Path<( String)>, r: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
-    let result = api_validate(r.headers(), Level::Client, &conn);
+    let result = api_validate(r.headers(), Level::Moderator, &conn);
     if result.is_err() {
         return result.err().unwrap().api_error();
     }
