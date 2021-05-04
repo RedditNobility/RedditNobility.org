@@ -18,7 +18,7 @@ use std::cell::RefCell;
 use crate::schema::users::dsl::created;
 use new_rawr::client::RedditClient;
 use new_rawr::auth::AnonymousAuthenticator;
-use crate::models::{User, Level, Status};
+use crate::models::{User, Level, Status, ClientKey};
 use new_rawr::structures::submission::Submission;
 use new_rawr::traits::{Votable, Content};
 use rand::Rng;
@@ -81,7 +81,7 @@ fn api_validate(header_map: &HeaderMap, level: Level, conn: &MysqlConnection) ->
             if client.is_none() {
                 return Ok(false);
             }
-            return Ok(verify(&key, &client.unwrap().api_key).unwrap());
+            return Ok(key.eq(&client.unwrap().api_key));
         } else {
             return Ok(false);
         }
@@ -146,7 +146,6 @@ pub async fn get_moderators(pool: web::Data<DbPool>, r: HttpRequest) -> HttpResp
         data: Some(result.unwrap()),
     };
     HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap())
-
 }
 
 #[get("/api/user/{user}")]
@@ -409,6 +408,40 @@ pub async fn change_property(pool: web::Data<DbPool>, request: web::Form<ChangeR
     let response = APIResponse::<User> {
         success: true,
         data: None,
+    };
+    return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+}
+
+
+#[post("/api/admin/key/add")]
+pub async fn new_key(pool: web::Data<DbPool>, r: HttpRequest) -> HttpResponse {
+    let conn = pool.get().expect("couldn't get db connection from pool");
+    let result = api_validate(r.headers(), Level::Admin, &conn);
+    if result.is_err() {
+        return result.err().unwrap().api_error();
+    }
+    if !result.unwrap() {
+        return UserError::NotAuthorized.api_error();
+    }
+    let client_key = ClientKey {
+        id: 0,
+        api_key: utils::gen_client_key(),
+        created: utils::get_current_time(),
+    };
+    let result2 = action::add_client_key(&client_key, &conn);
+    if result2.is_err() {
+        return DBError(result2.err().unwrap()).api_error();
+    }
+
+    let result1 = action::get_client_key_by_key(client_key.api_key.clone(), &conn);
+    if result1.is_err() {
+        return DBError(result1.err().unwrap()).api_error();
+    }
+    let result1 = result1.unwrap();
+
+    let response = APIResponse::<ClientKey> {
+        success: true,
+        data: Some(result1.unwrap().clone()),
     };
     return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
 }

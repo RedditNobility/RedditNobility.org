@@ -2,7 +2,7 @@ use diesel::MysqlConnection;
 use diesel::prelude::*;
 
 use crate::{models, utils};
-use crate::models::{User, AuthToken, Setting};
+use crate::models::{User, AuthToken, Setting, ClientKey};
 
 //User
 pub fn add_new_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
@@ -92,6 +92,18 @@ pub fn get_client_key_by_id(key: i64, conn: &MysqlConnection) -> Result<Option<m
     use crate::schema::client_keys::dsl::*;
     let found_key = client_keys.filter(id.eq(key)).first::<models::ClientKey>(conn).optional()?;
     Ok(found_key)
+}
+
+pub fn get_client_key_by_key(key: String, conn: &MysqlConnection) -> Result<Option<models::ClientKey>, diesel::result::Error> {
+    use crate::schema::client_keys::dsl::*;
+    let found_key = client_keys.filter(api_key.eq(key)).first::<models::ClientKey>(conn).optional()?;
+    Ok(found_key)
+}
+
+pub fn add_client_key(key: &ClientKey, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::client_keys::dsl::*;
+    diesel::insert_into(client_keys).values(key).execute(conn).unwrap();
+    Ok(())
 }
 
 // Setting

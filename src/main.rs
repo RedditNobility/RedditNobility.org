@@ -54,7 +54,6 @@ mod action;
 mod api;
 mod utils;
 mod siteerror;
-mod admincontrollers;
 mod usercontrollers;
 mod moderatorcontrollers;
 mod usererror;

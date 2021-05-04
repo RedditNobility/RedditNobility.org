@@ -184,3 +184,10 @@ pub fn get_avatar(user: &User) -> String {
     }
     return "".to_string();
 }
+
+pub fn gen_client_key() -> String {
+    rand::thread_rng().sample_iter(&Alphanumeric)
+        .take(25)
+        .map(char::from)
+        .collect()
+}
