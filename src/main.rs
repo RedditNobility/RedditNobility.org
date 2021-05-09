@@ -51,7 +51,6 @@ use crate::usererror::UserError;
 pub mod models;
 pub mod schema;
 mod action;
-mod api;
 mod utils;
 mod siteerror;
 mod usercontrollers;
@@ -60,6 +59,7 @@ mod usererror;
 mod websiteerror;
 mod apiresponse;
 mod recaptcha;
+mod api;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
@@ -164,17 +164,16 @@ async fn main() -> std::io::Result<()> {
             service(moderatorcontrollers::review_users).
             service(moderatorcontrollers::user_page).
             service(moderatorcontrollers::mod_index).
-            service(api::change_level).
-            service(api::change_status).
-            service(api::get_user).
-            service(api::submit_user).
-            service(api::user_login).
-            service(api::validate_key).
-            service(api::change_status).
-            service(api::change_property).
+            service(api::admin::change_level).
+            service(api::moderator::change_status).
+            service(api::moderator::get_user).
+            service(api::user::submit_user).
+            service(api::user::user_login).
+            service(api::user::validate_key).
+            service(api::user::change_property).
             service(api::get_moderators).
-            service(api::change_level).
-            service(api::next_user).
+            service(api::admin::change_level).
+            service(api::moderator::next_user).
             service(fs::Files::new("/", "site/static").show_files_listing()).
             service(fs::Files::new("/", "site/node_modules").show_files_listing())
     });
