@@ -26,7 +26,6 @@ use new_rawr::auth::AnonymousAuthenticator;
 use new_rawr::client::RedditClient;
 
 
-use new_rawr::traits::{Content};
 
 
 use serde::{Deserialize, Serialize};
@@ -94,7 +93,6 @@ pub async fn submit_user(
         if result1.is_err() {
             return DBError(result1.err().unwrap()).api_error();
         }
-        user = result1.unwrap();
         let response = APIResponse::<String> {
             success: true,
             data: Some("ADDED".parse().unwrap()),

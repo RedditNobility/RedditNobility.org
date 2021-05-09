@@ -6,7 +6,6 @@ use crate::websiteerror::{json_error_message, WebsiteError};
 
 use actix_web::{error, get, http::header, http::StatusCode, web, App, HttpResponse, HttpServer};
 use derive_more::{Display};
-use error::ResponseError;
 use log::{error};
 use serde_json;
 

@@ -10,7 +10,7 @@ use std::str::FromStr;
 use actix_web::http::{HeaderMap};
 
 use actix_web::{
-    get, http, middleware, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
+    get, web, HttpRequest, HttpResponse,
 };
 
 
@@ -30,7 +30,7 @@ use new_rawr::traits::{Content};
 
 
 use crate::api::apiresponse::APIResponse;
-use crate::models::{ClientKey, Level, Status, User};
+use crate::models::{ Level, User};
 
 use crate::siteerror::SiteError;
 

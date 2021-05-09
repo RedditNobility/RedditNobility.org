@@ -6,7 +6,6 @@ use crate::siteerror::SiteError;
 use crate::usererror::UserError;
 use crate::websiteerror::WebsiteError;
 use crate::{action, utils, DbPool, RedditRoyalty};
-use actix::prelude::*;
 
 
 use actix_web::cookie::SameSite;
@@ -22,7 +21,6 @@ use bcrypt::verify;
 
 
 
-use new_rawr::traits::{Content};
 
 
 use serde::{Deserialize, Serialize};

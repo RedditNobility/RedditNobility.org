@@ -23,8 +23,8 @@ use actix_files as fs;
 
 use actix_web::web::{Form};
 use actix_web::{
-    error, get, http, middleware, post, web, App, Error, HttpMessage, HttpRequest, HttpResponse,
-    HttpServer, Responder,
+     get, http, middleware, post, web, App, HttpMessage, HttpRequest, HttpResponse,
+    HttpServer,
 };
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Duration, Local};
@@ -32,12 +32,12 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
 
-use log::{error, info, warn};
+use log::{ info, warn};
 use new_rawr::auth::{PasswordAuthenticator};
 use new_rawr::client::RedditClient;
 
 
-use new_rawr::traits::{Commentable, Content, Votable};
+use new_rawr::traits::{ Content, Votable};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use serde::{Deserialize, Serialize};
 use tera::{Tera, Value};
