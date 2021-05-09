@@ -106,7 +106,7 @@ async fn main() -> std::io::Result<()> {
         .build(manager)
         .expect("Failed to create pool.");
     let connection = pool.get().unwrap();
-    embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
+    embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap();
     info!("Test");
 
     let arc = PasswordAuthenticator::new(
@@ -301,7 +301,7 @@ pub async fn install(
         value: "true".to_string(),
         updated: utils::get_current_time(),
     };
-    action::add_new_setting(&st, &conn);
+    action::add_new_setting(&st, &conn).unwrap();
     return HttpResponse::Found()
         .header(http::header::LOCATION, "/")
         .finish()
