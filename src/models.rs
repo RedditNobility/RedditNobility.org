@@ -5,9 +5,9 @@ use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
-use diesel::{deserialize, serialize, MysqlConnection, Queryable};
+use diesel::{deserialize, serialize, Queryable};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
 use std::fmt::{Display, Error, Formatter};
 use std::io::Write;
 use std::str::FromStr;

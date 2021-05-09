@@ -10,41 +10,41 @@ extern crate strum_macros;
 use std::collections::{HashMap};
 use std::ops::Sub;
 use std::path::Path;
-use std::rc::Rc;
-use std::str::FromStr;
+
+
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
-use std::time::{SystemTime, UNIX_EPOCH};
+
 use std::{env, thread};
 
 use actix_files as fs;
-use actix_web::body::Body;
-use actix_web::http::header::LOCATION;
-use actix_web::http::StatusCode;
-use actix_web::web::{BytesMut, Form};
+
+
+
+use actix_web::web::{Form};
 use actix_web::{
     error, get, http, middleware, post, web, App, Error, HttpMessage, HttpRequest, HttpResponse,
     HttpServer, Responder,
 };
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Duration, Local};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use diesel_migrations::name;
-use dotenv::dotenv;
+
+
 use log::{error, info, warn};
-use new_rawr::auth::{AnonymousAuthenticator, PasswordAuthenticator};
+use new_rawr::auth::{PasswordAuthenticator};
 use new_rawr::client::RedditClient;
-use new_rawr::options::ListingOptions;
-use new_rawr::structures::submission::Submission;
+
+
 use new_rawr::traits::{Commentable, Content, Votable};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use serde::{Deserialize, Serialize};
-use tera::{from_value, Function, Tera, Value};
+use tera::{Tera, Value};
 
 use crate::models::{Level, Setting, Status, User, UserProperties};
 use crate::siteerror::SiteError;
-use crate::usererror::UserError;
+
 use crate::websiteerror::WebsiteError;
 
 mod action;
@@ -136,7 +136,7 @@ async fn main() -> std::io::Result<()> {
         }
         sleep(Duration::minutes(5).to_std().unwrap())
     });
-    let mut server = HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         let result1 = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/site/templates/**/*"));
         if result1.is_err() {
             println!("{}", result1.err().unwrap());
@@ -264,7 +264,7 @@ pub async fn install(
     pool: web::Data<DbPool>,
     form: Form<InstallRequest>,
     tera: web::Data<Tera>,
-    req: HttpRequest,
+    _req: HttpRequest,
 ) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let option = action::get_setting("installed".to_string(), &conn);

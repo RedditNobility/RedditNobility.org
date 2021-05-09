@@ -1,10 +1,10 @@
 use std::error::Error;
-use std::fmt::{Display, Formatter, Result as FmtResult};
+
 
 use actix_web::{error, get, http::header, http::StatusCode, web, App, HttpResponse, HttpServer};
-use derive_more::{Display, Error};
+
 use error::ResponseError;
-use log::{error, info, warn};
+
 use serde_json;
 use serde_json::Value;
 use std::collections::HashMap;

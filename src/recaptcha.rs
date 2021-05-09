@@ -1,12 +1,12 @@
 use crate::siteerror::SiteError;
 use crate::websiteerror::WebsiteError;
-use hyper::client::{Client, HttpConnector};
-use hyper::header::USER_AGENT;
+use hyper::client::{Client};
+
 use hyper::http::request::Builder;
-use hyper::Uri;
-use hyper::{Body, Method, Request, StatusCode};
+
+use hyper::{Body, Method};
 use hyper_tls::HttpsConnector;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer};
 use std::collections::HashSet;
 
 pub async fn validate(

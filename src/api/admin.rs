@@ -1,43 +1,43 @@
-use diesel::MysqlConnection;
 
-use crate::action::{get_user_by_name, update_user};
+
+
 use crate::api::api_validate;
-use crate::api::apiresponse::{APIError, APIResponse};
+use crate::api::apiresponse::{APIResponse};
 use crate::api::get_user_by_header;
-use crate::models::{ClientKey, Level, Status, User};
-use crate::schema::users::dsl::created;
-use crate::siteerror::SiteError;
+use crate::models::{ClientKey, Level, User};
+
+
 use crate::siteerror::SiteError::DBError;
 use crate::usererror::UserError;
 use crate::websiteerror::WebsiteError;
-use crate::{action, utils, DbPool, RedditRoyalty};
-use actix::prelude::*;
-use actix_files as fs;
-use actix_web::error::ParseError::Header;
-use actix_web::http::{HeaderMap, HeaderName};
-use actix_web::web::Form;
+use crate::{action, utils, DbPool};
+
+
+
+
+
 use actix_web::{
     get, http, middleware, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
 };
-use bcrypt::verify;
-use diesel::Connection;
+
+
 use log::{error, info, warn};
-use new_rawr::auth::AnonymousAuthenticator;
-use new_rawr::client::RedditClient;
-use new_rawr::responses::listing::SubmissionData;
-use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Content, Votable};
-use rand::distributions::Alphanumeric;
-use rand::Rng;
-use serde::{Deserialize, Serialize};
-use serde_json::Number;
-use serde_json::Value;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
+
+
+
+
+use new_rawr::traits::{Content};
+
+
+use serde::{Deserialize};
+
+
+
+
+
 use std::str::FromStr;
-use std::sync::{Arc, Mutex};
-use tera::Tera;
+
+
 
 #[post("/api/admin/key/add")]
 pub async fn new_key(pool: web::Data<DbPool>, r: HttpRequest) -> HttpResponse {

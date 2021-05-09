@@ -1,42 +1,42 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
-use std::str::FromStr;
-use std::sync::{Arc, Mutex};
 
-use actix::prelude::*;
-use actix_files as fs;
-use actix_web::error::ParseError::Header;
-use actix_web::http::{HeaderMap, HeaderName};
-use actix_web::web::Form;
+
+
+use std::str::FromStr;
+
+
+
+
+
+use actix_web::http::{HeaderMap};
+
 use actix_web::{
     get, http, middleware, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
 };
-use bcrypt::verify;
-use diesel::Connection;
-use diesel::MysqlConnection;
-use log::{error, info, warn};
-use new_rawr::auth::AnonymousAuthenticator;
-use new_rawr::client::RedditClient;
-use new_rawr::responses::listing::SubmissionData;
-use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Content, Votable};
-use rand::distributions::Alphanumeric;
-use rand::Rng;
-use serde::{Deserialize, Serialize};
-use serde_json::Number;
-use serde_json::Value;
-use tera::Tera;
 
-use crate::action::{get_user_by_name, update_user};
+
+use diesel::MysqlConnection;
+
+
+
+
+
+use new_rawr::traits::{Content};
+
+
+
+
+
+
+
+
 use crate::api::apiresponse::APIResponse;
 use crate::models::{ClientKey, Level, Status, User};
-use crate::schema::users::dsl::created;
+
 use crate::siteerror::SiteError;
-use crate::siteerror::SiteError::DBError;
-use crate::usererror::UserError;
+
+
 use crate::websiteerror::WebsiteError;
-use crate::{action, utils, DbPool, RedditRoyalty};
+use crate::{action, utils, DbPool};
 
 pub mod admin;
 pub mod apiresponse;
@@ -100,7 +100,7 @@ pub fn api_validate(
         }
         println!("Hey");
         let result1 = utils::is_authorized(value, level, conn);
-        if (result1.is_err()) {
+        if result1.is_err() {
             return Err(result1.err().unwrap());
         }
         return Ok(result1.unwrap());
@@ -142,7 +142,7 @@ pub fn get_user_by_header(
 }
 
 #[get("/api/moderators")]
-pub async fn get_moderators(pool: web::Data<DbPool>, r: HttpRequest) -> HttpResponse {
+pub async fn get_moderators(pool: web::Data<DbPool>, _r: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = action::get_moderators(&conn);
     if result.is_err() {

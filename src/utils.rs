@@ -1,10 +1,10 @@
-use crate::models::{AuthToken, ClientKey, Level, Status, User, UserProperties};
+use crate::models::{AuthToken, Level, Status, User, UserProperties};
 use crate::siteerror::SiteError;
 use crate::websiteerror::WebsiteError;
-use crate::{action, RedditRoyalty};
-use actix_web::web::{Data, Path};
+use crate::{action};
+
 use bcrypt::{hash, DEFAULT_COST};
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use diesel::MysqlConnection;
 use dotenv::Error;
 use new_rawr::auth::AnonymousAuthenticator;
@@ -16,8 +16,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path as SysPath;
 use std::path::PathBuf;
-use std::str::FromStr;
-use std::sync::{Arc, Mutex};
+
+
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
@@ -98,7 +98,7 @@ pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthTok
         token: s.clone(),
         created: get_current_time(),
     };
-    let result = action::add_new_auth_token(&token, connection);
+    let _result = action::add_new_auth_token(&token, connection);
 
     return Ok(token);
 }
@@ -121,7 +121,7 @@ pub fn send_login(user: &User, conn: &MysqlConnection, rr: &RedditClient) {
     let mut user = user.clone();
     user.set_password(hash(&password.clone(), DEFAULT_COST).unwrap());
     println!("Test2");
-    let result = action::update_user(&user, &conn);
+    let _result = action::update_user(&user, &conn);
     println!("Test3");
     let token = create_token(&user, &conn).unwrap();
     println!("Test4");
@@ -130,7 +130,7 @@ pub fn send_login(user: &User, conn: &MysqlConnection, rr: &RedditClient) {
 
     let x = user.username.as_str();
     println!("{}", &x);
-    let result1 = rr
+    let _result1 = rr
         .messages()
         .compose(x, "RedditNobility Login", string.as_str());
     println!("Test5");

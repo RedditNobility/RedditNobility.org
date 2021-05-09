@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+
 
 use crate::models::Status;
 use crate::recaptcha::validate;
@@ -7,30 +7,30 @@ use crate::usererror::UserError;
 use crate::websiteerror::WebsiteError;
 use crate::{action, utils, DbPool, RedditRoyalty};
 use actix::prelude::*;
-use actix::prelude::*;
-use actix_files as fs;
+
+
 use actix_web::cookie::SameSite;
 use actix_web::http::header::LOCATION;
-use actix_web::web::Form;
+
 use actix_web::{
     get, http, middleware, post, web, App, Error, HttpMessage, HttpRequest, HttpResponse,
     HttpServer,
 };
 use bcrypt::verify;
-use diesel::{Connection, MysqlConnection};
-use new_rawr::auth::AnonymousAuthenticator;
-use new_rawr::client::RedditClient;
-use new_rawr::responses::listing::SubmissionData;
-use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Content, Votable};
-use rand::distributions::Alphanumeric;
-use rand::Rng;
+
+
+
+
+
+use new_rawr::traits::{Content};
+
+
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::borrow::BorrowMut;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
+
+
+
+
+
 use std::sync::{Arc, Mutex};
 use tera::Tera;
 
@@ -65,7 +65,7 @@ pub async fn submit(
     }
     let result = tera.get_ref().render("submit.html", &ctx);
     if result.is_err() {
-        let error = result.err().unwrap();
+        let _error = result.err().unwrap();
         return HttpResponse::InternalServerError().finish();
     }
     return HttpResponse::Ok()
@@ -77,18 +77,18 @@ pub async fn submit(
 pub async fn get_login(
     pool: web::Data<DbPool>,
     tera: web::Data<Tera>,
-    req: HttpRequest,
+    _req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let mut ctx = tera::Context::new();
     ctx.insert(
         "recaptcha_pub",
         std::env::var("RECAPTCHA_PUB").unwrap().as_str(),
     );
-    let conn = pool.get().expect("couldn't get db connection from pool");
+    let _conn = pool.get().expect("couldn't get db connection from pool");
 
     let result = tera.get_ref().render("login.html", &ctx);
     if result.is_err() {
-        let error = result.err().unwrap();
+        let _error = result.err().unwrap();
         return Ok(HttpResponse::InternalServerError().finish());
     }
     Ok(HttpResponse::Ok()
@@ -194,8 +194,8 @@ pub struct KeyLogin {
 pub async fn key_login(
     pool: web::Data<DbPool>,
     tera: web::Data<Tera>,
-    request: HttpRequest,
-    rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
+    _request: HttpRequest,
+    _rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
     form: web::Query<KeyLogin>,
 ) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");

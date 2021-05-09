@@ -1,46 +1,46 @@
-use std::time::{Duration, Instant};
 
-use crate::models::{Level, Status};
-use crate::recaptcha::validate;
+
+use crate::models::{Level};
+
 use crate::siteerror::SiteError;
 use crate::usererror::UserError;
 use crate::websiteerror::WebsiteError;
 use crate::{action, utils, DbPool, RedditRoyalty};
-use actix::prelude::*;
-use actix::prelude::*;
-use actix_files as fs;
-use actix_web::cookie::SameSite;
-use actix_web::http::header::LOCATION;
-use actix_web::web::Form;
+
+
+
+
+
+
 use actix_web::{
     get, http, middleware, post, web, App, Error, HttpMessage, HttpRequest, HttpResponse,
     HttpServer,
 };
-use bcrypt::verify;
-use diesel::{Connection, MysqlConnection};
-use new_rawr::auth::AnonymousAuthenticator;
-use new_rawr::client::RedditClient;
-use new_rawr::responses::listing::SubmissionData;
-use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Content, Votable};
-use rand::distributions::Alphanumeric;
-use rand::Rng;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::borrow::BorrowMut;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
+
+
+
+
+
+
+use new_rawr::traits::{Content};
+
+
+
+
+
+
+
+
 use std::sync::{Arc, Mutex};
 use tera::Tera;
 #[get("/moderator")]
 pub async fn mod_index(
     pool: web::Data<DbPool>,
-    mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
+    _rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
     tera: web::Data<Tera>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let mut ctx = tera::Context::new();
+    let ctx = tera::Context::new();
     let conn = pool.get().expect("couldn't get db connection from pool");
 
     let option1 = req.cookie("auth_token");
@@ -64,8 +64,8 @@ pub async fn mod_index(
 #[get("/moderator/review/{user}")]
 pub async fn review_users(
     pool: web::Data<DbPool>,
-    mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
-    web::Path((user)): web::Path<(String)>,
+    _rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
+    web::Path(user): web::Path<String>,
     tera: web::Data<Tera>,
     req: HttpRequest,
 ) -> HttpResponse {
@@ -96,8 +96,8 @@ pub async fn review_users(
 #[get("/moderator/user/{user}")]
 pub async fn user_page(
     pool: web::Data<DbPool>,
-    mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
-    web::Path((username)): web::Path<(String)>,
+    _rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
+    web::Path(username): web::Path<String>,
     tera: web::Data<Tera>,
     req: HttpRequest,
 ) -> HttpResponse {

@@ -1,15 +1,15 @@
 use std::error::Error;
-use std::fmt::{Display, Formatter, Result as FmtResult};
+
 
 use crate::api::apiresponse::{APIError, APIResponse};
 use crate::websiteerror::{json_error_message, WebsiteError};
 use actix_web::{error, get, http::header, http::StatusCode, web, App, HttpResponse, HttpServer};
-use derive_more::{Display, Error};
+use derive_more::{Display};
 use error::ResponseError;
-use log::{error, info, warn};
+use log::{error};
 use serde_json;
-use serde_json::Value;
-use std::collections::HashMap;
+
+
 use tera::Tera;
 
 /// Error type that occurs when an API request fails for some reason.
