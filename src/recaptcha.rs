@@ -1,29 +1,42 @@
-use serde::{Deserialize, Serialize, Deserializer};
-use std::collections::HashSet;
-use hyper_tls::HttpsConnector;
-use hyper::{Body, Method, Request, StatusCode};
+use crate::siteerror::SiteError;
+use crate::websiteerror::WebsiteError;
 use hyper::client::{Client, HttpConnector};
 use hyper::header::USER_AGENT;
 use hyper::http::request::Builder;
 use hyper::Uri;
-use crate::websiteerror::WebsiteError;
-use crate::siteerror::SiteError;
+use hyper::{Body, Method, Request, StatusCode};
+use hyper_tls::HttpsConnector;
+use serde::{Deserialize, Deserializer, Serialize};
+use std::collections::HashSet;
 
-pub async fn validate(secret: String, response: String, remote_address: String) -> Result<bool, Box<dyn WebsiteError>> {
+pub async fn validate(
+    secret: String,
+    response: String,
+    remote_address: String,
+) -> Result<bool, Box<dyn WebsiteError>> {
     let https = HttpsConnector::new();
     let client = Client::builder().build::<_, hyper::Body>(https);
 
-
-    let builder1 = Builder::new().method(Method::GET).uri(format!("https://www.google.com/recaptcha/api/siteverify?secret={}&response={}&remoteip={}", secret, response, remote_address)).body(Body::empty()).unwrap();
+    let builder1 = Builder::new()
+        .method(Method::GET)
+        .uri(format!(
+            "https://www.google.com/recaptcha/api/siteverify?secret={}&response={}&remoteip={}",
+            secret, response, remote_address
+        ))
+        .body(Body::empty())
+        .unwrap();
     let result = client.request(builder1).await;
     if result.is_err() {
-        return Err(Box::new(SiteError::Other("Unable to make request to google".to_string())));
+        return Err(Box::new(SiteError::Other(
+            "Unable to make request to google".to_string(),
+        )));
     }
     let response1 = result.unwrap();
     let bytes = hyper::body::to_bytes(response1.into_body()).await;
     let string = String::from_utf8(bytes.unwrap().to_vec()).unwrap();
     println!("{}", &string);
-    let result1: Result<RecaptchaResponse, serde_json::Error> = serde_json::from_str(string.as_str());
+    let result1: Result<RecaptchaResponse, serde_json::Error> =
+        serde_json::from_str(string.as_str());
     if result1.is_err() {
         return Err(Box::new(SiteError::JSONError(result1.err().unwrap())));
     }
@@ -48,8 +61,9 @@ pub enum Code {
 }
 
 impl<'de> Deserialize<'de> for Code {
-    fn deserialize<D>(de: D) -> Result<Self, D::Error> where
-        D: Deserializer<'de>
+    fn deserialize<D>(de: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
     {
         let code = String::deserialize(de)?;
         Ok(match &*code {

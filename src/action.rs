@@ -1,39 +1,60 @@
-use diesel::MysqlConnection;
 use diesel::prelude::*;
+use diesel::MysqlConnection;
 
+use crate::models::{AuthToken, ClientKey, Setting, User};
 use crate::{models, utils};
-use crate::models::{User, AuthToken, Setting, ClientKey};
 
 //User
 pub fn add_new_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    diesel::insert_into(users).values(user).execute(conn).unwrap();
+    diesel::insert_into(users)
+        .values(user)
+        .execute(conn)
+        .unwrap();
     Ok(())
 }
 
-pub fn get_user_by_name(user: String, conn: &MysqlConnection) -> Result<Option<models::User>, diesel::result::Error> {
+pub fn get_user_by_name(
+    user: String,
+    conn: &MysqlConnection,
+) -> Result<Option<models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let found_user = users.filter(username.eq(user)).first::<models::User>(conn).optional()?;
+    let found_user = users
+        .filter(username.eq(user))
+        .first::<models::User>(conn)
+        .optional()?;
     Ok(found_user)
 }
 
-pub fn get_user_by_id(l_id: i64, conn: &MysqlConnection) -> Result<Option<models::User>, diesel::result::Error> {
+pub fn get_user_by_id(
+    l_id: i64,
+    conn: &MysqlConnection,
+) -> Result<Option<models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
     println!("{}", l_id);
-    let found_user = users.filter(id.eq(l_id)).first::<models::User>(conn).optional()?;
+    let found_user = users
+        .filter(id.eq(l_id))
+        .first::<models::User>(conn)
+        .optional()?;
     Ok(found_user)
 }
 
 pub fn get_found_users(conn: &MysqlConnection) -> Result<Vec<models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let values = users.filter(status.eq("Found")).load::<models::User>(conn).expect("Error loading mods");
+    let values = users
+        .filter(status.eq("Found"))
+        .load::<models::User>(conn)
+        .expect("Error loading mods");
 
     Ok(values)
 }
 
 pub fn get_moderators(conn: &MysqlConnection) -> Result<Vec<models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let values = users.filter(level.eq_any(vec!["Moderator", "Admin"])).load::<models::User>(conn).expect("Error loading mods");
+    let values = users
+        .filter(level.eq_any(vec!["Moderator", "Admin"]))
+        .load::<models::User>(conn)
+        .expect("Error loading mods");
 
     Ok(values)
 }
@@ -41,7 +62,9 @@ pub fn get_moderators(conn: &MysqlConnection) -> Result<Vec<models::User>, diese
 pub fn delete_user(us: String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
 
-    diesel::delete(users.filter(username.eq(us))).execute(conn).unwrap();
+    diesel::delete(users.filter(username.eq(us)))
+        .execute(conn)
+        .unwrap();
     Ok(())
 }
 
@@ -49,19 +72,24 @@ pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::re
     use crate::schema::users::dsl::*;
 
     diesel::update(users.filter(id.eq(user.id)))
-        .set(
-            (password.eq(user.password.clone()),
-             status.eq(user.status.clone()),
-             status_changed.eq(user.status_changed.clone()),
-             level.eq(user.level.clone()),
-             moderator.eq(user.moderator.clone()),
-             properties.eq(user.properties.clone()),
-             discoverer.eq(user.discoverer.clone())))
-        .execute(conn).unwrap();
+        .set((
+            password.eq(user.password.clone()),
+            status.eq(user.status.clone()),
+            status_changed.eq(user.status_changed.clone()),
+            level.eq(user.level.clone()),
+            moderator.eq(user.moderator.clone()),
+            properties.eq(user.properties.clone()),
+            discoverer.eq(user.discoverer.clone()),
+        ))
+        .execute(conn)
+        .unwrap();
     Ok(())
 }
 
-pub fn get_user_from_auth_token(token: String, conn: &MysqlConnection) -> Result<Option<models::User>, diesel::result::Error> {
+pub fn get_user_from_auth_token(
+    token: String,
+    conn: &MysqlConnection,
+) -> Result<Option<models::User>, diesel::result::Error> {
     let result = get_auth_token(token, conn);
     if result.is_err() {
         return Err(result.err().unwrap());
@@ -75,41 +103,74 @@ pub fn get_user_from_auth_token(token: String, conn: &MysqlConnection) -> Result
 }
 
 //Auth Token
-pub fn get_auth_token(a_token: String, conn: &MysqlConnection) -> Result<Option<models::AuthToken>, diesel::result::Error> {
+pub fn get_auth_token(
+    a_token: String,
+    conn: &MysqlConnection,
+) -> Result<Option<models::AuthToken>, diesel::result::Error> {
     use crate::schema::auth_tokens::dsl::*;
-    let found_token = auth_tokens.filter(token.eq(a_token)).first::<models::AuthToken>(conn).optional()?;
+    let found_token = auth_tokens
+        .filter(token.eq(a_token))
+        .first::<models::AuthToken>(conn)
+        .optional()?;
     Ok(found_token)
 }
 
-pub fn add_new_auth_token(t: &AuthToken, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+pub fn add_new_auth_token(
+    t: &AuthToken,
+    conn: &MysqlConnection,
+) -> Result<(), diesel::result::Error> {
     use crate::schema::auth_tokens::dsl::*;
-    diesel::insert_into(auth_tokens).values(t).execute(conn).unwrap();
+    diesel::insert_into(auth_tokens)
+        .values(t)
+        .execute(conn)
+        .unwrap();
     Ok(())
 }
 
 //API Key
-pub fn get_client_key_by_id(key: i64, conn: &MysqlConnection) -> Result<Option<models::ClientKey>, diesel::result::Error> {
+pub fn get_client_key_by_id(
+    key: i64,
+    conn: &MysqlConnection,
+) -> Result<Option<models::ClientKey>, diesel::result::Error> {
     use crate::schema::client_keys::dsl::*;
-    let found_key = client_keys.filter(id.eq(key)).first::<models::ClientKey>(conn).optional()?;
+    let found_key = client_keys
+        .filter(id.eq(key))
+        .first::<models::ClientKey>(conn)
+        .optional()?;
     Ok(found_key)
 }
 
-pub fn get_client_key_by_key(key: String, conn: &MysqlConnection) -> Result<Option<models::ClientKey>, diesel::result::Error> {
+pub fn get_client_key_by_key(
+    key: String,
+    conn: &MysqlConnection,
+) -> Result<Option<models::ClientKey>, diesel::result::Error> {
     use crate::schema::client_keys::dsl::*;
-    let found_key = client_keys.filter(api_key.eq(key)).first::<models::ClientKey>(conn).optional()?;
+    let found_key = client_keys
+        .filter(api_key.eq(key))
+        .first::<models::ClientKey>(conn)
+        .optional()?;
     Ok(found_key)
 }
 
-pub fn add_client_key(key: &ClientKey, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+pub fn add_client_key(
+    key: &ClientKey,
+    conn: &MysqlConnection,
+) -> Result<(), diesel::result::Error> {
     use crate::schema::client_keys::dsl::*;
-    diesel::insert_into(client_keys).values(key).execute(conn).unwrap();
+    diesel::insert_into(client_keys)
+        .values(key)
+        .execute(conn)
+        .unwrap();
     Ok(())
 }
 
 // Setting
 pub fn add_new_setting(s: &Setting, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::settings::dsl::*;
-    diesel::insert_into(settings).values(s).execute(conn).unwrap();
+    diesel::insert_into(settings)
+        .values(s)
+        .execute(conn)
+        .unwrap();
     Ok(())
 }
 
@@ -117,7 +178,10 @@ pub fn update_setting(s: &Setting, conn: &MysqlConnection) -> Result<(), diesel:
     use crate::schema::settings::dsl::*;
 
     let result1 = diesel::update(settings.filter(id.eq(s.id)))
-        .set((value.eq(s.value.clone()), updated.eq(utils::get_current_time())))
+        .set((
+            value.eq(s.value.clone()),
+            updated.eq(utils::get_current_time()),
+        ))
         .execute(conn);
     if result1.is_err() {
         return Err(result1.err().unwrap());
@@ -125,9 +189,14 @@ pub fn update_setting(s: &Setting, conn: &MysqlConnection) -> Result<(), diesel:
     return Ok(());
 }
 
-
-pub fn get_setting(k: String, conn: &MysqlConnection) -> Result<Option<models::Setting>, diesel::result::Error> {
+pub fn get_setting(
+    k: String,
+    conn: &MysqlConnection,
+) -> Result<Option<models::Setting>, diesel::result::Error> {
     use crate::schema::settings::dsl::*;
-    let found_user = settings.filter(setting_key.eq(k)).first::<models::Setting>(conn).optional()?;
+    let found_user = settings
+        .filter(setting_key.eq(k))
+        .first::<models::Setting>(conn)
+        .optional()?;
     Ok(found_user)
 }

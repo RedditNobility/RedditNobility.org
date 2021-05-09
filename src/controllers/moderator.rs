@@ -1,43 +1,54 @@
 use std::time::{Duration, Instant};
 
-
+use crate::models::{Level, Status};
+use crate::recaptcha::validate;
+use crate::siteerror::SiteError;
+use crate::usererror::UserError;
+use crate::websiteerror::WebsiteError;
+use crate::{action, utils, DbPool, RedditRoyalty};
+use actix::prelude::*;
 use actix::prelude::*;
 use actix_files as fs;
-use actix_web::{middleware, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, http, HttpMessage};
-use tera::Tera;
-use new_rawr::responses::listing::SubmissionData;
-use serde::{Serialize, Deserialize};
-use diesel::{MysqlConnection, Connection};
-use std::rc::Rc;
-use std::sync::{Mutex, Arc};
-use std::cell::RefCell;
-use new_rawr::client::RedditClient;
-use new_rawr::auth::AnonymousAuthenticator;
-use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Votable, Content};
-use rand::Rng;
-use rand::distributions::Alphanumeric;
-use serde_json::Value;
-use actix::prelude::*;
-use std::borrow::BorrowMut;
-use std::collections::HashMap;
-use actix_web::web::Form;
-use bcrypt::verify;
 use actix_web::cookie::SameSite;
 use actix_web::http::header::LOCATION;
-use crate::{DbPool, action, utils, RedditRoyalty};
-use crate::siteerror::SiteError;
-use crate::recaptcha::validate;
-use crate::websiteerror::WebsiteError;
-use crate::models::{Status, Level};
-use crate::usererror::UserError;
+use actix_web::web::Form;
+use actix_web::{
+    get, http, middleware, post, web, App, Error, HttpMessage, HttpRequest, HttpResponse,
+    HttpServer,
+};
+use bcrypt::verify;
+use diesel::{Connection, MysqlConnection};
+use new_rawr::auth::AnonymousAuthenticator;
+use new_rawr::client::RedditClient;
+use new_rawr::responses::listing::SubmissionData;
+use new_rawr::structures::submission::Submission;
+use new_rawr::traits::{Content, Votable};
+use rand::distributions::Alphanumeric;
+use rand::Rng;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::borrow::BorrowMut;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::sync::{Arc, Mutex};
+use tera::Tera;
 #[get("/moderator")]
-pub async fn mod_index(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
+pub async fn mod_index(
+    pool: web::Data<DbPool>,
+    mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
+    tera: web::Data<Tera>,
+    req: HttpRequest,
+) -> HttpResponse {
     let mut ctx = tera::Context::new();
     let conn = pool.get().expect("couldn't get db connection from pool");
 
     let option1 = req.cookie("auth_token");
-    let result2 = utils::is_authorized(option1.unwrap().value().to_string(), Level::Moderator, &conn);
+    let result2 = utils::is_authorized(
+        option1.unwrap().value().to_string(),
+        Level::Moderator,
+        &conn,
+    );
     if result2.is_err() {
         return result2.err().unwrap().site_error(tera);
     }
@@ -45,17 +56,28 @@ pub async fn mod_index(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mutex<Redd
         return UserError::NotAuthorized.site_error(tera);
     }
 
-
     let result = tera.get_ref().render("moderator.html", &ctx);
-    return HttpResponse::Ok().content_type("text/html").body(&result.unwrap());
+    return HttpResponse::Ok()
+        .content_type("text/html")
+        .body(&result.unwrap());
 }
 #[get("/moderator/review/{user}")]
-pub async fn review_users(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>, web::Path((user)): web::Path<( String)>, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
+pub async fn review_users(
+    pool: web::Data<DbPool>,
+    mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
+    web::Path((user)): web::Path<(String)>,
+    tera: web::Data<Tera>,
+    req: HttpRequest,
+) -> HttpResponse {
     let mut ctx = tera::Context::new();
     let conn = pool.get().expect("couldn't get db connection from pool");
 
     let option1 = req.cookie("auth_token");
-    let result2 = utils::is_authorized(option1.unwrap().value().to_string(), Level::Moderator, &conn);
+    let result2 = utils::is_authorized(
+        option1.unwrap().value().to_string(),
+        Level::Moderator,
+        &conn,
+    );
     if result2.is_err() {
         return result2.err().unwrap().site_error(tera);
     }
@@ -66,18 +88,25 @@ pub async fn review_users(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mutex<R
     ctx.insert("user", &user);
 
     let result = tera.get_ref().render("review-users.html", &ctx);
-    return HttpResponse::Ok().content_type("text/html").body(&result.unwrap());
+    return HttpResponse::Ok()
+        .content_type("text/html")
+        .body(&result.unwrap());
 }
 
 #[get("/moderator/user/{user}")]
-pub async fn user_page(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>, web::Path((username)): web::Path<( String)>, tera: web::Data<Tera>, req: HttpRequest) -> HttpResponse {
+pub async fn user_page(
+    pool: web::Data<DbPool>,
+    mut rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
+    web::Path((username)): web::Path<(String)>,
+    tera: web::Data<Tera>,
+    req: HttpRequest,
+) -> HttpResponse {
     let mut ctx = tera::Context::new();
     let conn = pool.get().expect("couldn't get db connection from pool");
 
     let option1 = req.cookie("auth_token");
-    if option1.is_none(){
+    if option1.is_none() {
         return UserError::NotAuthorized.site_error(tera);
-
     }
     let string = option1.unwrap().value().to_string();
     let result2 = utils::is_authorized(string.clone(), Level::Moderator, &conn);
@@ -114,5 +143,7 @@ pub async fn user_page(pool: web::Data<DbPool>, mut rr: web::Data<Arc<Mutex<Redd
     if result.is_err() {
         return SiteError::TeraError(result.err().unwrap()).site_error(tera);
     }
-    return HttpResponse::Ok().content_type("text/html").body(&result.unwrap());
+    return HttpResponse::Ok()
+        .content_type("text/html")
+        .body(&result.unwrap());
 }

@@ -1,16 +1,16 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use actix_web::{ error, get, http::header, http::StatusCode, App, HttpResponse, HttpServer, web};
+use crate::api::apiresponse::{APIError, APIResponse};
+use crate::websiteerror::{json_error_message, WebsiteError};
+use actix_web::{error, get, http::header, http::StatusCode, web, App, HttpResponse, HttpServer};
 use derive_more::{Display, Error};
-use serde_json;
 use error::ResponseError;
 use log::{error, info, warn};
+use serde_json;
 use serde_json::Value;
 use std::collections::HashMap;
 use tera::Tera;
-use crate::websiteerror::{WebsiteError, json_error_message};
-use crate::api::apiresponse::{APIError, APIResponse};
 
 /// Error type that occurs when an API request fails for some reason.
 #[derive(Debug, Display)]
@@ -20,14 +20,12 @@ pub enum SiteError {
     TeraError(tera::Error),
     Other(String),
 }
-impl SiteError{
+impl SiteError {
     fn error(&self) {
         error!("{}", self)
     }
 }
-impl Error for SiteError{
-
-}
+impl Error for SiteError {}
 impl WebsiteError for SiteError {
     fn site_error(&self, tera: web::Data<Tera>) -> HttpResponse {
         let mut ctx = tera::Context::new();
@@ -40,7 +38,10 @@ impl WebsiteError for SiteError {
             return HttpResponse::InternalServerError().finish();
         }
         self.error();
-        HttpResponse::Ok().status(self.status_code()).content_type("text/html").body(&result.unwrap())
+        HttpResponse::Ok()
+            .status(self.status_code())
+            .content_type("text/html")
+            .body(&result.unwrap())
     }
     fn api_error(&self) -> HttpResponse {
         self.error();
@@ -54,7 +55,10 @@ impl WebsiteError for SiteError {
             success: false,
             data: Some(error),
         };
-        HttpResponse::Ok().status(self.status_code()).content_type("application/json").body(serde_json::to_string(&response).unwrap())
+        HttpResponse::Ok()
+            .status(self.status_code())
+            .content_type("application/json")
+            .body(serde_json::to_string(&response).unwrap())
     }
     fn status_code(&self) -> StatusCode {
         match *self {
@@ -69,16 +73,14 @@ impl WebsiteError for SiteError {
     }
 }
 
-
 impl From<diesel::result::Error> for SiteError {
     fn from(err: diesel::result::Error) -> SiteError {
         SiteError::DBError(err)
     }
 }
 
-
 impl From<serde_json::Error> for SiteError {
     fn from(err: serde_json::Error) -> SiteError {
         SiteError::JSONError(err)
     }
-} 
+}

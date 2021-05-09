@@ -1,24 +1,24 @@
-use crate::{action, RedditRoyalty};
-use diesel::MysqlConnection;
-use crate::models::{User, Level, ClientKey, AuthToken, Status, UserProperties};
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use crate::models::{AuthToken, ClientKey, Level, Status, User, UserProperties};
 use crate::siteerror::SiteError;
-use dotenv::Error;
-use rand::Rng;
-use rand::distributions::Alphanumeric;
-use actix_web::web::{Data, Path};
-use std::sync::{Arc, Mutex};
-use std::fs;
 use crate::websiteerror::WebsiteError;
-use std::path::PathBuf;
-use std::path::Path as SysPath;
-use std::str::FromStr;
+use crate::{action, RedditRoyalty};
+use actix_web::web::{Data, Path};
 use bcrypt::{hash, DEFAULT_COST};
-use new_rawr::client::RedditClient;
-use std::fs::File;
-use std::io::{BufReader, BufRead};
+use chrono::{DateTime, NaiveDateTime, Utc};
+use diesel::MysqlConnection;
+use dotenv::Error;
 use new_rawr::auth::AnonymousAuthenticator;
-use chrono::{NaiveDateTime, DateTime, Utc};
+use new_rawr::client::RedditClient;
+use rand::distributions::Alphanumeric;
+use rand::Rng;
+use std::fs;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use std::path::Path as SysPath;
+use std::path::PathBuf;
+use std::str::FromStr;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
     let mut status = Status::Found;
@@ -27,9 +27,15 @@ pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
     } else if username.contains("=F") {
         status = Status::Denied
     }
-    let username = username.replace("=T", "").replace("=F", "").replace("\r", "");
+    let username = username
+        .replace("=T", "")
+        .replace("=F", "")
+        .replace("\r", "");
 
-    if action::get_user_by_name(username.clone(), &conn).unwrap().is_none() {
+    if action::get_user_by_name(username.clone(), &conn)
+        .unwrap()
+        .is_none()
+    {
         let properties = UserProperties {
             avatar: None,
             description: None,
@@ -42,7 +48,10 @@ pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
             moderator: "".to_string(),
             status: status,
             status_changed: 0,
-            created: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64,
+            created: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as i64,
             level: Level::User,
             discoverer,
             properties: properties,
@@ -52,7 +61,11 @@ pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
 }
 
 ///A standardized method for deciding rather a user is allowed to be where they are
-pub fn is_authorized(api_token: String, target_level: Level, conn: &MysqlConnection) -> Result<bool, Box<dyn WebsiteError>> {
+pub fn is_authorized(
+    api_token: String,
+    target_level: Level,
+    conn: &MysqlConnection,
+) -> Result<bool, Box<dyn WebsiteError>> {
     let result = action::get_user_from_auth_token(api_token, &conn);
     if result.is_err() {
         return Err(Box::new(SiteError::DBError(result.err().unwrap())));
@@ -74,7 +87,8 @@ pub fn is_authorized(api_token: String, target_level: Level, conn: &MysqlConnect
 }
 
 pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthToken, Error> {
-    let s: String = rand::thread_rng().sample_iter(&Alphanumeric)
+    let s: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
         .take(25)
         .map(char::from)
         .collect();
@@ -90,12 +104,19 @@ pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthTok
 }
 
 pub(crate) fn get_current_time() -> i64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64
 }
 
 pub fn send_login(user: &User, conn: &MysqlConnection, rr: &RedditClient) {
     println!("Test0");
-    let password: String = rand::thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
+    let password: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(10)
+        .map(char::from)
+        .collect();
     println!("Test");
     let mut user = user.clone();
     user.set_password(hash(&password.clone(), DEFAULT_COST).unwrap());
@@ -109,7 +130,9 @@ pub fn send_login(user: &User, conn: &MysqlConnection, rr: &RedditClient) {
 
     let x = user.username.as_str();
     println!("{}", &x);
-    let result1 = rr.messages().compose(x, "RedditNobility Login", string.as_str());
+    let result1 = rr
+        .messages()
+        .compose(x, "RedditNobility Login", string.as_str());
     println!("Test5");
 }
 
@@ -119,15 +142,21 @@ fn build_message(user: &User, password: &String, token: &AuthToken) -> String {
     if string.is_err() {
         todo!();
     }
-    let string = string.unwrap().
-        replace("{{URL}}", format!("{}/login/key?token={}", url, token.token.as_str()).as_str()).
-        replace("{{PASSWORD}}", &password).
-        replace("{{USERNAME}}", user.username.clone().as_str());
+    let string = string
+        .unwrap()
+        .replace(
+            "{{URL}}",
+            format!("{}/login/key?token={}", url, token.token.as_str()).as_str(),
+        )
+        .replace("{{PASSWORD}}", &password)
+        .replace("{{USERNAME}}", user.username.clone().as_str());
     return string;
 }
 
 pub fn approve_user(user: &User, client: &RedditClient) -> bool {
-    let result1 = client.subreddit("RedditNobility").invite_member(user.username.clone());
+    let result1 = client
+        .subreddit("RedditNobility")
+        .invite_member(user.username.clone());
     if result1.is_err() {
         return false;
     }
@@ -167,7 +196,10 @@ pub fn get_avatar(user: &User) -> String {
         }
     }
 
-    let client = RedditClient::new("Robotic Monarch by u/KingTuxWH", AnonymousAuthenticator::new());
+    let client = RedditClient::new(
+        "Robotic Monarch by u/KingTuxWH",
+        AnonymousAuthenticator::new(),
+    );
     let user1 = client.user(user.username.as_str());
     let result = user1.about();
     if result.is_err() {
@@ -186,7 +218,8 @@ pub fn get_avatar(user: &User) -> String {
 }
 
 pub fn gen_client_key() -> String {
-    rand::thread_rng().sample_iter(&Alphanumeric)
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
         .take(25)
         .map(char::from)
         .collect()

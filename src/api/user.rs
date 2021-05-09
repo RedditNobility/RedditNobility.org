@@ -1,42 +1,43 @@
 use diesel::MysqlConnection;
 
-use actix::prelude::*;
-use log::{error, info, warn};
-use actix_files as fs;
-use actix_web::{middleware, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, http};
-use crate::{DbPool, RedditRoyalty, action, utils};
-use tera::Tera;
-use new_rawr::responses::listing::SubmissionData;
-use serde::{Serialize, Deserialize};
-use diesel::{Connection};
-use std::rc::Rc;
-use std::sync::{Mutex, Arc};
-use std::cell::RefCell;
-use crate::schema::users::dsl::created;
-use new_rawr::client::RedditClient;
-use new_rawr::auth::AnonymousAuthenticator;
-use crate::models::{User, Level, Status, ClientKey};
-use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Votable, Content};
-use rand::Rng;
-use rand::distributions::Alphanumeric;
-use serde_json::Value;
-use actix_web::web::Form;
-use std::collections::HashMap;
-use serde_json::Number;
-use actix_web::error::ParseError::Header;
-use actix_web::http::{HeaderName, HeaderMap};
-use crate::websiteerror::WebsiteError;
-use crate::siteerror::SiteError;
-use bcrypt::verify;
-use crate::usererror::UserError;
-use crate::siteerror::SiteError::DBError;
-use crate::api::apiresponse::{APIResponse, APIError};
-use std::str::FromStr;
 use crate::action::{get_user_by_name, update_user};
 use crate::api::api_validate;
+use crate::api::apiresponse::{APIError, APIResponse};
 use crate::api::get_user_by_header;
-
+use crate::models::{ClientKey, Level, Status, User};
+use crate::schema::users::dsl::created;
+use crate::siteerror::SiteError;
+use crate::siteerror::SiteError::DBError;
+use crate::usererror::UserError;
+use crate::websiteerror::WebsiteError;
+use crate::{action, utils, DbPool, RedditRoyalty};
+use actix::prelude::*;
+use actix_files as fs;
+use actix_web::error::ParseError::Header;
+use actix_web::http::{HeaderMap, HeaderName};
+use actix_web::web::Form;
+use actix_web::{
+    get, http, middleware, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
+};
+use bcrypt::verify;
+use diesel::Connection;
+use log::{error, info, warn};
+use new_rawr::auth::AnonymousAuthenticator;
+use new_rawr::client::RedditClient;
+use new_rawr::responses::listing::SubmissionData;
+use new_rawr::structures::submission::Submission;
+use new_rawr::traits::{Content, Votable};
+use rand::distributions::Alphanumeric;
+use rand::Rng;
+use serde::{Deserialize, Serialize};
+use serde_json::Number;
+use serde_json::Value;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::str::FromStr;
+use std::sync::{Arc, Mutex};
+use tera::Tera;
 
 #[derive(Serialize, Deserialize)]
 pub struct UserSuggest {
@@ -44,7 +45,11 @@ pub struct UserSuggest {
 }
 
 #[post("/api/submit/user")]
-pub async fn submit_user(pool: web::Data<DbPool>, suggest: web::Form<UserSuggest>, r: HttpRequest) -> HttpResponse {
+pub async fn submit_user(
+    pool: web::Data<DbPool>,
+    suggest: web::Form<UserSuggest>,
+    r: HttpRequest,
+) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::User, &conn);
     if result.is_err() {
@@ -65,7 +70,10 @@ pub async fn submit_user(pool: web::Data<DbPool>, suggest: web::Form<UserSuggest
         if discoverer.is_err() {
             return discoverer.err().unwrap().api_error();
         }
-        let client = RedditClient::new("RoboticMonarch by u/KingTuxWH", AnonymousAuthenticator::new());
+        let client = RedditClient::new(
+            "RoboticMonarch by u/KingTuxWH",
+            AnonymousAuthenticator::new(),
+        );
         let user1 = client.user(suggest.username.as_str());
         let result2 = user1.about();
         if result2.is_err() {
@@ -73,9 +81,15 @@ pub async fn submit_user(pool: web::Data<DbPool>, suggest: web::Form<UserSuggest
                 success: true,
                 data: Some("NOT_FOUND".parse().unwrap()),
             };
-            return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+            return HttpResponse::Ok()
+                .content_type("application/json")
+                .body(serde_json::to_string(&response).unwrap());
         }
-        utils::quick_add(suggest.username.clone(), discoverer.unwrap().unwrap().username.clone(), &conn);
+        utils::quick_add(
+            suggest.username.clone(),
+            discoverer.unwrap().unwrap().username.clone(),
+            &conn,
+        );
         let result1 = action::get_user_by_name(suggest.username.clone(), &conn);
         if result1.is_err() {
             return DBError(result1.err().unwrap()).api_error();
@@ -85,13 +99,17 @@ pub async fn submit_user(pool: web::Data<DbPool>, suggest: web::Form<UserSuggest
             success: true,
             data: Some("ADDED".parse().unwrap()),
         };
-        return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+        return HttpResponse::Ok()
+            .content_type("application/json")
+            .body(serde_json::to_string(&response).unwrap());
     } else {
         let response = APIResponse::<String> {
             success: true,
             data: Some("ALREADY_ADDED".parse().unwrap()),
         };
-        return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+        return HttpResponse::Ok()
+            .content_type("application/json")
+            .body(serde_json::to_string(&response).unwrap());
     }
 }
 
@@ -102,7 +120,12 @@ pub struct APILoginRequest {
 }
 
 #[post("/api/login")]
-pub async fn user_login(pool: web::Data<DbPool>, login: web::Form<APILoginRequest>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, r: HttpRequest) -> HttpResponse {
+pub async fn user_login(
+    pool: web::Data<DbPool>,
+    login: web::Form<APILoginRequest>,
+    rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
+    r: HttpRequest,
+) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = action::get_user_by_name(login.username.clone(), &conn);
     if result.is_err() {
@@ -118,7 +141,9 @@ pub async fn user_login(pool: web::Data<DbPool>, login: web::Form<APILoginReques
         let mut map = HashMap::<String, Value>::new();
         map.insert("success".to_string(), Value::from(true));
         map.insert("status".to_string(), Value::from("SENT"));
-        return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&map).unwrap());
+        return HttpResponse::Ok()
+            .content_type("application/json")
+            .body(serde_json::to_string(&map).unwrap());
     } else {
         let string = login.password.as_ref().unwrap();
         if verify(&string, &user.password).unwrap() {
@@ -127,7 +152,9 @@ pub async fn user_login(pool: web::Data<DbPool>, login: web::Form<APILoginReques
             map.insert("success".to_string(), Value::from(true));
             map.insert("status".to_string(), Value::from("AUTHORIZED"));
             map.insert("token".to_string(), Value::from(x.unwrap().token.clone()));
-            return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&map).unwrap());
+            return HttpResponse::Ok()
+                .content_type("application/json")
+                .body(serde_json::to_string(&map).unwrap());
         }
     }
 
@@ -143,7 +170,9 @@ pub async fn validate_key(pool: web::Data<DbPool>, r: HttpRequest) -> Result<Htt
     }
     let mut map = HashMap::<String, Value>::new();
     map.insert("success".to_string(), Value::from(true));
-    return Ok(HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&map).unwrap()));
+    return Ok(HttpResponse::Ok()
+        .content_type("application/json")
+        .body(serde_json::to_string(&map).unwrap()));
 }
 #[derive(Deserialize)]
 pub struct ChangeRequest {
@@ -153,7 +182,11 @@ pub struct ChangeRequest {
 }
 
 #[post("/api/change/user")]
-pub async fn change_property(pool: web::Data<DbPool>, request: web::Form<ChangeRequest>, r: HttpRequest) -> HttpResponse {
+pub async fn change_property(
+    pool: web::Data<DbPool>,
+    request: web::Form<ChangeRequest>,
+    r: HttpRequest,
+) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::User, &conn);
     if result.is_err() {
@@ -191,7 +224,9 @@ pub async fn change_property(pool: web::Data<DbPool>, request: web::Form<ChangeR
     if request.property.eq("avatar") {
         modifying_user.properties.set_avatar(request.value.clone());
     } else if request.property.eq("description") {
-        modifying_user.properties.set_description(request.value.clone());
+        modifying_user
+            .properties
+            .set_description(request.value.clone());
     } else {
         return UserError::InvalidRequest.api_error();
     }
@@ -203,5 +238,7 @@ pub async fn change_property(pool: web::Data<DbPool>, request: web::Form<ChangeR
         success: true,
         data: None,
     };
-    return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+    return HttpResponse::Ok()
+        .content_type("application/json")
+        .body(serde_json::to_string(&response).unwrap());
 }

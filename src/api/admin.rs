@@ -1,42 +1,43 @@
 use diesel::MysqlConnection;
 
-use actix::prelude::*;
-use log::{error, info, warn};
-use actix_files as fs;
-use actix_web::{middleware, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, http};
-use crate::{DbPool, RedditRoyalty, action, utils};
-use tera::Tera;
-use new_rawr::responses::listing::SubmissionData;
-use serde::{Serialize, Deserialize};
-use diesel::{Connection};
-use std::rc::Rc;
-use std::sync::{Mutex, Arc};
-use std::cell::RefCell;
-use crate::schema::users::dsl::created;
-use new_rawr::client::RedditClient;
-use new_rawr::auth::AnonymousAuthenticator;
-use crate::models::{User, Level, Status, ClientKey};
-use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Votable, Content};
-use rand::Rng;
-use rand::distributions::Alphanumeric;
-use serde_json::Value;
-use actix_web::web::Form;
-use std::collections::HashMap;
-use serde_json::Number;
-use actix_web::error::ParseError::Header;
-use actix_web::http::{HeaderName, HeaderMap};
-use crate::websiteerror::WebsiteError;
-use crate::siteerror::SiteError;
-use bcrypt::verify;
-use crate::usererror::UserError;
-use crate::siteerror::SiteError::DBError;
-use crate::api::apiresponse::{APIResponse, APIError};
-use std::str::FromStr;
 use crate::action::{get_user_by_name, update_user};
 use crate::api::api_validate;
+use crate::api::apiresponse::{APIError, APIResponse};
 use crate::api::get_user_by_header;
-
+use crate::models::{ClientKey, Level, Status, User};
+use crate::schema::users::dsl::created;
+use crate::siteerror::SiteError;
+use crate::siteerror::SiteError::DBError;
+use crate::usererror::UserError;
+use crate::websiteerror::WebsiteError;
+use crate::{action, utils, DbPool, RedditRoyalty};
+use actix::prelude::*;
+use actix_files as fs;
+use actix_web::error::ParseError::Header;
+use actix_web::http::{HeaderMap, HeaderName};
+use actix_web::web::Form;
+use actix_web::{
+    get, http, middleware, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
+};
+use bcrypt::verify;
+use diesel::Connection;
+use log::{error, info, warn};
+use new_rawr::auth::AnonymousAuthenticator;
+use new_rawr::client::RedditClient;
+use new_rawr::responses::listing::SubmissionData;
+use new_rawr::structures::submission::Submission;
+use new_rawr::traits::{Content, Votable};
+use rand::distributions::Alphanumeric;
+use rand::Rng;
+use serde::{Deserialize, Serialize};
+use serde_json::Number;
+use serde_json::Value;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::str::FromStr;
+use std::sync::{Arc, Mutex};
+use tera::Tera;
 
 #[post("/api/admin/key/add")]
 pub async fn new_key(pool: web::Data<DbPool>, r: HttpRequest) -> HttpResponse {
@@ -68,7 +69,9 @@ pub async fn new_key(pool: web::Data<DbPool>, r: HttpRequest) -> HttpResponse {
         success: true,
         data: Some(result1.unwrap().clone()),
     };
-    return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+    return HttpResponse::Ok()
+        .content_type("application/json")
+        .body(serde_json::to_string(&response).unwrap());
 }
 
 #[derive(Deserialize)]
@@ -78,7 +81,11 @@ pub struct ChangeLevel {
 }
 
 #[post("/api/admin/change/level")]
-pub async fn change_level(pool: web::Data<DbPool>, suggest: web::Form<ChangeLevel>, r: HttpRequest) -> HttpResponse {
+pub async fn change_level(
+    pool: web::Data<DbPool>,
+    suggest: web::Form<ChangeLevel>,
+    r: HttpRequest,
+) -> HttpResponse {
     println!("Test1");
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Admin, &conn);
@@ -117,6 +124,16 @@ pub async fn change_level(pool: web::Data<DbPool>, suggest: web::Form<ChangeLeve
         success: true,
         data: None,
     };
-    info!("{}", format!("{} has changed the level of {} to {}", moderator.username.clone(), user.username.clone(), level1.name()));
-    return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+    info!(
+        "{}",
+        format!(
+            "{} has changed the level of {} to {}",
+            moderator.username.clone(),
+            user.username.clone(),
+            level1.name()
+        )
+    );
+    return HttpResponse::Ok()
+        .content_type("application/json")
+        .body(serde_json::to_string(&response).unwrap());
 }

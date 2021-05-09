@@ -1,17 +1,17 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use actix_web::{ error, get, http::header, http::StatusCode, App, HttpResponse, HttpServer, web};
+use crate::api::apiresponse::{APIError, APIResponse};
+use crate::websiteerror::{json_error_message, WebsiteError};
+use actix::fut::err;
+use actix_web::{error, get, http::header, http::StatusCode, web, App, HttpResponse, HttpServer};
 use derive_more::{Display, Error};
-use serde_json;
 use error::ResponseError;
 use log::{error, info, warn};
+use serde_json;
 use serde_json::Value;
 use std::collections::HashMap;
 use tera::Tera;
-use crate::websiteerror::{WebsiteError, json_error_message};
-use crate::api::apiresponse::{APIError, APIResponse};
-use actix::fut::err;
 
 /// Error type that occurs when an API request fails for some reason.
 #[derive(Debug, Display)]
@@ -19,11 +19,8 @@ pub enum UserError {
     InvalidRequest,
     NotAuthorized,
     NotFound,
-
 }
-impl Error for UserError{
-
-}
+impl Error for UserError {}
 impl WebsiteError for UserError {
     fn status_code(&self) -> StatusCode {
         match *self {
@@ -36,7 +33,7 @@ impl WebsiteError for UserError {
         match *self {
             UserError::InvalidRequest => "",
             UserError::NotAuthorized => "",
-            UserError::NotFound => ""
+            UserError::NotFound => "",
         }
     }
 
@@ -50,7 +47,10 @@ impl WebsiteError for UserError {
             error!("{}", error);
             return HttpResponse::InternalServerError().finish();
         }
-        HttpResponse::Ok().status(self.status_code()).content_type("text/html").body(&result.unwrap())
+        HttpResponse::Ok()
+            .status(self.status_code())
+            .content_type("text/html")
+            .body(&result.unwrap())
     }
     fn api_error(&self) -> HttpResponse {
         let error = APIError {
@@ -62,7 +62,9 @@ impl WebsiteError for UserError {
             success: false,
             data: Some(error),
         };
-        HttpResponse::Ok().status(self.status_code()).content_type("application/json").body(serde_json::to_string(&response).unwrap())
+        HttpResponse::Ok()
+            .status(self.status_code())
+            .content_type("application/json")
+            .body(serde_json::to_string(&response).unwrap())
     }
 }
-

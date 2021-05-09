@@ -1,19 +1,18 @@
+use crate::schema::*;
+use crate::utils;
+use diesel::backend::Backend;
+use diesel::deserialize::FromSql;
+use diesel::mysql::Mysql;
+use diesel::serialize::{Output, ToSql};
+use diesel::sql_types::Text;
+use diesel::{deserialize, serialize, MysqlConnection, Queryable};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt::{Display, Error, Formatter};
 use std::io::Write;
-use diesel::{Queryable, deserialize, serialize, MysqlConnection};
-use serde::{Deserialize, Serialize};
-use strum_macros::EnumString;
-use strum_macros::Display;
-use crate::schema::*;
-use std::collections::HashMap;
-use diesel::deserialize::FromSql;
-use diesel::sql_types::Text;
-use diesel::backend::Backend;
-use diesel::serialize::{ToSql, Output};
-use diesel::mysql::Mysql;
 use std::str::FromStr;
-use crate::utils;
-
+use strum_macros::Display;
+use strum_macros::EnumString;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 pub struct Setting {
@@ -21,7 +20,6 @@ pub struct Setting {
     pub setting_key: String,
     pub value: String,
     pub updated: i64,
-
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
@@ -57,13 +55,16 @@ impl UserProperties {
 }
 
 impl FromSql<Text, Mysql> for UserProperties {
-    fn from_sql(bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>) -> deserialize::Result<UserProperties> {
+    fn from_sql(
+        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
+    ) -> deserialize::Result<UserProperties> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes);
         if t.is_err() {
             //IDK break
         }
         let string = t.unwrap();
-        let result: Result<UserProperties, serde_json::Error> = serde_json::from_str(string.as_str());
+        let result: Result<UserProperties, serde_json::Error> =
+            serde_json::from_str(string.as_str());
         if result.is_err() {
             //IDK break
         }
@@ -102,8 +103,9 @@ pub struct User {
     pub created: i64,
 }
 
-
-#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString)]
+#[derive(
+    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
+)]
 #[sql_type = "Text"]
 pub enum Status {
     Found,
@@ -112,9 +114,10 @@ pub enum Status {
     Banned,
 }
 
-
 //Found, Approved, Denied, Banned
-#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString)]
+#[derive(
+    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
+)]
 #[sql_type = "Text"]
 pub enum Level {
     Admin,
@@ -122,7 +125,6 @@ pub enum Level {
     User,
     Client,
 }
-
 
 impl Level {
     pub fn name(&self) -> &str {
@@ -151,7 +153,9 @@ impl ToSql<Text, Mysql> for Level {
 }
 
 impl FromSql<Text, Mysql> for Level {
-    fn from_sql(bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>) -> deserialize::Result<Level> {
+    fn from_sql(
+        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
+    ) -> deserialize::Result<Level> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes);
         if t.is_err() {
             //IDK break
@@ -173,7 +177,9 @@ impl ToSql<Text, Mysql> for Status {
 }
 
 impl FromSql<Text, Mysql> for Status {
-    fn from_sql(bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>) -> deserialize::Result<Status> {
+    fn from_sql(
+        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
+    ) -> deserialize::Result<Status> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes);
         if t.is_err() {
             //IDK break

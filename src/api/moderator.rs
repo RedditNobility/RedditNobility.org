@@ -1,51 +1,55 @@
 use diesel::MysqlConnection;
 
-use actix::prelude::*;
-use log::{error, info, warn};
-use actix_files as fs;
-use actix_web::{middleware, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, http};
-use crate::{DbPool, RedditRoyalty, action, utils};
-use tera::Tera;
-use new_rawr::responses::listing::SubmissionData;
-use serde::{Serialize, Deserialize};
-use diesel::{Connection};
-use std::rc::Rc;
-use std::sync::{Mutex, Arc};
-use std::cell::RefCell;
-use crate::schema::users::dsl::created;
-use new_rawr::client::RedditClient;
-use new_rawr::auth::AnonymousAuthenticator;
-use crate::models::{User, Level, Status, ClientKey};
-use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Votable, Content};
-use rand::Rng;
-use rand::distributions::Alphanumeric;
-use serde_json::Value;
-use actix_web::web::Form;
-use std::collections::HashMap;
-use serde_json::Number;
-use actix_web::error::ParseError::Header;
-use actix_web::http::{HeaderName, HeaderMap};
-use crate::websiteerror::WebsiteError;
-use crate::siteerror::SiteError;
-use bcrypt::verify;
-use crate::usererror::UserError;
-use crate::siteerror::SiteError::DBError;
-use crate::api::apiresponse::{APIResponse, APIError};
-use std::str::FromStr;
 use crate::action::{get_user_by_name, update_user};
 use crate::api::api_validate;
+use crate::api::apiresponse::{APIError, APIResponse};
 use crate::api::get_user_by_header;
-
+use crate::models::{ClientKey, Level, Status, User};
+use crate::schema::users::dsl::created;
+use crate::siteerror::SiteError;
+use crate::siteerror::SiteError::DBError;
+use crate::usererror::UserError;
+use crate::websiteerror::WebsiteError;
+use crate::{action, utils, DbPool, RedditRoyalty};
+use actix::prelude::*;
+use actix_files as fs;
+use actix_web::error::ParseError::Header;
+use actix_web::http::{HeaderMap, HeaderName};
+use actix_web::web::Form;
+use actix_web::{
+    get, http, middleware, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
+};
+use bcrypt::verify;
+use diesel::Connection;
+use log::{error, info, warn};
+use new_rawr::auth::AnonymousAuthenticator;
+use new_rawr::client::RedditClient;
+use new_rawr::responses::listing::SubmissionData;
+use new_rawr::structures::submission::Submission;
+use new_rawr::traits::{Content, Votable};
+use rand::distributions::Alphanumeric;
+use rand::Rng;
+use serde::{Deserialize, Serialize};
+use serde_json::Number;
+use serde_json::Value;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::str::FromStr;
+use std::sync::{Arc, Mutex};
+use tera::Tera;
 
 #[derive(Serialize, Deserialize)]
 pub struct GetUser {
     pub username: String,
 }
 
-
 #[get("/api/user/{user}")]
-pub async fn get_user(pool: web::Data<DbPool>, web::Path((user)): web::Path<( String)>, r: HttpRequest) -> HttpResponse {
+pub async fn get_user(
+    pool: web::Data<DbPool>,
+    web::Path((user)): web::Path<(String)>,
+    r: HttpRequest,
+) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Moderator, &conn);
     if result.is_err() {
@@ -68,7 +72,9 @@ pub async fn get_user(pool: web::Data<DbPool>, web::Path((user)): web::Path<( St
         success: true,
         data: Some(user),
     };
-    HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap())
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body(serde_json::to_string(&response).unwrap())
 }
 
 #[derive(Deserialize)]
@@ -78,7 +84,12 @@ pub struct ChangeStatus {
 }
 
 #[post("/api/moderator/change/status")]
-pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeStatus>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, r: HttpRequest) -> HttpResponse {
+pub async fn change_status(
+    pool: web::Data<DbPool>,
+    suggest: web::Form<ChangeStatus>,
+    rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
+    r: HttpRequest,
+) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Moderator, &conn);
     if result.is_err() {
@@ -123,7 +134,9 @@ pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeSta
                 success: true,
                 data: Some(error),
             };
-            return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+            return HttpResponse::Ok()
+                .content_type("application/json")
+                .body(serde_json::to_string(&response).unwrap());
         }
     }
     user.set_status(status);
@@ -136,7 +149,9 @@ pub async fn change_status(pool: web::Data<DbPool>, suggest: web::Form<ChangeSta
         success: true,
         data: None,
     };
-    return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+    return HttpResponse::Ok()
+        .content_type("application/json")
+        .body(serde_json::to_string(&response).unwrap());
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -157,11 +172,15 @@ pub struct RedditPost {
     pub title: String,
     pub content: String,
     pub score: i64,
-
 }
 
 #[get("/api/moderator/review/{user}")]
-pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, web::Path((user)): web::Path<( String)>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>) -> HttpResponse {
+pub async fn next_user(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    web::Path((user)): web::Path<(String)>,
+    rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
+) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Moderator, &conn);
     if result.is_err() {
@@ -177,7 +196,10 @@ pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, web::Path((user)
         panic!("The Site Core has been poisoned. Tux you dumb fuck!");
     }
     let mut rr = rr.unwrap();
-    let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", AnonymousAuthenticator::new());
+    let client = RedditClient::new(
+        "RedditNobility bot(by u/KingTuxWH)",
+        AnonymousAuthenticator::new(),
+    );
     let mut option: Option<User> = Option::None;
     if user.eq("next") {
         let result = action::get_found_users(&conn);
@@ -220,12 +242,18 @@ pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, web::Path((user)
             data: Some(error),
         };
         action::delete_user(x1.username.clone(), &conn);
-        return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+        return HttpResponse::Ok()
+            .content_type("application/json")
+            .body(serde_json::to_string(&response).unwrap());
     }
     let final_user = result1.unwrap();
     let user = client.user(x1.username.as_str());
 
-    let submissions = user.submissions().unwrap().take(5).collect::<Vec<Submission>>();
+    let submissions = user
+        .submissions()
+        .unwrap()
+        .take(5)
+        .collect::<Vec<Submission>>();
     let mut user_posts = Vec::<RedditPost>::new();
 
     for x in submissions {
@@ -251,5 +279,7 @@ pub async fn next_user(pool: web::Data<DbPool>, r: HttpRequest, web::Path((user)
         success: true,
         data: Some(user),
     };
-    return HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap());
+    return HttpResponse::Ok()
+        .content_type("application/json")
+        .body(serde_json::to_string(&response).unwrap());
 }

@@ -6,10 +6,12 @@ use std::sync::{Arc, Mutex};
 
 use actix::prelude::*;
 use actix_files as fs;
-use actix_web::{App, Error, get, http, HttpRequest, HttpResponse, HttpServer, middleware, post, web};
 use actix_web::error::ParseError::Header;
 use actix_web::http::{HeaderMap, HeaderName};
 use actix_web::web::Form;
+use actix_web::{
+    get, http, middleware, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
+};
 use bcrypt::verify;
 use diesel::Connection;
 use diesel::MysqlConnection;
@@ -26,22 +28,26 @@ use serde_json::Number;
 use serde_json::Value;
 use tera::Tera;
 
-use crate::{action, DbPool, RedditRoyalty, utils};
 use crate::action::{get_user_by_name, update_user};
+use crate::api::apiresponse::APIResponse;
 use crate::models::{ClientKey, Level, Status, User};
 use crate::schema::users::dsl::created;
 use crate::siteerror::SiteError;
 use crate::siteerror::SiteError::DBError;
 use crate::usererror::UserError;
 use crate::websiteerror::WebsiteError;
-use crate::api::apiresponse::APIResponse;
+use crate::{action, utils, DbPool, RedditRoyalty};
 
 pub mod admin;
-pub mod user;
-pub mod moderator;
 pub mod apiresponse;
+pub mod moderator;
+pub mod user;
 
-pub fn api_validate(header_map: &HeaderMap, level: Level, conn: &MysqlConnection) -> Result<bool, Box<dyn WebsiteError>> {
+pub fn api_validate(
+    header_map: &HeaderMap,
+    level: Level,
+    conn: &MysqlConnection,
+) -> Result<bool, Box<dyn WebsiteError>> {
     let option = header_map.get("Authorization");
     if option.is_none() {
         println!("Test");
@@ -102,7 +108,10 @@ pub fn api_validate(header_map: &HeaderMap, level: Level, conn: &MysqlConnection
     return Ok(false);
 }
 
-pub fn get_user_by_header(header_map: &HeaderMap, conn: &MysqlConnection) -> Result<Option<User>, Box<dyn WebsiteError>> {
+pub fn get_user_by_header(
+    header_map: &HeaderMap,
+    conn: &MysqlConnection,
+) -> Result<Option<User>, Box<dyn WebsiteError>> {
     let option = header_map.get("Authorization");
     if option.is_none() {
         return Ok(None);
@@ -143,5 +152,7 @@ pub async fn get_moderators(pool: web::Data<DbPool>, r: HttpRequest) -> HttpResp
         success: true,
         data: Some(result.unwrap()),
     };
-    HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&response).unwrap())
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body(serde_json::to_string(&response).unwrap())
 }
