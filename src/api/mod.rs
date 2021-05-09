@@ -1,43 +1,45 @@
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::str::FromStr;
+use std::sync::{Arc, Mutex};
+
+use actix::prelude::*;
+use actix_files as fs;
+use actix_web::{App, Error, get, http, HttpRequest, HttpResponse, HttpServer, middleware, post, web};
+use actix_web::error::ParseError::Header;
+use actix_web::http::{HeaderMap, HeaderName};
+use actix_web::web::Form;
+use bcrypt::verify;
+use diesel::Connection;
+use diesel::MysqlConnection;
+use log::{error, info, warn};
+use new_rawr::auth::AnonymousAuthenticator;
+use new_rawr::client::RedditClient;
+use new_rawr::responses::listing::SubmissionData;
+use new_rawr::structures::submission::Submission;
+use new_rawr::traits::{Content, Votable};
+use rand::distributions::Alphanumeric;
+use rand::Rng;
+use serde::{Deserialize, Serialize};
+use serde_json::Number;
+use serde_json::Value;
+use tera::Tera;
+
+use crate::{action, DbPool, RedditRoyalty, utils};
+use crate::action::{get_user_by_name, update_user};
+use crate::models::{ClientKey, Level, Status, User};
+use crate::schema::users::dsl::created;
+use crate::siteerror::SiteError;
+use crate::siteerror::SiteError::DBError;
+use crate::usererror::UserError;
+use crate::websiteerror::WebsiteError;
+use crate::api::apiresponse::APIResponse;
+
 pub mod admin;
 pub mod user;
 pub mod moderator;
-
-use diesel::MysqlConnection;
-
-use actix::prelude::*;
-use log::{error, info, warn};
-use actix_files as fs;
-use actix_web::{middleware, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, http};
-use crate::{DbPool, RedditRoyalty, action, utils};
-use tera::Tera;
-use new_rawr::responses::listing::SubmissionData;
-use serde::{Serialize, Deserialize};
-use diesel::{Connection};
-use std::rc::Rc;
-use std::sync::{Mutex, Arc};
-use std::cell::RefCell;
-use crate::schema::users::dsl::created;
-use new_rawr::client::RedditClient;
-use new_rawr::auth::AnonymousAuthenticator;
-use crate::models::{User, Level, Status, ClientKey};
-use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Votable, Content};
-use rand::Rng;
-use rand::distributions::Alphanumeric;
-use serde_json::Value;
-use actix_web::web::Form;
-use std::collections::HashMap;
-use serde_json::Number;
-use actix_web::error::ParseError::Header;
-use actix_web::http::{HeaderName, HeaderMap};
-use crate::websiteerror::WebsiteError;
-use crate::siteerror::SiteError;
-use bcrypt::verify;
-use crate::usererror::UserError;
-use crate::siteerror::SiteError::DBError;
-use crate::apiresponse::{APIResponse, APIError};
-use std::str::FromStr;
-use crate::action::{get_user_by_name, update_user};
+pub mod apiresponse;
 
 pub fn api_validate(header_map: &HeaderMap, level: Level, conn: &MysqlConnection) -> Result<bool, Box<dyn WebsiteError>> {
     let option = header_map.get("Authorization");
@@ -129,8 +131,6 @@ pub fn get_user_by_header(header_map: &HeaderMap, conn: &MysqlConnection) -> Res
     }
     Ok(None)
 }
-
-
 
 #[get("/api/moderators")]
 pub async fn get_moderators(pool: web::Data<DbPool>, r: HttpRequest) -> HttpResponse {

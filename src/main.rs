@@ -4,62 +4,60 @@ extern crate diesel;
 extern crate diesel_migrations;
 extern crate dotenv;
 extern crate bcrypt;
-#[macro_use]
 extern crate strum_macros;
-#[macro_use]
 extern crate strum;
 
-use log::{error, info, warn};
-use dotenv::dotenv;
-use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer, HttpRequest, error, Responder, HttpMessage, http};
-use std::{env, thread};
-use diesel::prelude::*;
-use diesel::r2d2::{self, ConnectionManager};
-use tera::{Tera, Function, Value, from_value};
-use actix_files as fs;
-use actix_web::web::{Form, BytesMut};
-use crate::models::{User, UserProperties, Level, Status, Setting};
-use serde::{Serialize, Deserialize};
 use core::time;
-use new_rawr::client::RedditClient;
-use new_rawr::auth::{AnonymousAuthenticator, PasswordAuthenticator};
-use new_rawr::options::ListingOptions;
-use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Content, Commentable, Votable};
+use std::{env, thread};
+use std::cell::RefCell;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
-use std::io::{BufReader, BufRead};
+use std::io::{BufRead, BufReader};
+use std::ops::Sub;
 use std::path::Path;
+use std::rc::Rc;
+use std::str::FromStr;
+use std::sync::{Arc, Mutex};
+use std::thread::sleep;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use actix_files as fs;
+use actix_web::{App, Error, error, get, http, HttpMessage, HttpRequest, HttpResponse, HttpServer, middleware, post, Responder, web};
+use actix_web::body::Body;
 use actix_web::http::header::LOCATION;
 use actix_web::http::StatusCode;
-use actix_web::body::Body;
+use actix_web::web::{BytesMut, Form};
 use bcrypt::{DEFAULT_COST, hash, verify};
-use std::collections::{HashMap, BTreeMap};
-use std::rc::Rc;
-use std::cell::RefCell;
-use std::time::{SystemTime, UNIX_EPOCH};
-use std::sync::{Mutex, Arc};
-use openssl::ssl::{SslAcceptor, SslMethod, SslFiletype};
-use std::thread::sleep;
-use chrono::{Local, DateTime, Duration};
-use std::ops::Sub;
-use std::str::FromStr;
+use chrono::{DateTime, Duration, Local};
+use diesel::prelude::*;
+use diesel::r2d2::{self, ConnectionManager};
 use diesel_migrations::name;
-use crate::websiteerror::WebsiteError;
+use dotenv::dotenv;
+use log::{error, info, warn};
+use new_rawr::auth::{AnonymousAuthenticator, PasswordAuthenticator};
+use new_rawr::client::RedditClient;
+use new_rawr::options::ListingOptions;
+use new_rawr::structures::submission::Submission;
+use new_rawr::traits::{Commentable, Content, Votable};
+use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+use serde::{Deserialize, Serialize};
+use tera::{from_value, Function, Tera, Value};
+
+use crate::models::{Level, Setting, Status, User, UserProperties};
 use crate::siteerror::SiteError;
 use crate::usererror::UserError;
+use crate::websiteerror::WebsiteError;
 
 pub mod models;
 pub mod schema;
 mod action;
 mod utils;
 mod siteerror;
-mod usercontrollers;
-mod moderatorcontrollers;
 mod usererror;
 mod websiteerror;
-mod apiresponse;
 mod recaptcha;
 mod api;
+mod controllers;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
@@ -156,14 +154,14 @@ async fn main() -> std::io::Result<()> {
             service(favicon).
             service(index).
             service(install).
-            service(usercontrollers::get_login).
-            service(usercontrollers::post_login).
-            service(usercontrollers::key_login).
-            service(usercontrollers::me).
-            service(usercontrollers::submit).
-            service(moderatorcontrollers::review_users).
-            service(moderatorcontrollers::user_page).
-            service(moderatorcontrollers::mod_index).
+            service(controllers::user::get_login).
+            service(controllers::user::post_login).
+            service(controllers::user::key_login).
+            service(controllers::user::me).
+            service(controllers::user::submit).
+            service(controllers::moderator::review_users).
+            service(controllers::moderator::user_page).
+            service(controllers::moderator::mod_index).
             service(api::admin::change_level).
             service(api::moderator::change_status).
             service(api::moderator::get_user).

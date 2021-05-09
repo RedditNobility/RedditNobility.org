@@ -31,7 +31,7 @@ use crate::siteerror::SiteError;
 use bcrypt::verify;
 use crate::usererror::UserError;
 use crate::siteerror::SiteError::DBError;
-use crate::apiresponse::{APIResponse, APIError};
+use crate::api::apiresponse::{APIResponse, APIError};
 use std::str::FromStr;
 use crate::action::{get_user_by_name, update_user};
 use crate::api::api_validate;

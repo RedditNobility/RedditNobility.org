@@ -10,7 +10,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use tera::Tera;
 use crate::websiteerror::{WebsiteError, json_error_message};
-use crate::apiresponse::{APIError, APIResponse};
+use crate::api::apiresponse::{APIError, APIResponse};
 
 /// Error type that occurs when an API request fails for some reason.
 #[derive(Debug, Display)]
