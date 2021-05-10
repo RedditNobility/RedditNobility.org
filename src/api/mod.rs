@@ -1,39 +1,17 @@
-
-
-
 use std::str::FromStr;
 
+use actix_web::http::HeaderMap;
 
-
-
-
-use actix_web::http::{HeaderMap};
-
-use actix_web::{
-    get, web, HttpRequest, HttpResponse,
-};
-
+use actix_web::{get, web, HttpRequest, HttpResponse};
 
 use diesel::MysqlConnection;
 
-
-
-
-
-use new_rawr::traits::{Content};
-
-
-
-
-
-
-
+use new_rawr::traits::Content;
 
 use crate::api::apiresponse::APIResponse;
-use crate::models::{ Level, User};
+use crate::models::{Level, User};
 
 use crate::siteerror::SiteError;
-
 
 use crate::websiteerror::WebsiteError;
 use crate::{action, utils, DbPool};

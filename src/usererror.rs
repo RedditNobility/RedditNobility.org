@@ -1,14 +1,12 @@
 use std::error::Error;
 
-
 use crate::api::apiresponse::{APIError, APIResponse};
 use crate::websiteerror::{json_error_message, WebsiteError};
 
 use actix_web::{error, get, http::header, http::StatusCode, web, App, HttpResponse, HttpServer};
-use derive_more::{Display};
-use log::{error};
+use derive_more::Display;
+use log::error;
 use serde_json;
-
 
 use tera::Tera;
 

@@ -1,6 +1,6 @@
 use crate::siteerror::SiteError;
 use crate::websiteerror::WebsiteError;
-use hyper::client::{Client};
+use hyper::client::Client;
 
 use hyper::http::request::Builder;
 

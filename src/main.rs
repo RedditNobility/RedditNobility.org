@@ -7,10 +7,9 @@ extern crate dotenv;
 extern crate strum;
 extern crate strum_macros;
 
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::ops::Sub;
 use std::path::Path;
-
 
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
@@ -19,25 +18,20 @@ use std::{env, thread};
 
 use actix_files as fs;
 
-
-
-use actix_web::web::{Form};
+use actix_web::web::Form;
 use actix_web::{
-     get, http, middleware, post, web, App, HttpMessage, HttpRequest, HttpResponse,
-    HttpServer,
+    get, http, middleware, post, web, App, HttpMessage, HttpRequest, HttpResponse, HttpServer,
 };
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Duration, Local};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
-
-use log::{ info, warn};
-use new_rawr::auth::{PasswordAuthenticator};
+use log::{info, warn};
+use new_rawr::auth::PasswordAuthenticator;
 use new_rawr::client::RedditClient;
 
-
-use new_rawr::traits::{ Content, Votable};
+use new_rawr::traits::{Content, Votable};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use serde::{Deserialize, Serialize};
 use tera::{Tera, Value};

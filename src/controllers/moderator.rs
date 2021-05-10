@@ -1,38 +1,20 @@
-
-
-use crate::models::{Level};
+use crate::models::Level;
 
 use crate::siteerror::SiteError;
 use crate::usererror::UserError;
 use crate::websiteerror::WebsiteError;
 use crate::{action, utils, DbPool, RedditRoyalty};
 
-
-
-
-
-
 use actix_web::{
     get, http, middleware, post, web, App, Error, HttpMessage, HttpRequest, HttpResponse,
     HttpServer,
 };
 
-
-
-
-
-
-use new_rawr::traits::{Content};
-
-
-
-
-
-
-
+use new_rawr::traits::Content;
 
 use std::sync::{Arc, Mutex};
 use tera::Tera;
+
 #[get("/moderator")]
 pub async fn mod_index(
     pool: web::Data<DbPool>,
@@ -61,6 +43,7 @@ pub async fn mod_index(
         .content_type("text/html")
         .body(&result.unwrap());
 }
+
 #[get("/moderator/review/{user}")]
 pub async fn review_users(
     pool: web::Data<DbPool>,

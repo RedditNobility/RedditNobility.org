@@ -1,12 +1,9 @@
-
-
 use crate::models::Status;
 use crate::recaptcha::validate;
 use crate::siteerror::SiteError;
 use crate::usererror::UserError;
 use crate::websiteerror::WebsiteError;
 use crate::{action, utils, DbPool, RedditRoyalty};
-
 
 use actix_web::cookie::SameSite;
 use actix_web::http::header::LOCATION;
@@ -17,17 +14,7 @@ use actix_web::{
 };
 use bcrypt::verify;
 
-
-
-
-
-
-
 use serde::{Deserialize, Serialize};
-
-
-
-
 
 use std::sync::{Arc, Mutex};
 use tera::Tera;

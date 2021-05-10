@@ -1,43 +1,22 @@
-
-
-
 use crate::api::api_validate;
-use crate::api::apiresponse::{APIResponse};
+use crate::api::apiresponse::APIResponse;
 use crate::api::get_user_by_header;
 use crate::models::{ClientKey, Level, User};
-
 
 use crate::siteerror::SiteError::DBError;
 use crate::usererror::UserError;
 use crate::websiteerror::WebsiteError;
 use crate::{action, utils, DbPool};
 
+use actix_web::{post, web, HttpRequest, HttpResponse};
 
+use log::info;
 
+use new_rawr::traits::Content;
 
-
-use actix_web::{
-      post, web,  HttpRequest, HttpResponse,
-};
-
-
-use log::{ info};
-
-
-
-
-use new_rawr::traits::{Content};
-
-
-use serde::{Deserialize};
-
-
-
-
+use serde::Deserialize;
 
 use std::str::FromStr;
-
-
 
 #[post("/api/admin/key/add")]
 pub async fn new_key(pool: web::Data<DbPool>, r: HttpRequest) -> HttpResponse {

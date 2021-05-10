@@ -1,11 +1,5 @@
-
-
-
-
 use crate::websiteerror::WebsiteError;
 use serde::{Deserialize, Serialize};
-
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct APIResponse<T> {

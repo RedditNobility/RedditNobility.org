@@ -1,11 +1,7 @@
-
-
-
 use crate::api::api_validate;
 use crate::api::apiresponse::{APIError, APIResponse};
 use crate::api::get_user_by_header;
 use crate::models::{Level, Status, User};
-
 
 use crate::siteerror::SiteError::DBError;
 use crate::usererror::UserError;
@@ -13,14 +9,7 @@ use crate::websiteerror::WebsiteError;
 use crate::{action, utils, DbPool, RedditRoyalty};
 use actix::prelude::*;
 
-
-
-
-use actix_web::{
-    get,  post, web, App, Error, HttpRequest, HttpResponse,
-};
-
-
+use actix_web::{get, post, web, App, Error, HttpRequest, HttpResponse};
 
 use new_rawr::auth::AnonymousAuthenticator;
 use new_rawr::client::RedditClient;
@@ -28,16 +17,10 @@ use new_rawr::client::RedditClient;
 use new_rawr::structures::submission::Submission;
 use new_rawr::traits::{Content, Votable};
 
-
 use serde::{Deserialize, Serialize};
-
-
-
-
 
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-
 
 #[derive(Serialize, Deserialize)]
 pub struct GetUser {

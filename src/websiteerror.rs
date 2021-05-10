@@ -1,8 +1,6 @@
 use std::error::Error;
 
-
 use actix_web::{error, get, http::header, http::StatusCode, web, App, HttpResponse, HttpServer};
-
 
 use serde_json;
 use serde_json::Value;

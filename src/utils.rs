@@ -1,7 +1,7 @@
+use crate::action;
 use crate::models::{AuthToken, Level, Status, User, UserProperties};
 use crate::siteerror::SiteError;
 use crate::websiteerror::WebsiteError;
-use crate::{action};
 
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Utc};
@@ -16,7 +16,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path as SysPath;
 use std::path::PathBuf;
-
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
