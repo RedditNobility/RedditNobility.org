@@ -13,6 +13,7 @@ use std::io::Write;
 use std::str::FromStr;
 use strum_macros::Display;
 use strum_macros::EnumString;
+use crate::utils::is_valid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 pub struct Setting {
@@ -103,8 +104,19 @@ pub struct User {
     pub created: i64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubmitUser {
+    pub username: String,
+    //FOUND, DENIED, APPROVED, BANNED
+    pub status: Option<Status>,
+    //The Moderator who approved them or denied them. If the user was banned it will still be set to who approved them
+    pub moderator: Option<String>,
+    //When the data was created
+    pub created: Option<i64>,
+}
+
 #[derive(
-    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
+AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
 )]
 #[sql_type = "Text"]
 pub enum Status {
@@ -116,7 +128,7 @@ pub enum Status {
 
 //Found, Approved, Denied, Banned
 #[derive(
-    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
+AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
 )]
 #[sql_type = "Text"]
 pub enum Level {
@@ -194,6 +206,25 @@ impl FromSql<Text, Mysql> for Status {
 }
 
 impl User {
+    pub fn new(sub: SubmitUser, discoverer: String) -> User {
+        let properties = UserProperties {
+            avatar: None,
+            description: None,
+            title: is_valid(sub.username.clone()),
+        };
+        User {
+            id: 0,
+            username: sub.username.clone(),
+            password: "".to_string(),
+            level: Level::User,
+            status: sub.status.unwrap_or_else(default_status),
+            status_changed: 0,
+            discoverer,
+            moderator: "".to_string(),
+            properties,
+            created: sub.created.unwrap_or_else(utils::get_current_time),
+        }
+    }
     pub fn set_status(&mut self, status: Status) {
         self.status = status;
         self.status_changed = utils::get_current_time();
@@ -208,6 +239,10 @@ impl User {
     pub fn set_password(&mut self, password: String) {
         self.password = password;
     }
+}
+
+fn default_status() -> Status {
+    Status::Found
 }
 
 impl Display for User {

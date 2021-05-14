@@ -1,7 +1,7 @@
 use crate::api::api_validate;
 use crate::api::apiresponse::{APIError, APIResponse};
 use crate::api::get_user_by_header;
-use crate::models::{Level, Status, User};
+use crate::models::{Level, Status, User, SubmitUser};
 
 use crate::siteerror::SiteError::DBError;
 use crate::usererror::UserError;
@@ -10,7 +10,6 @@ use crate::{action, utils, DbPool, RedditRoyalty};
 use actix::prelude::*;
 
 use actix_web::{get, post, web, App, Error, HttpRequest, HttpResponse};
-
 use new_rawr::auth::AnonymousAuthenticator;
 use new_rawr::client::RedditClient;
 
@@ -21,6 +20,13 @@ use serde::{Deserialize, Serialize};
 
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+use actix_web::web::{BytesMut, BufMut};
+use hyper::StatusCode;
+use actix_multipart::Multipart;
+use std::io::Write;
+use futures::{TryStreamExt, StreamExt};
+use crate::utils::{quick_add, submit_add};
+use crate::siteerror::SiteError;
 
 #[derive(Serialize, Deserialize)]
 pub struct GetUser {
@@ -113,13 +119,10 @@ pub async fn change_status(
                 user_friendly_message: None,
                 error_code: Some("FAILED_APPROVE".to_string()),
             };
-            let response = APIResponse::<APIError> {
+            return APIResponse::<APIError> {
                 success: true,
                 data: Some(error),
-            };
-            return HttpResponse::Ok()
-                .content_type("application/json")
-                .body(serde_json::to_string(&response).unwrap());
+            }.error(StatusCode::BAD_REQUEST);
         }
     }
     user.set_status(status);
@@ -265,4 +268,60 @@ pub async fn next_user(
     return HttpResponse::Ok()
         .content_type("application/json")
         .body(serde_json::to_string(&response).unwrap());
+}
+
+
+#[post("/moderator/file/upload")]
+pub async fn file_upload(pool: web::Data<DbPool>, mut payload: Multipart, r: HttpRequest) -> HttpResponse {
+    let conn = pool.get().expect("couldn't get db connection from pool");
+    let result = api_validate(r.headers(), Level::Moderator, &conn);
+    if result.is_err() {
+        return result.err().unwrap().api_error();
+    }
+    if !result.unwrap() {
+        return UserError::NotFound.api_error();
+    }
+    let moderator = get_user_by_header(&r.headers(), &conn);
+    if moderator.is_err() {
+        return moderator.err().unwrap().api_error();
+    }
+    let moderator = moderator.unwrap().unwrap();
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let content_type = field.content_disposition().unwrap();
+        let filename = content_type.get_filename().unwrap();
+        let string = sanitize_filename::sanitize(&filename);
+
+        // Field in turn is stream of *Bytes* object
+        let mut all_bytes = BytesMut::new();
+        while let Some(chunk) = field.next().await {
+            let data = chunk.unwrap();
+            all_bytes.put(data);
+        }
+        let bytes = all_bytes.freeze();
+        let result = String::from_utf8(bytes.to_vec());
+        if result.is_err() {
+            return SiteError::Other("Unable to parse String".parse().unwrap()).api_error();
+        }
+        let content = result.unwrap();
+        if string.ends_with(".json") {
+            let result: Result<Vec<SubmitUser>, serde_json::Error> = serde_json::from_str(content.as_str());
+            if result.is_err() {
+                //Technically this is a user error. But I am lazy
+                return SiteError::JSONError(result.err().unwrap()).api_error();
+            }
+            let users = result.unwrap();
+            for x in users {
+                submit_add(x, moderator.username.clone(), &conn);
+            }
+        } else {
+            let split = content.split("\n");
+            for x in split {
+                quick_add(x.to_string(), moderator.username.clone(), &conn);
+            }
+        }
+    }
+    APIResponse::<()> {
+        success: true,
+        data: None,
+    }.ok()
 }

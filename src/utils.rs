@@ -1,5 +1,5 @@
 use crate::action;
-use crate::models::{AuthToken, Level, Status, User, UserProperties};
+use crate::models::{AuthToken, Level, Status, User, UserProperties, SubmitUser};
 use crate::siteerror::SiteError;
 use crate::websiteerror::WebsiteError;
 
@@ -55,6 +55,16 @@ pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
             discoverer,
             properties: properties,
         };
+        action::add_new_user(&user, &conn);
+    }
+}
+
+pub fn submit_add(sub: SubmitUser, discoverer: String, conn: &MysqlConnection) {
+    if action::get_user_by_name(sub.username.clone(), &conn)
+        .unwrap()
+        .is_none()
+    {
+        let user = User::new(sub, discoverer);
         action::add_new_user(&user, &conn);
     }
 }

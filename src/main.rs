@@ -1,3 +1,4 @@
+
 #[macro_use]
 extern crate diesel;
 #[macro_use]
@@ -6,6 +7,7 @@ extern crate bcrypt;
 extern crate dotenv;
 extern crate strum;
 extern crate strum_macros;
+
 
 use std::collections::HashMap;
 use std::ops::Sub;
