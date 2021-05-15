@@ -169,7 +169,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::moderator::next_user)
             .service(fs::Files::new("/cdn", "site/node_modules").show_files_listing())
             .service(fs::Files::new("/", "site/static").show_files_listing())
-    });
+    }).workers(2);
     if std::env::var("PRIVATE_KEY").is_ok() {
         let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
         builder
