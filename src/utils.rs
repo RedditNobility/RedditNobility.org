@@ -60,6 +60,7 @@ pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
 }
 
 pub fn submit_add(sub: SubmitUser, discoverer: String, conn: &MysqlConnection) {
+    println!("Adding user {}", sub.username.clone());
     if action::get_user_by_name(sub.username.clone(), &conn)
         .unwrap()
         .is_none()

@@ -332,12 +332,16 @@ pub async fn file_upload(pool: web::Data<DbPool>, mut payload: Multipart, r: Htt
     }
     let moderator = moderator.unwrap().unwrap();
     while let Ok(Some(mut field)) = payload.try_next().await {
+        println!("Yes");
         let content_type = field.content_disposition().unwrap();
         if let Some(name) = content_type.get_name() {
             if !name.eq("file") {
+                println!("Less NO");
+
                 continue;
             }
         } else {
+            println!("NO");
             continue;
         }
         let filename = content_type.get_filename().unwrap();
@@ -376,5 +380,6 @@ pub async fn file_upload(pool: web::Data<DbPool>, mut payload: Multipart, r: Htt
             data: None,
         }.ok();
     }
+    println!("Misisng File");
     return UserError::InvalidRequest.api_error();
 }

@@ -77,7 +77,11 @@
     </div>
     <div class="row">
         <div class="col">
-            <h5>Upload User List</h5><input name="file" type="file">
+            <h5>Upload User List</h5>
+            <progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
+            <h3 id="status"></h3>
+            <p id="loaded_n_total"></p>
+            <input id="usersfile" name="file" type="file">
             <button class="btn btn-primary" onclick="uploadFile()" type="button">Upload</button>
         </div>
         <div class="col"></div>
@@ -152,11 +156,52 @@
 <script>
     const review_url = "{{url(path='moderator/review/')|safe}}";
     const user_url = "{{url(path='moderator/user/')|safe}}";
+    const upload_users = "{{url(path='moderator/file/upload')|safe}}";
+    const auth_token = getCookie("auth_token");
 
     let review = false;
 
     function uploadFile() {
+        let value = document.getElementById("usersfile");
 
+        const formData = new FormData();
+        let file = value.files[0];
+        console.log(file)
+        formData.append('file', file)
+        var ajax = new XMLHttpRequest();
+        ajax.upload.addEventListener("progress", progressHandler, false);
+        ajax.addEventListener("load", completeHandler, false);
+        ajax.addEventListener("error", errorHandler, false);
+        ajax.addEventListener("abort", abortHandler, false);
+        ajax.open("POST", upload_users); // http://www.developphp.com/video/JavaScript/File-Upload-Progress-Bar-Meter-Tutorial-Ajax-PHP
+        //use file_upload_parser.php from above url
+        ajax.setRequestHeader("Authorization", "Bearer " + auth_token)
+
+        ajax.send(formData);
+    }
+
+    function _(el) {
+        return document.getElementById(el);
+    }
+
+    function progressHandler(event) {
+        _("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes of " + event.total;
+        var percent = (event.loaded / event.total) * 100;
+        _("progressBar").value = Math.round(percent);
+        _("status").innerHTML = Math.round(percent) + "% uploaded... please wait";
+    }
+
+    function completeHandler(event) {
+        _("status").innerHTML = event.target.responseText;
+        _("progressBar").value = 0; //wil clear progress bar after successful upload
+    }
+
+    function errorHandler(event) {
+        _("status").innerHTML = "Upload Failed";
+    }
+
+    function abortHandler(event) {
+        _("status").innerHTML = "Upload Aborted";
     }
 
     function reviewUser() {
@@ -178,6 +223,12 @@
                 window.location.href = user_url + value + "?add_if_not_found=true";
             }
         }
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
     }
 </script>
 </body>
