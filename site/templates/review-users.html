@@ -83,7 +83,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta3/js/bootstrap.bundle.min.js"></script>
 <script>
     const user = "{{user}}"
-    const url = "{{url(path='api/moderator/review/')|safe}}";
+    const url = "{{url(path='api/moderator/review/')|safe}}?add_if_not_found=true";
     const status = "{{url(path='api/moderator/change/status')|safe}}";
     const home = "{{url(path='moderator')|safe}}";
     const auth_token = getCookie("auth_token");

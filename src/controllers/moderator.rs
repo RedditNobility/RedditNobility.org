@@ -4,6 +4,7 @@ use crate::siteerror::SiteError;
 use crate::usererror::UserError;
 use crate::websiteerror::WebsiteError;
 use crate::{action, utils, DbPool, RedditRoyalty};
+use serde::{Deserialize, Serialize};
 
 use actix_web::{
     get, http, middleware, post, web, App, Error, HttpMessage, HttpRequest, HttpResponse,
@@ -14,6 +15,8 @@ use new_rawr::traits::Content;
 
 use std::sync::{Arc, Mutex};
 use tera::Tera;
+use crate::utils::quick_add;
+use crate::siteerror::SiteError::DBError;
 
 #[get("/moderator")]
 pub async fn mod_index(
@@ -26,6 +29,9 @@ pub async fn mod_index(
     let conn = pool.get().expect("couldn't get db connection from pool");
 
     let option1 = req.cookie("auth_token");
+    if option1.is_none() {
+        return UserError::NotAuthorized.site_error(tera);
+    }
     let result2 = utils::is_authorized(
         option1.unwrap().value().to_string(),
         Level::Moderator,
@@ -76,12 +82,17 @@ pub async fn review_users(
         .body(&result.unwrap());
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct GetUser {
+    pub add_if_not_found: Option<bool>,
+}
+
 #[get("/moderator/user/{user}")]
 pub async fn user_page(
     pool: web::Data<DbPool>,
     _rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
     web::Path(username): web::Path<String>,
-    tera: web::Data<Tera>,
+    tera: web::Data<Tera>, details: web::Query<GetUser>,
     req: HttpRequest,
 ) -> HttpResponse {
     let mut ctx = tera::Context::new();
@@ -112,9 +123,26 @@ pub async fn user_page(
     if lookup.is_err() {
         return SiteError::DBError(lookup.err().unwrap()).site_error(tera);
     }
-    let lookup = lookup.unwrap();
+    let mut lookup = lookup.unwrap();
     if lookup.is_none() {
-        return UserError::NotFound.site_error(tera);
+        if let Some(value) = details.add_if_not_found {
+            if value {
+                quick_add(username.clone(), user.username.clone(), &conn);
+                let new_user = action::get_user_by_name(username.clone(), &conn);
+                if new_user.is_err() {
+                    return DBError(new_user.err().unwrap()).site_error(tera);
+                }
+                let new_user = new_user.unwrap();
+                if new_user.is_none() {
+                    return UserError::NotFound.site_error(tera);
+                }
+                lookup = new_user;
+            } else {
+                return UserError::NotFound.site_error(tera);
+            }
+        } else {
+            return UserError::NotFound.site_error(tera);
+        }
     }
     let lookup = lookup.unwrap();
     ctx.insert("user", &lookup);

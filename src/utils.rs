@@ -216,8 +216,10 @@ pub fn get_avatar(user: &User) -> String {
     }
     let about = result.unwrap();
     let option = about.data.snoovatar_img;
-    if option.is_some() {
-        return option.unwrap().clone();
+    if let Some(avatar) = option{
+        if !avatar.is_empty(){
+            return avatar.clone();
+        }
     }
     let option = about.data.icon_img;
     if option.is_some() {

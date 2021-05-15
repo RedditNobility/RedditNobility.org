@@ -30,31 +30,54 @@ use crate::siteerror::SiteError;
 
 #[derive(Serialize, Deserialize)]
 pub struct GetUser {
-    pub username: String,
+    pub add_if_not_found: Option<bool>,
 }
 
 #[get("/api/user/{user}")]
 pub async fn get_user(
     pool: web::Data<DbPool>,
     web::Path(user): web::Path<String>,
-    r: HttpRequest,
+    r: HttpRequest, details: web::Query<GetUser>,
 ) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Moderator, &conn);
-    if result.is_err() {
-        return result.err().unwrap().api_error();
+    if let Ok(bool) = result {
+        if !bool {
+            return UserError::NotAuthorized.api_error();
+        }
+    } else if let Err(err) = result {
+        return err.api_error();
     }
 
-    if !result.unwrap() {
-        return UserError::NotFound.api_error();
-    }
     let result1 = action::get_user_by_name(user.clone(), &conn);
     if result1.is_err() {
         return DBError(result1.err().unwrap()).api_error();
     }
-    let result1 = result1.unwrap();
+    let mut result1 = result1.unwrap();
     if result1.is_none() {
-        return UserError::NotFound.api_error();
+        if let Some(value) = details.add_if_not_found {
+            if value {
+                let moderator = get_user_by_header(&r.headers(), &conn);
+                if moderator.is_err() {
+                    return moderator.err().unwrap().api_error();
+                }
+                let moderator = moderator.unwrap().unwrap();
+                quick_add(user.clone(), moderator.username.clone(), &conn);
+                let new_user = action::get_user_by_name(user.clone(), &conn);
+                if new_user.is_err() {
+                    return DBError(new_user.err().unwrap()).api_error();
+                }
+                let new_user = new_user.unwrap();
+                if new_user.is_none() {
+                    return UserError::NotFound.api_error();
+                }
+                result1 = new_user;
+            } else {
+                return UserError::NotFound.api_error();
+            }
+        } else {
+            return UserError::NotFound.api_error();
+        }
     }
     let user = result1.unwrap();
     let response = APIResponse::<User> {
@@ -165,7 +188,7 @@ pub async fn next_user(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     web::Path(user): web::Path<String>,
-    rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
+    rr: web::Data<Arc<Mutex<RedditRoyalty>>>, details: web::Query<GetUser>,
 ) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Moderator, &conn);
@@ -203,9 +226,31 @@ pub async fn next_user(
         if result1.is_err() {
             return DBError(result1.err().unwrap()).api_error();
         }
-        let result1 = result1.unwrap();
+        let mut result1 = result1.unwrap();
         if result1.is_none() {
-            return UserError::NotFound.api_error();
+            if let Some(value) = details.add_if_not_found {
+                if value {
+                    let moderator = get_user_by_header(&r.headers(), &conn);
+                    if moderator.is_err() {
+                        return moderator.err().unwrap().api_error();
+                    }
+                    let moderator = moderator.unwrap().unwrap();
+                    quick_add(user.clone(), moderator.username.clone(), &conn);
+                    let new_user = action::get_user_by_name(user.clone(), &conn);
+                    if new_user.is_err() {
+                        return DBError(new_user.err().unwrap()).api_error();
+                    }
+                    let new_user = new_user.unwrap();
+                    if new_user.is_none() {
+                        return UserError::NotFound.api_error();
+                    }
+                    result1 = new_user;
+                } else {
+                    return UserError::NotFound.api_error();
+                }
+            } else {
+                return UserError::NotFound.api_error();
+            }
         }
         option = result1;
     }
@@ -288,6 +333,13 @@ pub async fn file_upload(pool: web::Data<DbPool>, mut payload: Multipart, r: Htt
     let moderator = moderator.unwrap().unwrap();
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_type = field.content_disposition().unwrap();
+        if let Some(name) = content_type.get_name() {
+            if !name.eq("file") {
+                continue;
+            }
+        } else {
+            continue;
+        }
         let filename = content_type.get_filename().unwrap();
         let string = sanitize_filename::sanitize(&filename);
 
@@ -319,9 +371,10 @@ pub async fn file_upload(pool: web::Data<DbPool>, mut payload: Multipart, r: Htt
                 quick_add(x.to_string(), moderator.username.clone(), &conn);
             }
         }
+        return APIResponse::<()> {
+            success: true,
+            data: None,
+        }.ok();
     }
-    APIResponse::<()> {
-        success: true,
-        data: None,
-    }.ok()
+    return UserError::InvalidRequest.api_error();
 }
