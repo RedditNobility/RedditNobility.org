@@ -194,6 +194,12 @@
     function completeHandler(event) {
         _("status").innerHTML = event.target.responseText;
         _("progressBar").value = 0; //wil clear progress bar after successful upload
+        let json = JSON.parse(event.target.responseText);
+        if (json.success) {
+            alert(json.data + " users added");
+        } else {
+            alert("Upload Failed")
+        }
     }
 
     function errorHandler(event) {

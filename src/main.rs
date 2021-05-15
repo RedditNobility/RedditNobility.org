@@ -166,6 +166,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::user::change_property)
             .service(api::get_moderators)
             .service(api::admin::change_level)
+            .service(api::admin::new_key)
             .service(api::moderator::next_user)
             .service(api::moderator::file_upload)
             .service(fs::Files::new("/cdn", "site/node_modules").show_files_listing())

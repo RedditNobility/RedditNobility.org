@@ -106,13 +106,16 @@ pub struct APILoginRequest {
 }
 
 #[post("/api/login")]
-pub async fn user_login(
-    pool: web::Data<DbPool>,
-    login: web::Form<APILoginRequest>,
-    rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
-    _r: HttpRequest,
-) -> HttpResponse {
+pub async fn user_login(pool: web::Data<DbPool>,login: web::Form<APILoginRequest>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, r: HttpRequest ) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
+    let result = api_validate(r.headers(), Level::Client, &conn);
+    if result.is_err() {
+        return result.err().unwrap().api_error();
+    }
+    if !result.unwrap() {
+        return UserError::NotFound.api_error();
+    }
+
     let result = action::get_user_by_name(login.username.clone(), &conn);
     if result.is_err() {
         return SiteError::DBError(result.err().unwrap()).api_error();

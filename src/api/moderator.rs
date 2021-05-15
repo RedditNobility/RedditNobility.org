@@ -211,6 +211,7 @@ pub async fn next_user(
     );
     let mut option: Option<User> = Option::None;
     if user.eq("next") {
+        println!("Next User");
         let result = action::get_found_users(&conn);
         if result.is_err() {}
         let mut vec = result.unwrap();
@@ -332,6 +333,7 @@ pub async fn file_upload(pool: web::Data<DbPool>, mut payload: Multipart, r: Htt
     }
     let moderator = moderator.unwrap().unwrap();
     while let Ok(Some(mut field)) = payload.try_next().await {
+        let mut users_added = 0;
         println!("Yes");
         let content_type = field.content_disposition().unwrap();
         if let Some(name) = content_type.get_name() {
@@ -344,7 +346,12 @@ pub async fn file_upload(pool: web::Data<DbPool>, mut payload: Multipart, r: Htt
             println!("NO");
             continue;
         }
-        let filename = content_type.get_filename().unwrap();
+        let option = content_type.get_filename();
+        if option.is_none(){
+            return UserError::InvalidRequest.api_error();
+
+        }
+        let filename = option.unwrap();
         let string = sanitize_filename::sanitize(&filename);
 
         // Field in turn is stream of *Bytes* object
@@ -367,17 +374,20 @@ pub async fn file_upload(pool: web::Data<DbPool>, mut payload: Multipart, r: Htt
             }
             let users = result.unwrap();
             for x in users {
+                users_added = users_added + 1;
                 submit_add(x, moderator.username.clone(), &conn);
             }
         } else {
             let split = content.split("\n");
             for x in split {
+                users_added = users_added + 1;
+
                 quick_add(x.to_string(), moderator.username.clone(), &conn);
             }
         }
-        return APIResponse::<()> {
+        return APIResponse::<i32> {
             success: true,
-            data: None,
+            data: Some(users_added),
         }.ok();
     }
     println!("Misisng File");
