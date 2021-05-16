@@ -17,12 +17,12 @@ appenders:
     kind: file
     path: "log/site.log"
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}"
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
   all:
     kind: file
     path: "log/all.log"
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}"
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
 root:
   level: info
   appenders:
