@@ -58,10 +58,16 @@ pub async fn submit(
         .body(&result.unwrap());
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct Details {
+    pub status: Option<String>,
+
+}
+
 #[get("/login")]
 pub async fn get_login(
     pool: web::Data<DbPool>,
-    tera: web::Data<Tera>,
+    tera: web::Data<Tera>, details: web::Query<Details>,
     _req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let mut ctx = tera::Context::new();
@@ -69,6 +75,11 @@ pub async fn get_login(
         "recaptcha_pub",
         std::env::var("RECAPTCHA_PUB").unwrap().as_str(),
     );
+    if let Some(status) = &details.status {
+        ctx.insert("status", status);
+    } else {
+        ctx.insert("status", "");
+    }
     let _conn = pool.get().expect("couldn't get db connection from pool");
 
     let result = tera.get_ref().render("login.html", &ctx);
@@ -147,12 +158,12 @@ pub async fn post_login(
                         "auth_token",
                         utils::create_token(&user, &conn).unwrap().token.clone(),
                     )
-                    .path("/")
-                    .secure(true)
-                    .same_site(SameSite::None)
-                    .max_age(time::Duration::weeks(1))
-                    .http_only(false)
-                    .finish(),
+                        .path("/")
+                        .secure(true)
+                        .same_site(SameSite::None)
+                        .max_age(time::Duration::weeks(1))
+                        .http_only(false)
+                        .finish(),
                 )
                 .finish()
                 .into_body();

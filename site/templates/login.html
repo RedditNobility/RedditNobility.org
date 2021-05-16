@@ -22,10 +22,23 @@
 <body>
 <!-- Start: Login Form Clean -->
 <section class="login-clean">
-    <form id="form" action='{{url(path="login/post")}}' enctype="application/x-www-form-urlencoded"  method="post">
+    <form id="form" action='{{url(path="login/post")}}' enctype="application/x-www-form-urlencoded" method="post">
         <p style="font-size: 15px;">No Password? Leave the value blank and you will be sent a login link via a Reddit
             Direct Message.</p>
         <h2 class="visually-hidden">Login Form</h2>
+        {% if status == "NOT_FOUND" %}
+        <div class="alert alert-danger" role="alert">
+            Username/Password is incorrect
+        </div>
+        {% elif status == "BAD_RECAPTCHA" %}
+        <div class="alert alert-danger" role="alert">
+            Bad Recaptcha 
+        </div>
+        {% elif status == "LOGIN_SENT" %}
+        <div class="alert alert-success" role="alert">
+            Login Sent
+        </div>
+        {% endif %}
         <div class="illustration"><img src={{url(path="TuxCrown.png")}} style="width: 190px;"></div>
         <div class="mb-3"><input class="form-control" type="text" name="username" placeholder="Username"></div>
         <div class="mb-3"><input class="form-control" type="password" name="password" placeholder="Password"></div>
