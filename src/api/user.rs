@@ -2,7 +2,7 @@ use crate::action::{get_user_by_name, update_user};
 use crate::api::api_validate;
 use crate::api::apiresponse::APIResponse;
 use crate::api::get_user_by_header;
-use crate::models::{ClientKey, Level, Status, User};
+use crate::models::{ClientKey, Level, Status, User, AuthToken};
 
 use crate::siteerror::SiteError;
 use crate::siteerror::SiteError::DBError;
@@ -106,7 +106,7 @@ pub struct APILoginRequest {
 }
 
 #[post("/api/login")]
-pub async fn user_login(pool: web::Data<DbPool>,login: web::Form<APILoginRequest>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, r: HttpRequest ) -> HttpResponse {
+pub async fn user_login(pool: web::Data<DbPool>, login: web::Form<APILoginRequest>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, r: HttpRequest) -> HttpResponse {
     let conn = pool.get().expect("couldn't get db connection from pool");
     let result = api_validate(r.headers(), Level::Client, &conn);
     if result.is_err() {
@@ -122,28 +122,26 @@ pub async fn user_login(pool: web::Data<DbPool>,login: web::Form<APILoginRequest
     }
     let user = result.unwrap();
     if user.is_none() {
-        return UserError::NotAuthorized.api_error();
+        return UserError::NotFound.api_error();
     }
     let user = user.unwrap();
     if login.password.is_none() {
         utils::send_login(&user, &conn, &rr.clone().lock().unwrap().reddit);
         let mut map = HashMap::<String, Value>::new();
         map.insert("success".to_string(), Value::from(true));
-        map.insert("status".to_string(), Value::from("SENT"));
-        return HttpResponse::Ok()
-            .content_type("application/json")
-            .body(serde_json::to_string(&map).unwrap());
+        return APIResponse::<String> {
+            success: true,
+            data: Some("SENT".to_string()),
+        }.ok();
     } else {
         let string = login.password.as_ref().unwrap();
         if verify(&string, &user.password).unwrap() {
             let x = utils::create_token(&user, &conn);
             let mut map = HashMap::<String, Value>::new();
-            map.insert("success".to_string(), Value::from(true));
-            map.insert("status".to_string(), Value::from("AUTHORIZED"));
-            map.insert("token".to_string(), Value::from(x.unwrap().token.clone()));
-            return HttpResponse::Ok()
-                .content_type("application/json")
-                .body(serde_json::to_string(&map).unwrap());
+            return APIResponse::<AuthToken> {
+                success: true,
+                data: Some(x.unwrap()),
+            }.ok();
         }
     }
 
@@ -163,6 +161,7 @@ pub async fn validate_key(pool: web::Data<DbPool>, r: HttpRequest) -> Result<Htt
         .content_type("application/json")
         .body(serde_json::to_string(&map).unwrap()));
 }
+
 #[derive(Deserialize)]
 pub struct ChangeRequest {
     pub username: String,
