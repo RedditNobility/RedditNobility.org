@@ -101,13 +101,16 @@
         }).then(response => response.json())
             .then(msg => {
                 if (msg.success == true) {
+                    if (msg.data === "FAILED_APPROVE"){
+                        alert("Unable to approve user");
+                    }
                     if (user == "next") {
                         update_user()
                     } else {
                         window.location.href = home;
                     }
                 } else {
-                    alert("Unable to pull up user");
+                    alert("Unable to approve user");
                 }
             }).catch(err => console.log(err));
     }
