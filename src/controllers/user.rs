@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use tera::Tera;
 use std::result::Result::Ok;
+use log::{info, warn, error};
 
 #[derive(Deserialize)]
 pub struct SubmitUser {
@@ -105,15 +106,12 @@ pub struct LoginRequest {
 pub async fn post_login(
     pool: web::Data<DbPool>,
     tera: web::Data<Tera>,
-    request: HttpRequest,
     rr: web::Data<Arc<Mutex<RedditRoyalty>>>,
     form: web::Form<LoginRequest>,
 ) -> HttpResponse {
     if form.g_recaptcha_response.is_none() {
-        println!("Nothing");
-        //return HttpResponse::Found().header(http::header::LOCATION, "/login?status=BAD_RECAPTCHA").finish().into_body();
+        return HttpResponse::Found().header(http::header::LOCATION, "/login?status=BAD_RECAPTCHA").finish().into_body();
     } else {
-        println!("Something");
         let string1 = form.g_recaptcha_response.as_ref().unwrap().clone();
         let result1 = std::env::var("RECAPTCHA_SECRET").unwrap();
         let url = std::env::var("URL").unwrap();
@@ -158,7 +156,6 @@ pub async fn post_login(
         let result2 = verify(string, &user.password);
         if let Ok(valid) = result2 {
             return if valid {
-                let x = request.headers().get("HOST").unwrap().to_str().unwrap();
                 HttpResponse::Found()
                     .header(LOCATION, "/")
                     .cookie(
@@ -188,11 +185,20 @@ pub async fn post_login(
                 .into_body();
         }
     }
-    utils::send_login(&user, &conn, &rr.try_lock().unwrap().reddit);
-    return HttpResponse::Found()
-        .header(http::header::LOCATION, "/login?status=LOGIN_SENT")
-        .finish()
-        .into_body();
+    let result3 = rr.lock();
+    return if let Ok(reddit) = result3 {
+        utils::send_login(&user, &conn, &reddit.reddit);
+        HttpResponse::Found()
+            .header(http::header::LOCATION, "/login?status=LOGIN_SENT")
+            .finish()
+            .into_body()
+    } else {
+        error!("Unable to claim RedditRoyalty Object!");
+        HttpResponse::Found()
+            .header(http::header::LOCATION, "/login?status=NOT_FOUND")
+            .finish()
+            .into_body()
+    }
 }
 
 #[derive(Serialize, Deserialize)]
