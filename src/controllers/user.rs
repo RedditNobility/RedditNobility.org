@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 
 use std::sync::{Arc, Mutex};
 use tera::Tera;
+use std::result::Result::Ok;
 
 #[derive(Deserialize)]
 pub struct SubmitUser {
@@ -148,25 +149,38 @@ pub async fn post_login(
     }
     if form.password.is_some() && !form.password.as_ref().unwrap().is_empty() {
         let string = form.password.as_ref().unwrap();
-        if verify(string, &user.password).unwrap() {
-            let x = request.headers().get("HOST").unwrap().to_str().unwrap();
-            println!("{}", &x);
+        if user.password.is_empty() {
             return HttpResponse::Found()
-                .header(LOCATION, "/")
-                .cookie(
-                    http::Cookie::build(
-                        "auth_token",
-                        utils::create_token(&user, &conn).unwrap().token.clone(),
-                    )
-                        .path("/")
-                        .secure(true)
-                        .same_site(SameSite::None)
-                        .max_age(time::Duration::weeks(1))
-                        .http_only(false)
-                        .finish(),
-                )
+                .header("Location", "/login?status=NOT_FOUND")
                 .finish()
                 .into_body();
+        }
+        let result2 = verify(string, &user.password);
+        if let Ok(valid) = result2 {
+            return if valid {
+                let x = request.headers().get("HOST").unwrap().to_str().unwrap();
+                HttpResponse::Found()
+                    .header(LOCATION, "/")
+                    .cookie(
+                        http::Cookie::build(
+                            "auth_token",
+                            utils::create_token(&user, &conn).unwrap().token.clone(),
+                        )
+                            .path("/")
+                            .secure(true)
+                            .same_site(SameSite::None)
+                            .max_age(time::Duration::weeks(1))
+                            .http_only(false)
+                            .finish(),
+                    )
+                    .finish()
+                    .into_body()
+            } else {
+                HttpResponse::Found()
+                    .header("Location", "/login?status=NOT_FOUND")
+                    .finish()
+                    .into_body()
+            };
         } else {
             return HttpResponse::Found()
                 .header("Location", "/login?status=NOT_FOUND")
