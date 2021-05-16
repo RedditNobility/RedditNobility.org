@@ -16,10 +16,13 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path as SysPath;
 use std::path::PathBuf;
+use log::{info, warn};
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
+    info!("Adding user {}", &username);
+
     let mut status = Status::Found;
     if username.contains("=T") {
         status = Status::Approved;
@@ -45,7 +48,7 @@ pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
             username: username.clone(),
             password: "".to_string(),
             moderator: "".to_string(),
-            status: status,
+            status,
             status_changed: 0,
             created: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -53,14 +56,14 @@ pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
                 .as_millis() as i64,
             level: Level::User,
             discoverer,
-            properties: properties,
+            properties,
         };
         action::add_new_user(&user, &conn);
     }
 }
 
 pub fn submit_add(sub: SubmitUser, discoverer: String, conn: &MysqlConnection) {
-    println!("Adding user {}", sub.username.clone());
+    info!("Adding user {}", &sub.username);
     if action::get_user_by_name(sub.username.clone(), &conn)
         .unwrap()
         .is_none()
@@ -121,29 +124,21 @@ pub(crate) fn get_current_time() -> i64 {
 }
 
 pub fn send_login(user: &User, conn: &MysqlConnection, rr: &RedditClient) {
-    println!("Test0");
     let password: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(10)
         .map(char::from)
         .collect();
-    println!("Test");
     let mut user = user.clone();
     user.set_password(hash(&password.clone(), DEFAULT_COST).unwrap());
-    println!("Test2");
     let _result = action::update_user(&user, &conn);
-    println!("Test3");
     let token = create_token(&user, &conn).unwrap();
-    println!("Test4");
     let string = build_message(&user, &password, &token);
-    println!("{}", &string);
 
     let x = user.username.as_str();
-    println!("{}", &x);
     let _result1 = rr
         .messages()
         .compose(x, "RedditNobility Login", string.as_str());
-    println!("Test5");
 }
 
 fn build_message(user: &User, password: &String, token: &AuthToken) -> String {
@@ -156,10 +151,10 @@ fn build_message(user: &User, password: &String, token: &AuthToken) -> String {
         .unwrap()
         .replace(
             "{{URL}}",
-            format!("{}/login/key?token={}", url, token.token.as_str()).as_str(),
+            &*format!("{}/login/key?token={}", url, token.token),
         )
         .replace("{{PASSWORD}}", &password)
-        .replace("{{USERNAME}}", user.username.clone().as_str());
+        .replace("{{USERNAME}}", &*user.username.clone());
     return string;
 }
 
@@ -217,8 +212,8 @@ pub fn get_avatar(user: &User) -> String {
     }
     let about = result.unwrap();
     let option = about.data.snoovatar_img;
-    if let Some(avatar) = option{
-        if !avatar.is_empty(){
+    if let Some(avatar) = option {
+        if !avatar.is_empty() {
             return avatar.clone();
         }
     }

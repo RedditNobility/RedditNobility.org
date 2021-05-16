@@ -196,7 +196,6 @@ pub async fn next_user(
         return result.err().unwrap().api_error();
     }
     if !result.unwrap() {
-        println!("GHey");
         return UserError::NotFound.api_error();
     }
     let rr = rr.lock();

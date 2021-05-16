@@ -28,13 +28,11 @@ pub fn api_validate(
 ) -> Result<bool, Box<dyn WebsiteError>> {
     let option = header_map.get("Authorization");
     if option.is_none() {
-        println!("Test");
         return Ok(false);
     }
     let x = option.unwrap().to_str();
     if x.is_err() {}
     let header = x.unwrap().to_string();
-    println!("{}", &header);
 
     let split = header.split(" ").collect::<Vec<&str>>();
     let option = split.get(0);
@@ -76,7 +74,6 @@ pub fn api_validate(
         if level == Level::Client {
             return Ok(false);
         }
-        println!("Hey");
         let result1 = utils::is_authorized(value, level, conn);
         if result1.is_err() {
             return Err(result1.err().unwrap());
