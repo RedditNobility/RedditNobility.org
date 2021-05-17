@@ -32,7 +32,7 @@ log4rs = "1.0.0"
 log = "0.4.14"
 strum = { version = "0.20.0", features = ["derive"] }
 strum_macros = "0.20.1"
-derive_more = "0.99.13"
+derive_more = "0.99.14"
 chrono = "0.4.19"
 hyper = "0.13.9"
 hyper-tls = "0.4.3"
