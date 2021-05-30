@@ -218,9 +218,9 @@ impl User {
             password: "".to_string(),
             level: Level::User,
             status: sub.status.unwrap_or_else(default_status),
-            status_changed: 0,
+            status_changed: utils::get_current_time(),
             discoverer,
-            moderator: "".to_string(),
+            moderator: sub.moderator.unwrap_or_else(default_moderator),
             properties,
             created: sub.created.unwrap_or_else(utils::get_current_time),
         }
@@ -243,6 +243,9 @@ impl User {
 
 fn default_status() -> Status {
     Status::Found
+}
+fn default_moderator() -> String {
+    "".to_string()
 }
 
 impl Display for User {
