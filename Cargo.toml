@@ -31,7 +31,7 @@ openssl = { version = "0.10", features = ["v110"] }
 log4rs = "1.0.0"
 log = "0.4.14"
 strum = { version = "0.20.0", features = ["derive"] }
-strum_macros = "0.20.1"
+strum_macros = "0.21.0"
 derive_more = "0.99.14"
 chrono = "0.4.19"
 hyper = "0.13.9"
