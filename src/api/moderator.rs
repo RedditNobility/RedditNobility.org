@@ -292,7 +292,7 @@ pub async fn next_user(
             subreddit: x.subreddit().name,
             url: format!("https://reddit.com{}", x.data.permalink),
             id: x.data.id.clone(),
-            title: x.title().clone().to_string(),
+            title: x.data.name.clone(),
             content: x.data.selftext.clone().to_string(),
             score: x.score(),
         };
@@ -346,9 +346,8 @@ pub async fn file_upload(pool: web::Data<DbPool>, mut payload: Multipart, r: Htt
             continue;
         }
         let option = content_type.get_filename();
-        if option.is_none(){
+        if option.is_none() {
             return UserError::InvalidRequest.api_error();
-
         }
         let filename = option.unwrap();
         let string = sanitize_filename::sanitize(&filename);
