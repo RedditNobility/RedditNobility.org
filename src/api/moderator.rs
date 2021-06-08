@@ -292,7 +292,7 @@ pub async fn next_user(
             subreddit: x.subreddit().name,
             url: format!("https://reddit.com{}", x.data.permalink),
             id: x.data.id.clone(),
-            title: x.data.name.clone(),
+            title: x.data.title.clone(),
             content: x.data.selftext.clone().to_string(),
             score: x.score(),
         };
