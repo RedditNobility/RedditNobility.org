@@ -25,7 +25,7 @@ tera = "1.11.0"
 new-rawr = { git = "https://github.com/wherkamp/new-rawr.git" }
 bcrypt = "0.10.0"
 rand = "0.8.4"
-futures-util = "0.3.15"
+futures-util = "0.3.17"
 actix-web = { version = "3.3.2", features = ["openssl"] }
 openssl = { version = "0.10", features = ["v110"] }
 log4rs = "1.0.0"
