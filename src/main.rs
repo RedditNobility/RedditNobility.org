@@ -1,4 +1,3 @@
-
 #[macro_use]
 extern crate diesel;
 #[macro_use]
@@ -8,7 +7,6 @@ extern crate dotenv;
 extern crate strum;
 extern crate strum_macros;
 
-
 use std::collections::HashMap;
 use std::ops::Sub;
 use std::path::Path;
@@ -16,11 +14,13 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 
+use actix_cors::Cors;
 use std::{env, thread};
 
 use actix_files as fs;
+use actix_files::Files;
 
-use actix_web::web::Form;
+use actix_web::web::{Form, PayloadConfig};
 use actix_web::{
     get, http, middleware, post, web, App, HttpMessage, HttpRequest, HttpResponse, HttpServer,
 };
@@ -33,26 +33,26 @@ use log::{info, warn};
 use new_rawr::auth::PasswordAuthenticator;
 use new_rawr::client::RedditClient;
 
+use crate::install::install::Installed;
 use new_rawr::traits::{Content, Votable};
-use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+use nitro_log::config::Config;
+use nitro_log::NitroLogger;
 use serde::{Deserialize, Serialize};
-use tera::{Tera, Value};
 
-use crate::models::{Level, Setting, Status, User, UserProperties};
-use crate::siteerror::SiteError;
+use crate::models::{Level, Status, User, UserProperties};
+use crate::utils::Resources;
 
-use crate::websiteerror::WebsiteError;
-
-mod action;
-mod api;
-mod controllers;
+mod admin;
+mod api_response;
+mod error;
+mod install;
 pub mod models;
+mod moderator;
 mod recaptcha;
 pub mod schema;
-mod siteerror;
-mod usererror;
+mod settings;
+mod user;
 mod utils;
-mod websiteerror;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
@@ -76,26 +76,26 @@ impl RedditRoyalty {
     }
 }
 
-fn url(args: &HashMap<String, Value>) -> Result<tera::Value, tera::Error> {
-    let option = args.get("path");
-    return if option.is_some() {
-        let x = option.unwrap().as_str().unwrap();
-        let x1 = std::env::var("URL").unwrap();
-        let string = format!("{}/{}", x1, x);
-        println!("{}", &string);
-        let result = tera::Value::from(&*string);
-        Ok(result)
-    } else {
-        Err(tera::Error::from("Missing Param Tera".to_string()))
-    };
-}
 embed_migrations!();
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "actix_web=trace");
-    std::env::set_var("RUST_BACKTRACE", "1");
-    log4rs::init_file(Path::new("resources").join("log.yml"), Default::default()).unwrap();
-    dotenv::dotenv().ok();
+    if let Err(error) = dotenv::dotenv() {
+        println!("Unable to load dotenv {}", error);
+        return Ok(());
+    }
+    let file = match std::env::var("MODE")
+        .unwrap_or("DEBUG".to_string())
+        .as_str()
+    {
+        "DEBUG" => "log-debug.json",
+        "RELEASE" => "log-release.json",
+        _ => {
+            panic!("Must be Release or Debug")
+        }
+    };
+    let config: Config = serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
+    NitroLogger::load(config, None).unwrap();
+    info!("Initializing Database");
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
     let manager = ConnectionManager::<MysqlConnection>::new(connspec);
     let pool = r2d2::Pool::builder()
@@ -103,7 +103,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to create pool.");
     let connection = pool.get().unwrap();
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap();
-    info!("Test");
+    info!("Initializing Reddit Controller");
 
     let arc = PasswordAuthenticator::new(
         std::env::var("CLIENT_KEY").unwrap().as_str(),
@@ -132,59 +132,48 @@ async fn main() -> std::io::Result<()> {
         }
         sleep(Duration::minutes(5).to_std().unwrap())
     });
-    let server = HttpServer::new(move || {
-        let result1 = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/site/templates/**/*"));
-        if result1.is_err() {
-            println!("{}", result1.err().unwrap());
-            panic!("Unable to create Tera")
-        }
-        let mut tera = result1.unwrap();
-        tera.register_function("url", url);
+    info!("Initializing Web Server");
 
+    let server = HttpServer::new(move || {
         App::new()
+            .wrap(
+                Cors::default()
+                    .allow_any_header()
+                    .allow_any_method()
+                    .allow_any_origin(),
+            )
             .wrap(middleware::Logger::default())
             .data(pool.clone())
-            .data(Arc::clone(&reddit_royalty))
-            .data(tera)
-            .service(favicon)
-            .service(index)
-            .service(install)
-            .service(controllers::user::get_login)
-            .service(controllers::user::post_login)
-            .service(controllers::user::key_login)
-            .service(controllers::user::me)
-            .service(controllers::user::submit)
-            .service(controllers::moderator::review_users)
-            .service(controllers::moderator::user_page)
-            .service(controllers::moderator::mod_index)
-            .service(api::admin::change_level)
-            .service(api::moderator::change_status)
-            .service(api::moderator::get_user)
-            .service(api::user::submit_user)
-            .service(api::user::user_login)
-            .service(api::user::validate_key)
-            .service(api::user::change_property)
-            .service(api::get_moderators)
-            .service(api::admin::change_level)
-            .service(api::admin::new_key)
-            .service(api::moderator::next_user)
-            .service(api::moderator::file_upload)
-            .service(fs::Files::new("/cdn", "site/node_modules").show_files_listing())
-            .service(fs::Files::new("/", "site/static").show_files_listing())
-    }).workers(2);
-    if std::env::var("PRIVATE_KEY").is_ok() {
-        let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-        builder
-            .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
-            .unwrap();
-        builder
-            .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
-            .unwrap();
+            .wrap(Installed)
+            .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+            .configure(error::handlers::init)
+            // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
+            .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
+    })
+    .workers(2);
 
-        server.bind_openssl("0.0.0.0:6742", builder)?.run().await
-    } else {
-        server.bind("0.0.0.0:6742")?.run().await
+    // I am pretty sure this is correctly working
+    // If I am correct this will only be available if the feature ssl is added
+    #[cfg(feature = "ssl")]
+    {
+        if std::env::var("PRIVATE_KEY").is_ok() {
+            use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+
+            let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+            builder
+                .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
+                .unwrap();
+            builder
+                .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
+                .unwrap();
+            return server
+                .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
+                .run()
+                .await;
+        }
     }
+
+    return server.bind(std::env::var("ADDRESS").unwrap())?.run().await;
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -193,117 +182,10 @@ pub struct Moderator {
     pub avatar: String,
 }
 
-#[get("/")]
-pub async fn index(
-    pool: web::Data<DbPool>,
-    tera: web::Data<Tera>,
-    req: HttpRequest,
-) -> HttpResponse {
-    let mut ctx = tera::Context::new();
-    let conn = pool.get().expect("couldn't get db connection from pool");
-    let option = action::get_setting("installed".to_string(), &conn);
-    if option.is_err() {
-        return SiteError::DBError(option.err().unwrap()).site_error(tera);
-    }
-    if option.unwrap().is_none() {
-        let result = tera.get_ref().render("install.html", &ctx);
-        if result.is_err() {
-            let error = result.err().unwrap();
-            println!("{}", &error);
-            return SiteError::TeraError(error).site_error(tera);
-        }
-        return HttpResponse::Ok()
-            .content_type("text/html")
-            .body(&result.unwrap());
-    }
-    let option1 = req.cookie("auth_token");
-    if option1.is_some() {
-        let result1 = action::get_user_from_auth_token(option1.unwrap().value().to_string(), &conn);
-        if result1.is_err() {
-            return SiteError::DBError(result1.err().unwrap()).site_error(tera);
-        }
-        let option2 = result1.unwrap();
-        if option2.is_none() {
-            //Handle need new login
-            println!("not Found User");
-        } else {
-            println!("Hey");
-            ctx.insert("user", &option2.unwrap())
-        }
-    }
-    let mut moderators = Vec::new();
-    let vec = action::get_moderators(&conn).unwrap();
-    for x in vec {
-        let avatar = utils::get_avatar(&x);
-        let moderator = Moderator {
-            user: x,
-            avatar: avatar,
-        };
-        moderators.push(moderator)
-    }
-    ctx.insert("moderators", &moderators);
-    let result = tera.get_ref().render("index.html", &ctx);
-    if result.is_err() {
-        return SiteError::TeraError(result.err().unwrap()).site_error(tera);
-    }
-    return HttpResponse::Ok()
-        .content_type("text/html")
-        .body(&result.unwrap());
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct InstallRequest {
     pub username: String,
     pub password: String,
-}
-
-#[post("/install")]
-pub async fn install(
-    pool: web::Data<DbPool>,
-    form: Form<InstallRequest>,
-    tera: web::Data<Tera>,
-    _req: HttpRequest,
-) -> HttpResponse {
-    let conn = pool.get().expect("couldn't get db connection from pool");
-    let option = action::get_setting("installed".to_string(), &conn);
-    if option.is_err() {
-        return SiteError::DBError(option.err().unwrap()).site_error(tera);
-    }
-    if option.unwrap().is_some() {
-        return HttpResponse::Found()
-            .header(http::header::LOCATION, "/")
-            .finish()
-            .into_body();
-    }
-    let properties = UserProperties {
-        avatar: None,
-        description: Some("OG User".to_string()),
-        title: utils::is_valid(form.username.clone()),
-    };
-    let user = User {
-        id: 0,
-        username: form.username.clone(),
-        password: hash(&form.password.clone(), DEFAULT_COST).unwrap(),
-        level: Level::Admin,
-        status: Status::Approved,
-        status_changed: utils::get_current_time(),
-        discoverer: "OG".to_string(),
-        moderator: "OG".to_string(),
-        properties,
-        created: utils::get_current_time(),
-    };
-    action::add_new_user(&user, &conn).unwrap();
-    let st = Setting {
-        id: 0,
-        setting_key: "installed".to_string(),
-        value: "true".to_string(),
-        updated: utils::get_current_time(),
-    };
-    action::add_new_setting(&st, &conn).unwrap();
-    return HttpResponse::Found()
-        .header(http::header::LOCATION, "/")
-        .finish()
-        .into_body();
 }
 
 #[get("/favicon.ico")]

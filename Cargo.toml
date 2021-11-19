@@ -1,5 +1,5 @@
 [package]
-name = "RedditNobility"
+name = "rn_site"
 version = "0.1.0"
 authors = ["Wyatt Jacob Herkamp <wherkamp@kingtux.me>"]
 edition = "2021"
@@ -20,14 +20,13 @@ zip = "0.5.13"
 futures = "0.3.15"
 sanitize-filename = "0.3"
 actix-files = "0.5.0"
-tera = "1.15.0"
 new-rawr = { git = "https://github.com/wherkamp/new-rawr.git" }
 bcrypt = "0.10.1"
 rand = "0.8.4"
 futures-util = "0.3.17"
 actix-web = { version = "3.3.2", features = ["openssl"] }
-openssl = { version = "0.10", features = ["v110"] }
-log4rs = "1.0.0"
+openssl = { version = "0.10", features = ["v110"], optional = true }
+nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }
 log = "0.4.14"
 strum = { version = "0.23.0", features = ["derive"] }
 strum_macros = "0.23.0"
@@ -37,3 +36,13 @@ hyper = "0.13.9"
 hyper-tls = "0.4.3"
 time = "0.3.5"
 actix-multipart = "0.3"
+actix-cors = "0.5.4"
+actix-service = "1.0.6"
+toml = "0.5.8"
+base64 = "0.13.0"
+
+rust-embed = { version = "6.2.0", features = ["interpolate-folder-path"] }
+
+[features]
+# Defines a feature named `webp` that does not enable any other features.
+ssl = ["openssl", "actix-web/openssl"]

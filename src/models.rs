@@ -8,20 +8,12 @@ use diesel::sql_types::Text;
 use diesel::{deserialize, serialize, Queryable};
 use serde::{Deserialize, Serialize};
 
+use crate::utils::is_valid;
 use std::fmt::{Display, Error, Formatter};
 use std::io::Write;
 use std::str::FromStr;
 use strum_macros::Display;
 use strum_macros::EnumString;
-use crate::utils::is_valid;
-
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
-pub struct Setting {
-    pub id: i64,
-    pub setting_key: String,
-    pub value: String,
-    pub updated: i64,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 pub struct AuthToken {
@@ -116,7 +108,7 @@ pub struct SubmitUser {
 }
 
 #[derive(
-AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
+    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
 )]
 #[sql_type = "Text"]
 pub enum Status {
@@ -128,7 +120,7 @@ pub enum Status {
 
 //Found, Approved, Denied, Banned
 #[derive(
-AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
+    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
 )]
 #[sql_type = "Text"]
 pub enum Level {

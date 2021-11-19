@@ -1,128 +1,64 @@
-use crate::action;
-use crate::models::{AuthToken, Level, Status, User, UserProperties, SubmitUser};
-use crate::siteerror::SiteError;
-use crate::websiteerror::WebsiteError;
+use crate::models::{AuthToken, Level, Status, SubmitUser, User, UserProperties};
 
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Utc};
 use diesel::MysqlConnection;
 use dotenv::Error;
+use log::{info, warn};
 use new_rawr::auth::AnonymousAuthenticator;
 use new_rawr::client::RedditClient;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::fs;
-use std::fs::File;
+use std::fs::{read, File};
 use std::io::{BufRead, BufReader};
-use std::path::Path as SysPath;
 use std::path::PathBuf;
-use log::{info, warn};
+use std::path::{Path as SysPath, Path};
+use std::str::FromStr;
 
+use crate::error::internal_error::InternalError;
+use crate::settings::action::get_setting;
+use rust_embed::RustEmbed;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
-    info!("Adding user {}", &username);
+#[derive(RustEmbed)]
+#[folder = "$CARGO_MANIFEST_DIR/resources"]
+pub struct Resources;
 
-    let mut status = Status::Found;
-    if username.contains("=T") {
-        status = Status::Approved;
-    } else if username.contains("=F") {
-        status = Status::Denied
+impl Resources {
+    pub fn file_get(file: &str) -> Vec<u8> {
+        let buf = Path::new("resources").join(file);
+        if buf.exists() {
+            read(buf).unwrap()
+        } else {
+            Resources::get(file).unwrap().data.to_vec()
+        }
     }
-    let username = username
-        .replace("=T", "")
-        .replace("=F", "")
-        .replace("\r", "");
-
-    if action::get_user_by_name(username.clone(), &conn)
-        .unwrap()
-        .is_none()
-    {
-        let properties = UserProperties {
-            avatar: None,
-            description: None,
-            title: is_valid(username.clone()),
-        };
-        let user = User {
-            id: 0,
-            username: username.clone(),
-            password: "".to_string(),
-            moderator: "".to_string(),
-            status,
-            status_changed: 0,
-            created: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis() as i64,
-            level: Level::User,
-            discoverer,
-            properties,
-        };
-        action::add_new_user(&user, &conn);
+    pub fn file_get_string(file: &str) -> String {
+        let vec = Resources::file_get(file);
+        String::from_utf8(vec).unwrap()
     }
 }
 
-pub fn submit_add(sub: SubmitUser, discoverer: String, conn: &MysqlConnection) {
-    info!("Adding user {}", &sub.username);
-    if action::get_user_by_name(sub.username.clone(), &conn)
-        .unwrap()
-        .is_none()
-    {
-        let user = User::new(sub, discoverer);
-        action::add_new_user(&user, &conn);
-    }
-}
-
-///A standardized method for deciding rather a user is allowed to be where they are
-pub fn is_authorized(
-    api_token: String,
-    target_level: Level,
-    conn: &MysqlConnection,
-) -> Result<bool, Box<dyn WebsiteError>> {
-    let result = action::get_user_from_auth_token(api_token, &conn);
-    if result.is_err() {
-        return Err(Box::new(SiteError::DBError(result.err().unwrap())));
-    }
-    let user = result.unwrap();
-    if user.is_none() {
-        return Ok(false);
-    }
-
-    let user = user.unwrap();
-    if user.status != Status::Approved {
-        return Ok(false);
-    }
-    println!("HEY");
-    if user.level.level() >= target_level.level() {
+pub fn installed(conn: &MysqlConnection) -> Result<bool, InternalError> {
+    let installed: bool = bool::from_str(std::env::var("INSTALLED").unwrap().as_str()).unwrap();
+    if installed {
         return Ok(true);
     }
-    return Ok(false);
+    let option = get_setting("INSTALLED", conn)?;
+    if option.is_none() {
+        return Ok(false);
+    }
+    std::env::set_var("INSTALLED", "true");
+    Ok(true)
 }
-
-pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthToken, Error> {
-    let s: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(25)
-        .map(char::from)
-        .collect();
-    let token = AuthToken {
-        id: 0,
-        user: user.id.clone(),
-        token: s.clone(),
-        created: get_current_time(),
-    };
-    let _result = action::add_new_auth_token(&token, connection);
-
-    return Ok(token);
-}
-
 pub(crate) fn get_current_time() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_millis() as i64
 }
-
+/**
 pub fn send_login(user: &User, conn: &MysqlConnection, rr: &RedditClient) {
     let password: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -158,6 +94,7 @@ fn build_message(user: &User, password: &String, token: &AuthToken) -> String {
     return string;
 }
 
+**/
 pub fn approve_user(user: &User, client: &RedditClient) -> bool {
     let result1 = client
         .subreddit("RedditNobility")

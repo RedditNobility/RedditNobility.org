@@ -1,9 +1,8 @@
-use crate::siteerror::SiteError;
-use crate::websiteerror::WebsiteError;
 use hyper::client::Client;
 
 use hyper::http::request::Builder;
 
+use crate::error::internal_error::InternalError;
 use hyper::{Body, Method};
 use hyper_tls::HttpsConnector;
 use serde::{Deserialize, Deserializer};
@@ -13,7 +12,7 @@ pub async fn validate(
     secret: String,
     response: String,
     remote_address: String,
-) -> Result<bool, Box<dyn WebsiteError>> {
+) -> Result<bool, InternalError> {
     let https = HttpsConnector::new();
     let client = Client::builder().build::<_, hyper::Body>(https);
 
@@ -25,21 +24,11 @@ pub async fn validate(
         ))
         .body(Body::empty())
         .unwrap();
-    let result = client.request(builder1).await;
-    if result.is_err() {
-        return Err(Box::new(SiteError::Other(
-            "Unable to make request to google".to_string(),
-        )));
-    }
-    let response1 = result.unwrap();
+    let response1 = client.request(builder1).await?;
     let bytes = hyper::body::to_bytes(response1.into_body()).await;
     let string = String::from_utf8(bytes.unwrap().to_vec()).unwrap();
-    let result1: Result<RecaptchaResponse, serde_json::Error> =
-        serde_json::from_str(string.as_str());
-    if result1.is_err() {
-        return Err(Box::new(SiteError::JSONError(result1.err().unwrap())));
-    }
-    return Ok(result1.unwrap().success);
+    let result1: RecaptchaResponse = serde_json::from_str(string.as_str())?;
+    return Ok(result1.success);
 }
 
 #[derive(Debug, Deserialize)]
