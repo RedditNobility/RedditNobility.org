@@ -38,20 +38,19 @@ use new_rawr::traits::{Content, Votable};
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
 use serde::{Deserialize, Serialize};
+use crate::user::models::User;
 
-use crate::models::{Level, Status, User, UserProperties};
 use crate::utils::Resources;
 
 mod admin;
 mod api_response;
 mod error;
 mod install;
-pub mod models;
 mod moderator;
 mod recaptcha;
 pub mod schema;
 mod settings;
-mod user;
+pub mod user;
 mod utils;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;

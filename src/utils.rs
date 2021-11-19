@@ -1,4 +1,3 @@
-use crate::models::{AuthToken, Level, Status, SubmitUser, User, UserProperties};
 
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Utc};
@@ -20,6 +19,7 @@ use crate::error::internal_error::InternalError;
 use crate::settings::action::get_setting;
 use rust_embed::RustEmbed;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use crate::User;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
