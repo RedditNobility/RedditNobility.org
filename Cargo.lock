@@ -17,7 +17,7 @@ dependencies = [
  "env_logger",
  "futures",
  "futures-util",
- "hyper 0.13.10",
+ "hyper 0.14.7",
  "hyper-tls 0.4.3",
  "log",
  "log4rs",
