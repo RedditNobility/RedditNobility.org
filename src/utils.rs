@@ -1,4 +1,3 @@
-
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Utc};
 use diesel::MysqlConnection;
@@ -20,6 +19,8 @@ use crate::settings::action::get_setting;
 use rust_embed::RustEmbed;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::User;
+use crate::user::action::add_new_auth_token;
+use crate::user::models::AuthToken;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -52,49 +53,29 @@ pub fn installed(conn: &MysqlConnection) -> Result<bool, InternalError> {
     std::env::set_var("INSTALLED", "true");
     Ok(true)
 }
+
 pub(crate) fn get_current_time() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_millis() as i64
 }
-/**
-pub fn send_login(user: &User, conn: &MysqlConnection, rr: &RedditClient) {
-    let password: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(10)
-        .map(char::from)
-        .collect();
-    let mut user = user.clone();
-    user.set_password(hash(&password.clone(), DEFAULT_COST).unwrap());
-    let _result = action::update_user(&user, &conn);
-    let token = create_token(&user, &conn).unwrap();
-    let string = build_message(&user, &password, &token);
 
-    let x = user.username.as_str();
-    let _result1 = rr
-        .messages()
-        .compose(x, "RedditNobility Login", string.as_str());
+pub fn send_login(user: &String, password: String, rr: &RedditClient) -> Result<(), InternalError> {
+    let string = build_message(user, password)?;
+    rr.messages().compose(user.as_str(), "RedditNobility Login", string.as_str())?;
+    return Ok(());
 }
 
-fn build_message(user: &User, password: &String, token: &AuthToken) -> String {
-    let url = std::env::var("URL").unwrap();
-    let string = fs::read_to_string(PathBuf::new().join("resources").join("login-message"));
-    if string.is_err() {
-        todo!();
-    }
+fn build_message(user: &String, password: String) -> Result<String, InternalError> {
+    let string = fs::read_to_string(PathBuf::new().join("resources").join("login-message"))?;
     let string = string
-        .unwrap()
-        .replace(
-            "{{URL}}",
-            &*format!("{}/login/key?token={}", url, token.token),
-        )
         .replace("{{PASSWORD}}", &password)
-        .replace("{{USERNAME}}", &*user.username.clone());
-    return string;
+        .replace("{{USERNAME}}", user);
+    return Ok(string);
 }
 
-**/
+
 pub fn approve_user(user: &User, client: &RedditClient) -> bool {
     let result1 = client
         .subreddit("RedditNobility")

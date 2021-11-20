@@ -1,12 +1,15 @@
+use std::ops::Add;
+use std::time::{SystemTime, UNIX_EPOCH};
 use actix_web::http::HeaderMap;
+use chrono::Duration;
 use diesel::MysqlConnection;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-use crate::user::action::get_user_from_auth_token;
-use crate::user::models::User;
+use crate::user::action::{add_new_auth_token, add_opt, get_user_from_auth_token};
+use crate::user::models::{AuthToken, OTP, User};
 use crate::utils::get_current_time;
 
 pub fn get_user_by_header(
@@ -37,4 +40,54 @@ pub fn get_user_by_header(
         return Ok(result);
     }
     Ok(None)
+}
+
+pub fn otp_expiration() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .add(Duration::hours(1).to_std().unwrap())
+        .as_millis() as i64
+}
+pub fn generate_otp(user: &i64, conn: &MysqlConnection) -> Result<String, InternalError> {
+    let value = loop {
+        let opt = generate_otp_value();
+        if !crate::user::action::opt_exist(&opt, conn)? {
+            break opt;
+        }
+    };
+    let opt = OTP{
+        id: 0,
+        user: user.clone(),
+        password: value,
+        expiration: otp_expiration(),
+        created: get_current_time()
+    };
+    add_opt(&opt, conn)?;
+    return Ok(opt.password);
+}
+
+fn generate_otp_value() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(6)
+        .map(char::from)
+        .collect()
+}
+
+pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthToken, InternalError> {
+    let s: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(25)
+        .map(char::from)
+        .collect();
+    let token = AuthToken {
+        id: 0,
+        user: user.id.clone(),
+        token: s.clone(),
+        created: get_current_time(),
+    };
+    let _result = add_new_auth_token(&token, connection);
+
+    return Ok(token);
 }

@@ -7,6 +7,8 @@ use base64::DecodeError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::string::FromUtf8Error;
+use bcrypt::BcryptError;
+use new_rawr::errors::APIError;
 
 #[derive(Debug)]
 pub enum InternalError {
@@ -50,6 +52,14 @@ impl Error for InternalError {}
 impl From<DecodeError> for InternalError {
     fn from(err: DecodeError) -> InternalError {
         InternalError::DecodeError(err)
+    }
+}impl From<BcryptError> for InternalError {
+    fn from(err: BcryptError) -> InternalError {
+        InternalError::Error(err.to_string())
+    }
+}impl From<APIError> for InternalError {
+    fn from(err: APIError) -> InternalError {
+        InternalError::Error(err.to_string())
     }
 }
 

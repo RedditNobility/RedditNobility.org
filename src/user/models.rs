@@ -23,6 +23,16 @@ pub struct AuthToken {
     pub created: i64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
+#[table_name = "otps"]
+pub struct OTP {
+    pub id: i64,
+    pub user: i64,
+    pub password: String,
+    pub expiration: i64,
+    pub created: i64,
+}
+
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
 #[sql_type = "Text"]
 pub struct UserProperties {

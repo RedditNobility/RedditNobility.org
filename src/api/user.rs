@@ -99,69 +99,6 @@ pub async fn submit_user(
     }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct APILoginRequest {
-    pub username: String,
-    pub password: Option<String>,
-}
-
-#[post("/api/login")]
-pub async fn user_login(pool: web::Data<DbPool>, login: web::Form<APILoginRequest>, rr: web::Data<Arc<Mutex<RedditRoyalty>>>, r: HttpRequest) -> HttpResponse {
-    let conn = pool.get().expect("couldn't get db connection from pool");
-    let result = api_validate(r.headers(), Level::Client, &conn);
-    if result.is_err() {
-        return result.err().unwrap().api_error();
-    }
-    if !result.unwrap() {
-        return UserError::NotFound.api_error();
-    }
-
-    let result = action::get_user_by_name(login.username.clone(), &conn);
-    if result.is_err() {
-        return SiteError::DBError(result.err().unwrap()).api_error();
-    }
-    let user = result.unwrap();
-    if user.is_none() {
-        return UserError::NotFound.api_error();
-    }
-    let user = user.unwrap();
-    if login.password.is_none() {
-        utils::send_login(&user, &conn, &rr.clone().lock().unwrap().reddit);
-        let mut map = HashMap::<String, Value>::new();
-        map.insert("success".to_string(), Value::from(true));
-        return APIResponse::<String> {
-            success: true,
-            data: Some("SENT".to_string()),
-        }.ok();
-    } else {
-        let string = login.password.as_ref().unwrap();
-        if verify(&string, &user.password).unwrap() {
-            let x = utils::create_token(&user, &conn);
-            let mut map = HashMap::<String, Value>::new();
-            return APIResponse::<AuthToken> {
-                success: true,
-                data: Some(x.unwrap()),
-            }.ok();
-        }
-    }
-
-    return UserError::NotAuthorized.api_error();
-}
-
-#[post("/api/validate/key")]
-pub async fn validate_key(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpResponse, Error> {
-    let conn = pool.get().expect("couldn't get db connection from pool");
-    let result = api_validate(r.headers(), Level::User, &conn);
-    if !result.unwrap() {
-        return Ok(UserError::NotAuthorized.api_error());
-    }
-    let mut map = HashMap::<String, Value>::new();
-    map.insert("success".to_string(), Value::from(true));
-    return Ok(HttpResponse::Ok()
-        .content_type("application/json")
-        .body(serde_json::to_string(&map).unwrap()));
-}
-
 #[derive(Deserialize)]
 pub struct ChangeRequest {
     pub username: String,

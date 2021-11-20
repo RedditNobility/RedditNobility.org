@@ -54,7 +54,8 @@ pub mod user;
 mod utils;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
-
+pub type Database = web::Data<DbPool>;
+pub type RN = web::Data<RedditRoyalty>;
 pub struct RedditRoyalty {
     pub users_being_worked_on: HashMap<i64, DateTime<Local>>,
     pub reddit: RedditClient,

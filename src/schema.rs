@@ -36,3 +36,13 @@ table! {
 
     }
 }
+table! {
+    otps (id) {
+        id -> Bigint,
+        user -> Bigint,
+        password ->Text,
+        expiration ->Bigint,
+        created ->Bigint,
+
+    }
+}
