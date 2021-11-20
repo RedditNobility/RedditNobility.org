@@ -94,7 +94,7 @@ fn lines_from_file(filename: impl AsRef<SysPath>) -> Vec<String> {
         .collect()
 }
 
-pub fn is_valid(username: String) -> Option<String> {
+pub fn is_valid(username: &String) -> Option<String> {
     let vec = lines_from_file(SysPath::new("resources").join("names.txt"));
     let string = username.to_lowercase();
     for x in vec {

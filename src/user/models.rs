@@ -205,7 +205,7 @@ impl User {
         let properties = UserProperties {
             avatar: None,
             description: None,
-            title: is_valid(sub.username.clone()),
+            title: is_valid(&sub.username),
         };
         User {
             id: 0,

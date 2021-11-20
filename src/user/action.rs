@@ -1,7 +1,9 @@
 use diesel::MysqlConnection;
 use diesel::prelude::*;
-use crate::user::models::{AuthToken, OTP, User};
+use crate::user::models::{AuthToken, OTP, User, UserProperties};
 use diesel::result::Error as DieselError;
+use crate::schema::users::properties;
+
 pub fn add_new_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
     diesel::insert_into(users)
@@ -80,6 +82,17 @@ pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::re
     Ok(())
 }
 
+pub fn update_properties(user: &i64, props: UserProperties, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::users::dsl::*;
+
+    diesel::update(users.filter(id.eq(user)))
+        .set((
+            properties.eq(&props),
+        ))
+        .execute(conn)?;
+    Ok(())
+}
+
 pub fn get_user_from_auth_token(
     token: String,
     conn: &MysqlConnection,
@@ -127,20 +140,22 @@ pub fn get_opt(value: &String, conn: &MysqlConnection) -> Result<Option<OTP>, di
     let x: Option<OTP> = otps.filter(password.eq(value)).first::<OTP>(conn).optional()?;
     return Ok(x);
 }
-pub fn delete_otp(id: i64, conn: &MysqlConnection)->Result<(), DieselError>{
+
+pub fn delete_otp(id: i64, conn: &MysqlConnection) -> Result<(), DieselError> {
     use crate::schema::otps::dsl::*;
     diesel::delete(otps).filter(id.eq(id)).execute(conn)?;
-    return Ok(())
+    return Ok(());
 }
+
 pub fn opt_exist(value: &String, conn: &MysqlConnection) -> Result<bool, diesel::result::Error> {
     use crate::schema::otps::dsl::*;
     let x: Option<i64> = otps.select(id).filter(password.eq(value)).first(conn).optional()?;
     return Ok(x.is_some());
 }
-pub fn add_opt(value: &OTP, conn: &MysqlConnection)->Result<(), DieselError>{
+
+pub fn add_opt(value: &OTP, conn: &MysqlConnection) -> Result<(), DieselError> {
     use crate::schema::otps::dsl::*;
 
     diesel::insert_into(otps).values(value).execute(conn)?;
     return Ok(());
-
 }

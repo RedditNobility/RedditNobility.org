@@ -46,7 +46,7 @@ pub async fn install_post(
     let properties = UserProperties {
         avatar: None,
         description: Some("OG User".to_string()),
-        title: utils::is_valid(form.username.clone()),
+        title: utils::is_valid(&form.username),
     };
     let user = User {
         id: 0,
