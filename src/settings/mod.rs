@@ -5,7 +5,7 @@ pub mod action;
 pub mod settings;
 pub mod utils;
 
-pub fn init(cfg: &mut web::ServiceConfig) {
+pub fn init(_cfg: &mut web::ServiceConfig) {
     //  cfg.service(controller::about_setting)
     //      .service(controller::setting_report)
     //     .service(controller::update_setting);

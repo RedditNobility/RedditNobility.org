@@ -1,17 +1,18 @@
-use std::ops::Add;
-use std::time::{SystemTime, UNIX_EPOCH};
 use actix_web::http::HeaderMap;
 use chrono::Duration;
 use diesel::MysqlConnection;
 use log::info;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
-use serde::{Deserialize, Serialize};
+use std::ops::Add;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::error::internal_error::InternalError;
 use crate::user::action;
-use crate::user::action::{add_new_auth_token, add_opt, get_user_by_name, get_user_from_auth_token};
-use crate::user::models::{AuthToken, Level, OTP, Status, User, UserProperties};
+use crate::user::action::{
+    add_new_auth_token, add_opt, get_user_by_name, get_user_from_auth_token,
+};
+use crate::user::models::{AuthToken, Level, Status, User, UserProperties, OTP};
 use crate::utils::{get_current_time, is_valid};
 
 pub fn get_user_by_header(
@@ -95,7 +96,11 @@ pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthTok
     return Ok(token);
 }
 
-pub fn quick_add(username: &String, discoverer: &String, conn: &MysqlConnection) -> Result<(), InternalError> {
+pub fn quick_add(
+    username: &String,
+    discoverer: &String,
+    conn: &MysqlConnection,
+) -> Result<(), InternalError> {
     info!("Adding user {}", &username);
 
     let mut status = Status::Found;
@@ -109,9 +114,7 @@ pub fn quick_add(username: &String, discoverer: &String, conn: &MysqlConnection)
         .replace("=F", "")
         .replace("\r", "");
 
-    if get_user_by_name(&username, &conn)?
-        .is_none()
-    {
+    if get_user_by_name(&username, &conn)?.is_none() {
         let properties = UserProperties {
             avatar: None,
             description: None,
@@ -133,4 +136,3 @@ pub fn quick_add(username: &String, discoverer: &String, conn: &MysqlConnection)
     }
     return Ok(());
 }
-

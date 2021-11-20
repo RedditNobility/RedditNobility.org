@@ -1,8 +1,8 @@
-pub mod models;
 pub mod action;
-pub mod utils;
-mod login;
 mod controllers;
+mod login;
+pub mod models;
+pub mod utils;
 
 use actix_web::web;
 use log::debug;

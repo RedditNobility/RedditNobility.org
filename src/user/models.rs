@@ -111,7 +111,7 @@ pub struct SubmitUser {
 }
 
 #[derive(
-AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
+    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
 )]
 #[sql_type = "Text"]
 pub enum Status {
@@ -123,7 +123,7 @@ pub enum Status {
 
 //Found, Approved, Denied, Banned
 #[derive(
-AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
+    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
 )]
 #[sql_type = "Text"]
 pub enum Level {

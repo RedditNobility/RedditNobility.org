@@ -1,21 +1,15 @@
-use actix_web::{HttpRequest, get, post, web};
-use actix_web::web::{Json, Path};
-use diesel::dsl::not;
-use hyper::StatusCode;
-use new_rawr::auth::AnonymousAuthenticator;
-use new_rawr::client::RedditClient;
-use new_rawr::errors::APIError;
-use new_rawr::errors::APIError::HyperError;
+use actix_web::{get, web, HttpRequest};
+
+use crate::api_response::{APIResponse, SiteResponse};
+use crate::{Database, User, RN};
 use new_rawr::structures::submission::Submission;
 use new_rawr::traits::{Content, Votable};
-use crate::api_response::{APIResponse, SiteResponse};
-use crate::{Database, DbPool, RN, User, utils};
-use crate::error::internal_error::InternalError::Error;
-use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
-use crate::user::action::{get_found_users, get_user_by_name, update_properties};
-use crate::user::utils::{get_user_by_header, quick_add};
+
+use crate::error::response::{not_found, unauthorized};
+use crate::user::action::{get_found_users, get_user_by_name};
+use crate::user::utils::get_user_by_header;
 use serde::{Deserialize, Serialize};
-use serde::de::Unexpected::Option;
+
 use crate::user::models::Level;
 
 #[get("/moderator/user/{user}")]
@@ -74,7 +68,7 @@ pub async fn review_user(
         return unauthorized();
     }
     let mut rn = rr.lock()?;
-    let mut user = if username.eq("next") {
+    let user = if username.eq("next") {
         let mut result = get_found_users(&conn)?;
         result.sort_by_key(|x| x.created);
         let mut v = None;
@@ -134,5 +128,3 @@ pub async fn review_user(
     };
     response.respond(&req)
 }
-
-

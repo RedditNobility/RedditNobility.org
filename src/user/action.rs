@@ -1,8 +1,7 @@
-use diesel::MysqlConnection;
+use crate::user::models::{AuthToken, User, UserProperties, OTP};
 use diesel::prelude::*;
-use crate::user::models::{AuthToken, OTP, User, UserProperties};
 use diesel::result::Error as DieselError;
-use crate::schema::users::properties;
+use diesel::MysqlConnection;
 
 pub fn add_new_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -29,17 +28,12 @@ pub fn get_user_by_id(
     conn: &MysqlConnection,
 ) -> Result<Option<User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    return users
-        .filter(id.eq(l_id))
-        .first::<User>(conn)
-        .optional();
+    return users.filter(id.eq(l_id)).first::<User>(conn).optional();
 }
 
 pub fn get_found_users(conn: &MysqlConnection) -> Result<Vec<User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    return users
-        .filter(status.eq("Found"))
-        .load::<User>(conn);
+    return users.filter(status.eq("Found")).load::<User>(conn);
 }
 
 pub fn get_users(conn: &MysqlConnection) -> Result<Vec<User>, diesel::result::Error> {
@@ -82,13 +76,15 @@ pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::re
     Ok(())
 }
 
-pub fn update_properties(user: &i64, props: UserProperties, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+pub fn update_properties(
+    user: &i64,
+    props: UserProperties,
+    conn: &MysqlConnection,
+) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
 
     diesel::update(users.filter(id.eq(user)))
-        .set((
-            properties.eq(&props),
-        ))
+        .set((properties.eq(&props),))
         .execute(conn)?;
     Ok(())
 }
@@ -134,14 +130,19 @@ pub fn add_new_auth_token(
     Ok(())
 }
 
-
-pub fn get_opt(value: &String, conn: &MysqlConnection) -> Result<Option<OTP>, diesel::result::Error> {
+pub fn get_opt(
+    value: &String,
+    conn: &MysqlConnection,
+) -> Result<Option<OTP>, diesel::result::Error> {
     use crate::schema::otps::dsl::*;
-    let x: Option<OTP> = otps.filter(password.eq(value)).first::<OTP>(conn).optional()?;
+    let x: Option<OTP> = otps
+        .filter(password.eq(value))
+        .first::<OTP>(conn)
+        .optional()?;
     return Ok(x);
 }
 
-pub fn delete_otp(id: i64, conn: &MysqlConnection) -> Result<(), DieselError> {
+pub fn delete_otp(_id: i64, conn: &MysqlConnection) -> Result<(), DieselError> {
     use crate::schema::otps::dsl::*;
     diesel::delete(otps).filter(id.eq(id)).execute(conn)?;
     return Ok(());
@@ -149,7 +150,11 @@ pub fn delete_otp(id: i64, conn: &MysqlConnection) -> Result<(), DieselError> {
 
 pub fn opt_exist(value: &String, conn: &MysqlConnection) -> Result<bool, diesel::result::Error> {
     use crate::schema::otps::dsl::*;
-    let x: Option<i64> = otps.select(id).filter(password.eq(value)).first(conn).optional()?;
+    let x: Option<i64> = otps
+        .select(id)
+        .filter(password.eq(value))
+        .first(conn)
+        .optional()?;
     return Ok(x.is_some());
 }
 

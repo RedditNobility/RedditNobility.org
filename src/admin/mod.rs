@@ -1,6 +1,6 @@
-mod models;
 mod action;
+mod models;
 
 use actix_web::web;
 
-pub fn init(cfg: &mut web::ServiceConfig) {}
+pub fn init(_cfg: &mut web::ServiceConfig) {}

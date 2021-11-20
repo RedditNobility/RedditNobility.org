@@ -9,36 +9,32 @@ extern crate strum_macros;
 
 use std::collections::HashMap;
 use std::ops::Sub;
-use std::path::Path;
 
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 
 use actix_cors::Cors;
-use std::{env, thread};
+use std::thread;
 
-use actix_files as fs;
 use actix_files::Files;
 
-use actix_web::web::{Form, PayloadConfig};
-use actix_web::{
-    get, http, middleware, post, web, App, HttpMessage, HttpRequest, HttpResponse, HttpServer,
-};
-use bcrypt::{hash, DEFAULT_COST};
+use actix_web::web::PayloadConfig;
+use actix_web::{get, middleware, web, App, HttpServer};
+
 use chrono::{DateTime, Duration, Local};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
-use log::{info, warn};
+use log::info;
 use new_rawr::auth::PasswordAuthenticator;
 use new_rawr::client::RedditClient;
 
 use crate::install::install::Installed;
-use new_rawr::traits::{Content, Votable};
+use crate::user::models::User;
+use new_rawr::traits::Content;
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
 use serde::{Deserialize, Serialize};
-use crate::user::models::User;
 
 use crate::utils::Resources;
 

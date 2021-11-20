@@ -1,8 +1,6 @@
-use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Utc};
 use diesel::MysqlConnection;
-use dotenv::Error;
-use log::{info, warn};
+
 use new_rawr::auth::AnonymousAuthenticator;
 use new_rawr::client::RedditClient;
 use rand::distributions::Alphanumeric;
@@ -16,11 +14,9 @@ use std::str::FromStr;
 
 use crate::error::internal_error::InternalError;
 use crate::settings::action::get_setting;
+use crate::User;
 use rust_embed::RustEmbed;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use crate::User;
-use crate::user::action::add_new_auth_token;
-use crate::user::models::AuthToken;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -63,7 +59,8 @@ pub(crate) fn get_current_time() -> i64 {
 
 pub fn send_login(user: &String, password: String, rr: &RedditClient) -> Result<(), InternalError> {
     let string = build_message(user, password)?;
-    rr.messages().compose(user.as_str(), "RedditNobility Login", string.as_str())?;
+    rr.messages()
+        .compose(user.as_str(), "RedditNobility Login", string.as_str())?;
     return Ok(());
 }
 
@@ -74,7 +71,6 @@ fn build_message(user: &String, password: String) -> Result<String, InternalErro
         .replace("{{USERNAME}}", user);
     return Ok(string);
 }
-
 
 pub fn approve_user(user: &User, client: &RedditClient) -> bool {
     let result1 = client

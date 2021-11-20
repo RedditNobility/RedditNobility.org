@@ -2,15 +2,15 @@ use std::str::ParseBoolError;
 
 use actix_web::HttpResponse;
 
+use crate::RedditRoyalty;
 use actix_web::http::StatusCode;
 use base64::DecodeError;
+use bcrypt::BcryptError;
+use new_rawr::errors::APIError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::string::FromUtf8Error;
 use std::sync::PoisonError;
-use bcrypt::BcryptError;
-use new_rawr::errors::APIError;
-use crate::RedditRoyalty;
 
 #[derive(Debug)]
 pub enum InternalError {
@@ -55,17 +55,19 @@ impl From<DecodeError> for InternalError {
     fn from(err: DecodeError) -> InternalError {
         InternalError::DecodeError(err)
     }
-}impl From<BcryptError> for InternalError {
+}
+impl From<BcryptError> for InternalError {
     fn from(err: BcryptError) -> InternalError {
         InternalError::Error(err.to_string())
     }
-}impl From<APIError> for InternalError {
+}
+impl From<APIError> for InternalError {
     fn from(err: APIError) -> InternalError {
         InternalError::Error(err.to_string())
     }
 }
 impl From<PoisonError<std::sync::MutexGuard<'_, RedditRoyalty>>> for InternalError {
-    fn from(err: PoisonError<std::sync::MutexGuard<'_, RedditRoyalty>>) -> InternalError {
+    fn from(_err: PoisonError<std::sync::MutexGuard<'_, RedditRoyalty>>) -> InternalError {
         InternalError::Error("Tux Broke Something really bad".to_string())
     }
 }

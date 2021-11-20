@@ -4,8 +4,8 @@ use actix_web::{get, web};
 
 use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::error::response::{already_exists, mismatching_passwords};
-use crate::settings::settings::{DBSetting, Setting};
+use crate::error::response::already_exists;
+
 use crate::{utils, DbPool};
 use actix_web::{post, HttpRequest};
 use bcrypt::{hash, DEFAULT_COST};
