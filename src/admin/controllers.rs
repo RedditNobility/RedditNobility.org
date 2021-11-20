@@ -11,14 +11,12 @@ use crate::user::action::{get_found_users, get_user_by_name, update_properties};
 use crate::user::utils::get_user_by_header;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use actix_web::error::ParseError::Status;
+use actix_web::post;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use strum::ParseError;
 use crate::admin::action::set_level;
 use crate::user::models::{Level, Status};
-use crate::user::models::Level::{Admin, User};
-use crate::user::models::Status::Approved;
 use crate::utils::get_current_time;
 
 #[post("/api/admin/change/{user}/{level}")]
@@ -33,7 +31,7 @@ pub async fn change_level(
         return unauthorized();
     }
     let user = user.unwrap();
-    if user.level != Admin {
+    if user.level != Level::Admin {
         return unauthorized();
     }
     let result1 = get_user_by_name(&value.0.0, &conn)?;
@@ -48,6 +46,6 @@ pub async fn change_level(
     let level1 = level.unwrap();
 
     set_level(&user.id, level1, &conn)?;
-    return APIResponse::new(true, Some(true)).respond(&req);
+    return APIResponse::new(true, Some(true)).respond(&r);
 
 }

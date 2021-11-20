@@ -1,5 +1,5 @@
 use std::path::Path;
-use actix_web::{get, web, HttpRequest};
+use actix_web::{get, post, web, HttpRequest};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::{Database, User, RN, utils};
@@ -11,13 +11,11 @@ use crate::user::action::{get_found_users, get_user_by_name, update_properties};
 use crate::user::utils::get_user_by_header;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use actix_web::error::ParseError::Status;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use strum::ParseError;
+use crate::schema::users::moderator;
 use crate::user::models::{Level, Status};
-use crate::user::models::Level::User;
-use crate::user::models::Status::Approved;
 use crate::utils::get_current_time;
 
 #[get("/moderator/user/{user}")]
@@ -137,7 +135,7 @@ pub async fn review_user(
     response.respond(&req)
 }
 
-#[get("/api/moderator/review/{user}/{status}")]
+#[post("/api/moderator/review/{user}/{status}")]
 pub async fn review_user_update(
     database: Database,
     value: web::Path<(String, String)>,
@@ -162,9 +160,9 @@ pub async fn review_user_update(
         return bad_request("Approved or Denied".to_string());
     }
     let status = str.unwrap();
-    if status == Approved {
+    if status == Status::Approved {
         let rr = rn.lock()?;
-        let user1 = utils::approve_user(&user, &rr.unwrap().reddit);
+        let user1 = utils::approve_user(&user, &rr.reddit);
         if !user1 {
             return crate::error::response::error("Unable to Process Approve Request Currently", Some(StatusCode::INTERNAL_SERVER_ERROR));
         }
@@ -183,7 +181,7 @@ pub struct ChangeRequest {
 pub async fn moderator_update_properties(
     database: Database,
     request: Json<ChangeRequest>,
-    value: web::Path<(String, String)>,
+    web::Path((username, key)): web::Path<(String, String)>  ,
     r: HttpRequest,
 ) -> SiteResponse {
     let conn = database.get()?;
@@ -192,17 +190,17 @@ pub async fn moderator_update_properties(
         return unauthorized();
     }
     let mut modetator = option.unwrap();
-    if modetator.level == User {
+    if modetator.level == Level::User {
         return unauthorized();
     }
     // Update User
-    let option = get_user_by_name(&value.0.0, &conn)?;
+    let option = get_user_by_name(&username, &conn)?;
     if option.is_none() {
         return not_found();
     }
     let mut user = option.unwrap();
     let value = request.0.value;
-    match value.0.1.as_str() {
+    match key.as_str() {
         "avatar" => {
             user.properties.set_avatar(value);
         }
