@@ -1,6 +1,9 @@
 mod action;
 mod models;
+mod controllers;
 
 use actix_web::web;
 
-pub fn init(_cfg: &mut web::ServiceConfig) {}
+pub fn init(cfg: &mut web::ServiceConfig) {
+    cfg.service(controllers::change_level);
+}

@@ -2,7 +2,7 @@ use std::str::ParseBoolError;
 
 use actix_web::HttpResponse;
 
-use crate::RedditRoyalty;
+use crate::RNCore;
 use actix_web::http::StatusCode;
 use base64::DecodeError;
 use bcrypt::BcryptError;
@@ -66,8 +66,8 @@ impl From<APIError> for InternalError {
         InternalError::Error(err.to_string())
     }
 }
-impl From<PoisonError<std::sync::MutexGuard<'_, RedditRoyalty>>> for InternalError {
-    fn from(_err: PoisonError<std::sync::MutexGuard<'_, RedditRoyalty>>) -> InternalError {
+impl From<PoisonError<std::sync::MutexGuard<'_, RNCore>>> for InternalError {
+    fn from(_err: PoisonError<std::sync::MutexGuard<'_, RNCore>>) -> InternalError {
         InternalError::Error("Tux Broke Something really bad".to_string())
     }
 }

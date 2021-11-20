@@ -51,15 +51,16 @@ mod utils;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 pub type Database = web::Data<DbPool>;
-pub type RN = web::Data<Arc<Mutex<RedditRoyalty>>>;
-pub struct RedditRoyalty {
+pub type RN = web::Data<Arc<Mutex<RNCore>>>;
+
+pub struct RNCore {
     pub users_being_worked_on: HashMap<i64, DateTime<Local>>,
     pub reddit: RedditClient,
 }
 
-impl RedditRoyalty {
-    fn new(client: RedditClient) -> RedditRoyalty {
-        RedditRoyalty {
+impl RNCore {
+    fn new(client: RedditClient) -> RNCore {
+        RNCore {
             users_being_worked_on: HashMap::new(),
             reddit: client,
         }
@@ -98,9 +99,9 @@ async fn main() -> std::io::Result<()> {
         .build(manager)
         .expect("Failed to create pool.");
     let connection = pool.get().unwrap();
+    info!("Checking and running Migrations");
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap();
     info!("Initializing Reddit Controller");
-
     let arc = PasswordAuthenticator::new(
         std::env::var("CLIENT_KEY").unwrap().as_str(),
         std::env::var("CLIENT_SECRET").unwrap().as_str(),
@@ -109,24 +110,26 @@ async fn main() -> std::io::Result<()> {
     );
 
     let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", arc);
-    let reddit_royalty = Arc::new(Mutex::new(RedditRoyalty::new(client)));
-    let arc2 = reddit_royalty.clone();
-    thread::spawn(move || loop {
+    let site_core = Arc::new(Mutex::new(RNCore::new(client)));
+    let reference = site_core.clone();
+    thread::spawn(move || {
         {
-            let arc1 = arc2.clone();
-            let result = arc1.lock();
-            if result.is_err() {
-                panic!("The Site Core has been poisoned. Tux you dumb fuck!")
-            }
-            let mut rr = result.unwrap();
-            for x in rr.users_being_worked_on.clone() {
-                let x1: Duration = Local::now().sub(x.1.clone());
-                if x1.num_minutes() > 5 {
-                    rr.remove_id(&x.0);
+            let site_core = reference.clone();
+            loop {
+                let result = site_core.lock();
+                if result.is_err() {
+                    panic!("Oh NO!.... The Site Core..... It's Broken")
                 }
+                let mut rr = result.unwrap();
+                for x in rr.users_being_worked_on.clone() {
+                    let x1: Duration = Local::now().sub(x.1.clone());
+                    if x1.num_minutes() > 5 {
+                        rr.remove_id(&x.0);
+                    }
+                }
+                sleep(Duration::minutes(5).to_std().unwrap())
             }
         }
-        sleep(Duration::minutes(5).to_std().unwrap())
     });
     info!("Initializing Web Server");
 
@@ -140,34 +143,37 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(middleware::Logger::default())
             .data(pool.clone())
+            .data(site_core.clone())
             .wrap(Installed)
             .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
             .configure(error::handlers::init)
+            .configure(user::init)
+            .configure(moderator::init)
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
             .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
     })
-    .workers(2);
+        .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added
     #[cfg(feature = "ssl")]
-    {
-        if std::env::var("PRIVATE_KEY").is_ok() {
-            use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+        {
+            if std::env::var("PRIVATE_KEY").is_ok() {
+                use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
-            let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-            builder
-                .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
-                .unwrap();
-            builder
-                .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
-                .unwrap();
-            return server
-                .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
-                .run()
-                .await;
+                let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+                builder
+                    .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
+                    .unwrap();
+                builder
+                    .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
+                    .unwrap();
+                return server
+                    .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
+                    .run()
+                    .await;
+            }
         }
-    }
 
     return server.bind(std::env::var("ADDRESS").unwrap())?.run().await;
 }
