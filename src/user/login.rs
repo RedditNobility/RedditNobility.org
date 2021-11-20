@@ -1,5 +1,6 @@
 use actix_web::{get, post, HttpRequest, web::Json, web::Data};
 use bcrypt::verify;
+use new_rawr::client::RedditClient;
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::response::{not_found, unauthorized};
 use serde::{Serialize, Deserialize};
@@ -61,6 +62,7 @@ pub async fn one_time_password_create(otp_request: Json<CreateOTP>, rn: RN, data
     if user.status != Status::Approved {
         return unauthorized();
     }
+    let rn = rn.lock()?;
     let string = generate_otp(&user.id, &connection)?;
     send_login(&user.username, string, &rn.reddit)?;
     return APIResponse {
