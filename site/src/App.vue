@@ -1,11 +1,25 @@
 <template>
-  <div id="nav">
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
-  </div>
-  <router-view />
-</template>
+  <Navbar :user="userStore.state.user" />
 
+  <router-view :key="$route.fullPath" />
+  <notifications position="bottom right" />
+</template>
+<script lang="ts">
+import userStore from "@/store/user";
+import defaultStore from "@/store/default";
+import Navbar from "@/components/Navbar.vue";
+import router from "@/router";
+import { defineComponent, onBeforeMount, onMounted } from "vue";
+export default defineComponent({
+  name: "App",
+  components: { Navbar },
+  setup() {
+    onBeforeMount(defaultStore.init);
+    onBeforeMount(userStore.getUser);
+    return { userStore, defaultStore };
+  },
+});
+</script>
 <style>
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;

@@ -108,7 +108,7 @@ async fn main() -> std::io::Result<()> {
         std::env::var("REDDIT_USER").unwrap().as_str(),
         std::env::var("PASSWORD").unwrap().as_str(),
     );
-
+    std::env::set_var("INSTALLED", "false".to_string());
     let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", arc);
     let site_core = Arc::new(Mutex::new(RNCore::new(client)));
     let reference = site_core.clone();

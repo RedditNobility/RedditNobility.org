@@ -82,25 +82,25 @@ pub fn approve_user(user: &User, client: &RedditClient) -> bool {
     return result1.unwrap();
 }
 
-fn lines_from_file(filename: impl AsRef<SysPath>) -> Vec<String> {
-    let file = File::open(filename).expect("no such file");
-    let buf = BufReader::new(file);
-    buf.lines()
-        .map(|l| l.expect("Could not parse line"))
-        .collect()
-}
+
 
 pub fn is_valid(username: &String) -> Option<String> {
-    let vec = lines_from_file(SysPath::new("resources").join("names.txt"));
+    let string1 = Resources::file_get_string("names.txt");
+    let split = string1.split(",");
+    let vec :Vec<&str>= split.collect();
     let string = username.to_lowercase();
     for x in vec {
-        if string.contains(&x) {
-            return Some(x);
+        if string.contains(&x.to_string()) {
+            return Some(x.to_string());
         }
     }
     return None;
 }
-
+#[test]
+fn valid_test(){
+    let option = is_valid(&"KingTuxWH".to_string());
+    assert_eq!(option.unwrap(), "king")
+}
 pub fn to_date(time: i64) -> String {
     let d = UNIX_EPOCH + Duration::from_millis(time as u64);
     let datetime = DateTime::<Utc>::from(d);

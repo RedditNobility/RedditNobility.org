@@ -70,24 +70,6 @@ export interface Repository {
   created: number;
 }
 
-export interface User {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  permissions: UserPermissions;
-  created: number;
-}
-
-export interface UserListResponse {
-  id: number;
-  name: string;
-}
-
-export interface UserPermissions {
-  admin: boolean;
-  deployer: boolean;
-}
 
 export interface RepositoryListResponse {
   id: number;
