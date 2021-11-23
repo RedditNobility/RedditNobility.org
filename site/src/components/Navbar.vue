@@ -38,8 +38,9 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
-import { AuthToken, BasicResponse, User } from "@/backend/Response";
+import { AuthToken, BasicResponse } from "@/backend/Response";
 import http from "@/http-common";
+import { User } from "@/backend/api/User";
 export default defineComponent({
   props: {
     user: {

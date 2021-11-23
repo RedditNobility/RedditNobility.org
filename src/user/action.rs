@@ -134,9 +134,9 @@ pub fn get_opt(
     return Ok(x);
 }
 
-pub fn delete_otp(_id: i64, conn: &MysqlConnection) -> Result<(), DieselError> {
+pub fn delete_otp(otp_id: i64, conn: &MysqlConnection) -> Result<(), DieselError> {
     use crate::schema::otps::dsl::*;
-    diesel::delete(otps).filter(id.eq(id)).execute(conn)?;
+    diesel::delete(otps).filter(id.eq(otp_id)).execute(conn)?;
     return Ok(());
 }
 
