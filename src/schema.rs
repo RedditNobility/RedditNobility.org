@@ -1,6 +1,7 @@
 table! {
     users (id) {
         id -> Bigint,
+        discord_id -> Bigint,
         username -> Text,
         password -> Text,
         permissions -> Text,

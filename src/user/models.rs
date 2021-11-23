@@ -93,6 +93,7 @@ impl ToSql<Text, Mysql> for UserProperties {
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 pub struct User {
     pub id: i64,
+    pub discord_id: i64,
     //The Reddit Username
     pub username: String,
     // The users password. If they are just going to use the Reddit login feature. This will be changed to the latest login token
@@ -133,7 +134,6 @@ pub enum Status {
     Found,
     Denied,
     Approved,
-    Banned,
 }
 
 impl ToSql<Text, Mysql> for UserPermissions {
@@ -186,6 +186,7 @@ impl User {
         };
         User {
             id: 0,
+            discord_id: 0,
             username: sub.username.clone(),
             password: "".to_string(),
             status: sub.status.unwrap_or_else(default_status),
@@ -199,8 +200,8 @@ impl User {
                 modify_user: false,
                 submit: true,
                 approve_user: false,
-                login: true
-            }
+                login: true,
+            },
         }
     }
     pub fn set_status(&mut self, status: Status) {

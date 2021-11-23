@@ -122,6 +122,7 @@ pub fn quick_add(
         };
         let user = User {
             id: 0,
+            discord_id: 0,
             username: username.clone(),
             password: "".to_string(),
             moderator: "".to_string(),

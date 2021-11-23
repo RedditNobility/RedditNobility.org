@@ -1,6 +1,7 @@
 CREATE TABLE users
 (
     id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    discord_id     BIGINT,
     username       TEXT,
     password       TEXT,
     permissions    TEXT,

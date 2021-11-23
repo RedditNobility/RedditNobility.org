@@ -1,5 +1,5 @@
 /target
-.env
+.env*
 .idea/
 *.iml
 log/
@@ -8,7 +8,8 @@ Cargo.lock
 .DS_Store
 node_modules
 /dist
-
+*.log
+test/
 
 # local env files
 .env.local

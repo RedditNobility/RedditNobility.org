@@ -50,6 +50,7 @@ pub async fn install_post(
     };
     let user = User {
         id: 0,
+        discord_id: 0,
         username: form.username.clone(),
         password: hash(&form.password.clone(), DEFAULT_COST).unwrap(),
         permissions: UserPermissions {

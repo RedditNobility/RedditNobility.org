@@ -1,1 +1,1 @@
-DROP TABLE OTPS;
+DROP TABLE otps;
