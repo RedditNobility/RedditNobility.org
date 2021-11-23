@@ -102,7 +102,7 @@ export default defineComponent({
       let body = JSON.stringify(newUser);
       console.log(body);
       const res = await http
-        .post("api/login", body)
+        .post("api/login/password", body)
         .then((res) => {
           console.log(typeof res);
           if (res.status != 200) {
