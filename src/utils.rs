@@ -65,7 +65,7 @@ pub fn send_login(user: &String, password: String, rr: &RedditClient) -> Result<
 }
 
 fn build_message(user: &String, password: String) -> Result<String, InternalError> {
-    let string = fs::read_to_string(PathBuf::new().join("resources").join("login-message"))?;
+    let string = Resources::file_get_string("login-message");
     let string = string
         .replace("{{PASSWORD}}", &password)
         .replace("{{USERNAME}}", user);

@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import Home from "../views/Home.vue";
 import Install from "../views/Install.vue";
-
+import Login from "../views/Login.vue";
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
@@ -20,6 +20,12 @@ const routes: Array<RouteRecordRaw> = [
     path: "/install",
     name: "Install",
     component: Install,
+
+  },
+  {
+    path: "/login/:type?/:username?",
+    name: "Login",
+    component: Login,
 
   },
 ];

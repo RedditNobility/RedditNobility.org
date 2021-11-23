@@ -127,6 +127,7 @@ async fn main() -> std::io::Result<()> {
                         rr.remove_id(&x.0);
                     }
                 }
+                drop(rr);
                 sleep(Duration::minutes(5).to_std().unwrap())
             }
         }

@@ -59,16 +59,21 @@ pub async fn one_time_password_create(
     database: Database,
     request: HttpRequest,
 ) -> SiteResponse {
+    println!("One");
     let connection = database.get()?;
     let option = get_user_by_name(&otp_request.username, &connection)?;
     if option.is_none() {
         return unauthorized();
     }
+    println!("Two");
     let user = option.unwrap();
     if user.status != Status::Approved || !user.permissions.login {
         return unauthorized();
     }
+    println!("Three");
+
     let rn = rn.lock()?;
+    println!("Four");
     let string = generate_otp(&user.id, &connection)?;
     send_login(&user.username, string, &rn.reddit)?;
     return APIResponse {
