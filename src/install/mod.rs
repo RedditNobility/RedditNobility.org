@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::settings::utils::quick_add;
 use crate::user::action::add_new_user;
-use crate::user::models::{Level, Status, User, UserProperties};
+use crate::user::models::{ Status, User, UserPermissions, UserProperties};
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(install_post).service(installed);
@@ -52,7 +52,13 @@ pub async fn install_post(
         id: 0,
         username: form.username.clone(),
         password: hash(&form.password.clone(), DEFAULT_COST).unwrap(),
-        level: Level::Admin,
+        permissions: UserPermissions {
+            admin: true,
+            modify_user: true,
+            submit: true,
+            approve_user: true,
+            login: true
+        },
         status: Status::Approved,
         status_changed: utils::get_current_time(),
         discoverer: "OG".to_string(),

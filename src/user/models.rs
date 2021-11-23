@@ -41,6 +41,21 @@ pub struct UserProperties {
     pub title: Option<String>,
 }
 
+#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
+#[sql_type = "Text"]
+pub struct UserPermissions {
+    #[serde(default)]
+    pub admin: bool,
+    #[serde(default)]
+    pub modify_user: bool,
+    #[serde(default)]
+    pub submit: bool,
+    #[serde(default)]
+    pub approve_user: bool,
+    #[serde(default)]
+    pub login: bool,
+}
+
 impl UserProperties {
     pub fn set_avatar(&mut self, avatar: String) {
         self.avatar = Some(avatar);
@@ -84,7 +99,7 @@ pub struct User {
     #[serde(skip_serializing)]
     pub password: String,
     //USER, MODERATOR, ADMIN
-    pub level: Level,
+    pub permissions: UserPermissions,
     //FOUND, DENIED, APPROVED, BANNED
     pub status: Status,
     //When was their status changed from FOUND to DENIED or APPROVED
@@ -111,7 +126,7 @@ pub struct SubmitUser {
 }
 
 #[derive(
-    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
+AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
 )]
 #[sql_type = "Text"]
 pub enum Status {
@@ -121,58 +136,20 @@ pub enum Status {
     Banned,
 }
 
-//Found, Approved, Denied, Banned
-#[derive(
-    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
-)]
-#[sql_type = "Text"]
-pub enum Level {
-    Admin,
-    Moderator,
-    User,
-    Client,
-}
-
-impl Level {
-    pub fn name(&self) -> &str {
-        match *self {
-            Level::Admin => "ADMIN",
-            Level::Moderator => "MODERATOR",
-            Level::User => "USER",
-            Level::Client => "CLIENT",
-        }
-    }
-    pub fn level(&self) -> i32 {
-        match *self {
-            Level::Admin => 3,
-            Level::Moderator => 2,
-            Level::User => 1,
-            Level::Client => 4,
-        }
-    }
-}
-
-impl ToSql<Text, Mysql> for Level {
+impl ToSql<Text, Mysql> for UserPermissions {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let s = self.to_string();
+        let s = serde_json::to_string(self)?;
         <String as ToSql<Text, Mysql>>::to_sql(&s, out)
     }
 }
 
-impl FromSql<Text, Mysql> for Level {
+impl FromSql<Text, Mysql> for UserPermissions {
     fn from_sql(
         bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
-    ) -> deserialize::Result<Level> {
-        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes);
-        if t.is_err() {
-            //IDK break
-        }
-        let string = t.unwrap();
-        let result: Result<Level, strum::ParseError> = Level::from_str(string.as_str());
-        if result.is_err() {
-            //IDK break
-        }
-        return Ok(result.unwrap());
+    ) -> deserialize::Result<UserPermissions> {
+        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
+        let result = serde_json::from_str(&t)?;
+        return Ok(result);
     }
 }
 
@@ -211,13 +188,19 @@ impl User {
             id: 0,
             username: sub.username.clone(),
             password: "".to_string(),
-            level: Level::User,
             status: sub.status.unwrap_or_else(default_status),
             status_changed: utils::get_current_time(),
             discoverer,
             moderator: sub.moderator.unwrap_or_else(default_moderator),
             properties,
             created: sub.created.unwrap_or_else(utils::get_current_time),
+            permissions: UserPermissions {
+                admin: false,
+                modify_user: false,
+                submit: true,
+                approve_user: false,
+                login: true
+            }
         }
     }
     pub fn set_status(&mut self, status: Status) {
@@ -225,9 +208,6 @@ impl User {
         self.status_changed = utils::get_current_time();
     }
 
-    pub fn set_level(&mut self, level: Level) {
-        self.level = level;
-    }
     pub fn set_moderator(&mut self, moderator: String) {
         self.moderator = moderator;
     }

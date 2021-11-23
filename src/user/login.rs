@@ -10,6 +10,7 @@ use crate::user::action::{delete_otp, get_opt, get_user_by_id, get_user_by_name}
 use crate::user::models::Status;
 use crate::user::utils::{create_token, generate_otp, get_user_by_header};
 use crate::utils::send_login;
+
 #[get("/api/me")]
 pub async fn me(database: Database, request: HttpRequest) -> SiteResponse {
     let connection = database.get()?;
@@ -36,7 +37,7 @@ pub async fn login(login: Json<Login>, database: Database, request: HttpRequest)
         return unauthorized();
     }
     let user = option.unwrap();
-    if user.status != Status::Approved {
+    if user.status != Status::Approved || !user.permissions.login {
         return unauthorized();
     }
     if verify(&login.password, &user.password)? {
@@ -64,7 +65,7 @@ pub async fn one_time_password_create(
         return unauthorized();
     }
     let user = option.unwrap();
-    if user.status != Status::Approved {
+    if user.status != Status::Approved || !user.permissions.login {
         return unauthorized();
     }
     let rn = rn.lock()?;
@@ -75,7 +76,7 @@ pub async fn one_time_password_create(
         data: Some(true),
         status_code: Some(201),
     }
-    .respond(&request);
+        .respond(&request);
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -102,7 +103,7 @@ pub async fn one_time_password(
         return unauthorized();
     }
     let user = user.unwrap();
-    if user.status != Status::Approved {
+    if user.status != Status::Approved || !user.permissions.login {
         //Ask questions later???
         return unauthorized();
     }

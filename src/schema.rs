@@ -3,7 +3,7 @@ table! {
         id -> Bigint,
         username -> Text,
         password -> Text,
-        level -> Text,
+        permissions -> Text,
         status -> Text,
         status_changed ->Bigint,
         discoverer -> Text,

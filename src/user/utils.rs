@@ -12,7 +12,7 @@ use crate::user::action;
 use crate::user::action::{
     add_new_auth_token, add_opt, get_user_by_name, get_user_from_auth_token,
 };
-use crate::user::models::{AuthToken, Level, Status, User, UserProperties, OTP};
+use crate::user::models::{AuthToken, Status, User, UserProperties, OTP, UserPermissions};
 use crate::utils::{get_current_time, is_valid};
 
 pub fn get_user_by_header(
@@ -128,9 +128,15 @@ pub fn quick_add(
             status,
             status_changed: 0,
             created: get_current_time(),
-            level: Level::User,
             discoverer: discoverer.clone(),
             properties,
+            permissions: UserPermissions {
+                admin: false,
+                modify_user: false,
+                submit: true,
+                approve_user: false,
+                login: true
+            }
         };
         action::add_new_user(&user, &conn)?;
     }

@@ -5,7 +5,6 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::internal_error::InternalError::Error;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
 use crate::user::action::{get_user_by_name, update_properties};
-use crate::user::models::Level::User;
 use crate::user::utils::{get_user_by_header, quick_add};
 use crate::{Database, RN};
 use new_rawr::errors::APIError::HyperError;
@@ -41,7 +40,7 @@ pub async fn submit_user(
     if result1.is_some() {
         return Err(Error("Bad Creation?".to_string()));
     }
-    if discoverer.level != User {
+    if discoverer.permissions.submit {
         return APIResponse::respond_new(result1, &r);
     }
     return APIResponse {

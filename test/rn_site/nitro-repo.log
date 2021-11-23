@@ -7,3 +7,7 @@
 2021-11-22 10:37:26 rn_site INFO: Checking and running Migrations
 2021-11-22 10:37:26 rn_site INFO: Initializing Reddit Controller
 2021-11-22 10:37:27 rn_site INFO: Initializing Web Server
+2021-11-23 07:47:42 rn_site INFO: Initializing Database
+2021-11-23 07:47:42 rn_site INFO: Checking and running Migrations
+2021-11-23 07:47:42 rn_site INFO: Initializing Reddit Controller
+2021-11-23 07:47:43 rn_site INFO: Initializing Web Server

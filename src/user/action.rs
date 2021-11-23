@@ -42,13 +42,6 @@ pub fn get_users(conn: &MysqlConnection) -> Result<Vec<User>, diesel::result::Er
     return users.load::<User>(conn);
 }
 
-pub fn get_moderators(conn: &MysqlConnection) -> Result<Vec<User>, diesel::result::Error> {
-    use crate::schema::users::dsl::*;
-    return users
-        .filter(level.eq_any(vec!["Moderator", "Admin"]))
-        .load::<User>(conn);
-}
-
 pub fn delete_user(us: &String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
 
@@ -66,7 +59,6 @@ pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::re
             password.eq(&user.password),
             status.eq(&user.status),
             status_changed.eq(&user.status_changed),
-            level.eq(&user.level),
             moderator.eq(&user.moderator),
             properties.eq(&user.properties),
             discoverer.eq(&user.discoverer),

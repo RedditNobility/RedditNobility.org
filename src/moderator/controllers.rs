@@ -15,7 +15,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use strum::ParseError;
 use crate::schema::users::moderator;
-use crate::user::models::{Level, Status};
+use crate::user::models::{ Status};
 use crate::utils::get_current_time;
 
 #[get("/moderator/user/{user}")]
@@ -30,7 +30,7 @@ pub async fn user_page(
         return unauthorized();
     }
     let user = user.unwrap();
-    if user.level == Level::User {
+    if !user.permissions.modify_user{
         return unauthorized();
     }
     let lookup = get_user_by_name(&username, &connection)?;
@@ -70,7 +70,7 @@ pub async fn review_user(
         return unauthorized();
     }
     let user = user.unwrap();
-    if user.level == Level::User {
+    if !user.permissions.approve_user{
         return unauthorized();
     }
     let mut rn = rr.lock()?;
@@ -148,7 +148,7 @@ pub async fn review_user_update(
         return unauthorized();
     }
     let user = user.unwrap();
-    if user.level == Level::User {
+    if !user.permissions.approve_user{
         return unauthorized();
     }
     let option = get_user_by_name(&value.0.0, &conn)?;
@@ -190,7 +190,7 @@ pub async fn moderator_update_properties(
         return unauthorized();
     }
     let mut modetator = option.unwrap();
-    if modetator.level == Level::User {
+    if !modetator.permissions.modify_user{
         return unauthorized();
     }
     // Update User
