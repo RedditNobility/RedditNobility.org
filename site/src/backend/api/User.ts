@@ -21,7 +21,10 @@ export interface MeResponse {
 
 export interface UserPermissions {
   admin: boolean;
-  deployer: boolean;
+  modify_user: boolean;
+  submit: boolean;
+  approve_user: boolean;
+  login: boolean;
 }
 export async function getUser(token: string) {
   //${API_URL}
