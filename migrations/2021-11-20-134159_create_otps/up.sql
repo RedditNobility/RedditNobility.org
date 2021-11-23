@@ -1,4 +1,4 @@
-CREATE TABLE auth_tokens
+CREATE TABLE otps
 (
     id   BIGINT AUTO_INCREMENT PRIMARY KEY,
     user BIGINT,

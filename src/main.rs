@@ -147,8 +147,10 @@ async fn main() -> std::io::Result<()> {
             .wrap(Installed)
             .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
             .configure(error::handlers::init)
+            .configure(install::init)
             .configure(user::init)
             .configure(moderator::init)
+            .configure(admin::init)
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
             .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
     })
