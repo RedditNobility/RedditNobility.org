@@ -19,7 +19,7 @@ use std::thread;
 use actix_files::Files;
 
 use actix_web::web::PayloadConfig;
-use actix_web::{get, middleware, web, App, HttpServer};
+use actix_web::{get, middleware, web, App, HttpServer, HttpRequest};
 
 use chrono::{DateTime, Duration, Local};
 use diesel::prelude::*;
@@ -34,6 +34,7 @@ use nitro_log::NitroLogger;
 use rraw::auth::PasswordAuthenticator;
 use rraw::me::Me;
 use serde::{Deserialize, Serialize};
+use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::utils::{installed, Resources};
 
@@ -162,6 +163,7 @@ async fn main() -> std::io::Result<()> {
             .data(pool.clone())
             .data(site_core.clone())
             .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+            .service(titles)
             .configure(error::handlers::init)
             .configure(user::init)
             .configure(moderator::init)
@@ -210,4 +212,12 @@ pub struct InstallRequest {
 #[get("/favicon.ico")]
 async fn favicon() -> actix_web::Result<actix_files::NamedFile> {
     Ok(actix_files::NamedFile::open("site/static/favicon.ico")?)
+}
+
+#[get("/titles")]
+async fn titles(req: HttpRequest) -> SiteResponse {
+    let string1 = Resources::file_get_string("names.txt");
+    let split = string1.split(",");
+    let vec: Vec<&str> = split.collect();
+    return APIResponse::respond_new(Some(vec), &req);
 }

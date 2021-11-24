@@ -12,6 +12,14 @@ export interface Content {
   content: Content;
   score: number;
 
+}export interface Comment {
+  subreddit: string;
+  url: string;
+  id: string;
+  og_post_title: string;
+  content: Content;
+  score: number;
+
 }
 export interface RedditUser {
   name: string;
@@ -19,8 +27,8 @@ export interface RedditUser {
   comment_karma: number;
   total_karma: number;
   created: number;
-  top_five_posts: Array<RedditPost>
-  top_five_comments: Array<string>
+  top_posts: Array<RedditPost>
+  top_comments: Array<Comment>
   user: User;
 }export interface User {
   id: number;
@@ -31,6 +39,7 @@ export interface RedditUser {
   status_changed: number;
   moderator: string;
   discoverer: string;
+  properties: Properties;
   created: number;
 }
 export interface MeResponse {
@@ -38,6 +47,9 @@ export interface MeResponse {
   username: string;
   permissions: UserPermissions;
   created: number;
+}
+export interface Properties {
+  title: string | undefined;
 }
 
 export interface UserPermissions {
@@ -67,6 +79,23 @@ export async function getUser(token: string) {
 } export async function reviewUser(token: string): Promise<RedditUser | undefined> {
   //${API_URL}
   const value = await http.get("/api/moderator/review/next", {
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  });
+
+  if (value.status != 200) {
+    return undefined;
+  }
+  const data = value.data as BasicResponse<unknown>;
+  if (data.success) {
+    return data.data as RedditUser;
+  }
+
+  return undefined;
+} export async function reviewUserByName(token: string, username: string): Promise<RedditUser | undefined> {
+  //${API_URL}
+  const value = await http.get("/api/moderator/review/"+username, {
     headers: {
       Authorization: "Bearer " + token,
     },

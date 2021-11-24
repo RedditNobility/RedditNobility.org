@@ -42,6 +42,24 @@
           }
         }
       ]
+    },
+    {
+      "module": "rraw",
+      "levels": [
+        "TRACE",
+        "DEBUG",
+        "INFO",
+        "WARN",
+        "ERROR"
+      ],
+      "targets": [
+        {
+          "type": "console",
+          "properties": {
+            "format": "[%module%] %level_{color='true'}%: %message%"
+          }
+        }
+      ]
     }
   ]
 }

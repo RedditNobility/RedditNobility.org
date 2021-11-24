@@ -1,4 +1,3 @@
-
 use actix_web::{get, post, web, HttpRequest};
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -11,10 +10,11 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
+use log::{debug, error};
 
 use strum::ParseError;
 
-use crate::user::models::{ Status};
+use crate::user::models::{Status};
 use crate::utils::get_current_time;
 
 #[get("/moderator/user/{user}")]
@@ -44,8 +44,8 @@ pub struct RedditUser {
     pub comment_karma: i64,
     pub total_karma: i64,
     pub created: i64,
-    pub top_five_posts: Vec<RedditPost>,
-    pub top_five_comments: Vec<RedditPost>,
+    pub top_posts: Vec<RedditPost>,
+    pub top_comments: Vec<Comment>,
     pub user: User,
 
 }
@@ -58,7 +58,19 @@ pub struct RedditPost {
     pub title: String,
     pub content: RedditContent,
     pub score: i64,
-}#[derive(Debug, Serialize, Deserialize)]
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Comment {
+    pub subreddit: String,
+    pub url: String,
+    pub id: String,
+    pub og_post_title: String,
+    pub content: String,
+    pub score: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RedditContent {
     pub content: Option<String>,
     pub url: Option<String>,
@@ -80,7 +92,7 @@ pub async fn review_user(
         return unauthorized();
     }
     let user = user.unwrap();
-    if !user.permissions.approve_user{
+    if !user.permissions.approve_user {
         return unauthorized();
     }
     let mut rn = rr.lock()?;
@@ -106,22 +118,38 @@ pub async fn review_user(
         }
         user.unwrap()
     };
-
-    rn.add_id(user.id);
+//TODO re-add this one line
+    // rn.add_id(user.id);
     let r_user = rn.reddit.user(user.username.clone());
     let about = rn.reddit.user(user.username.clone()).about().await?;
 
     let submissions = r_user
         .submissions(None).await?;
-    let mut user_posts = Vec::<RedditPost>::new();
+    let comments = r_user
+        .comments(None).await?;
 
+
+    let mut user_posts = Vec::<RedditPost>::new();
+    let mut user_comments = Vec::<Comment>::new();
+    for x in comments.data.children {
+        let x = x.data;
+        let post = Comment {
+            subreddit: x.subreddit,
+            url: format!("https://reddit.com{}", x.permalink.unwrap()),
+            id: x.id.clone(),
+            og_post_title: x.link_title.clone(),
+            content: x.body,
+            score: x.score as i64,
+        };
+        user_comments.push(post);
+    }
     for x in submissions.data.children {
         let x = x.data;
         let text = x.selftext;
-        let content = if text.is_empty(){
-            RedditContent{ content: None, url: x.url, over_18: x.over_18 }
-        }else{
-            RedditContent{ content: Some(text), url: None, over_18: x.over_18 }
+        let content = if text.is_empty() {
+            RedditContent { content: None, url: x.url, over_18: x.over_18 }
+        } else {
+            RedditContent { content: Some(text), url: None, over_18: x.over_18 }
         };
         let post = RedditPost {
             subreddit: x.subreddit,
@@ -139,9 +167,9 @@ pub async fn review_user(
         comment_karma: about.data.comment_karma as i64,
         total_karma: about.data.total_karma as i64,
         created: about.data.created as i64,
-        top_five_posts: user_posts,
-        top_five_comments: vec![],
-        user
+        top_posts: user_posts,
+        top_comments: user_comments,
+        user,
     };
     let response = APIResponse::<RedditUser> {
         success: true,
@@ -149,6 +177,11 @@ pub async fn review_user(
         status_code: Some(200),
     };
     response.respond(&req)
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ApproveRequest {
+    pub title: Option<String>,
 }
 
 #[post("/api/moderator/review/{username}/{status}")]
@@ -164,8 +197,9 @@ pub async fn review_user_update(
     if user.is_none() {
         return unauthorized();
     }
+
     let user = user.unwrap();
-    if !user.permissions.approve_user{
+    if !user.permissions.approve_user {
         return unauthorized();
     }
     let option = get_user_by_name(&username, &conn)?;
@@ -181,10 +215,21 @@ pub async fn review_user_update(
         let rr = rn.lock()?;
         let user1 = utils::approve_user(&user, &rr.reddit).await;
         if !user1 {
+            error!("Approval Failure");
             return crate::error::response::error("Unable to Process Approve Request Currently", Some(StatusCode::INTERNAL_SERVER_ERROR));
         }
     }
-    crate::moderator::action::update_status(&option.unwrap().id, status, &user.username, get_current_time(), &conn)?;
+    let x: ApproveRequest = serde_qs::from_str(req.query_string()).unwrap();
+    if let Some(title) = x.title {}
+    let user2 = option.unwrap();
+    let mut properties = user2.properties;
+    let x: ApproveRequest = serde_qs::from_str(req.query_string()).unwrap();
+    if let Some(title) = x.title {
+        debug!("Changing {} title to {}", &user2.username, &title);
+        properties.title = Some(title);
+        update_properties(&user2.id, properties, &conn)?;
+    }
+    crate::moderator::action::update_status(&user2.id, status, &user.username, get_current_time(), &conn)?;
     return APIResponse::new(true, Some(true)).respond(&req);
 }
 
@@ -198,7 +243,7 @@ pub struct ChangeRequest {
 pub async fn moderator_update_properties(
     database: Database,
     request: Json<ChangeRequest>,
-    path: web::Path<(String, String)>  ,
+    path: web::Path<(String, String)>,
     r: HttpRequest,
 ) -> SiteResponse {
     let (username, key) = path.into_inner();

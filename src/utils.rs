@@ -15,6 +15,7 @@ use crate::settings::action::get_setting;
 use crate::User;
 use rust_embed::RustEmbed;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use log::error;
 use rraw::auth::AnonymousAuthenticator;
 use rraw::me::Me;
 use rraw::utils::options::FriendType;
@@ -77,6 +78,7 @@ pub async fn approve_user(user: &User, client: &Me) -> bool {
     let result1 =  client
         .subreddit("RedditNobility".to_string()).add_friend(user.username.clone(), FriendType::Contributor).await;
     if result1.is_err() {
+        error!("Unable to approve User {}", result1.err().unwrap());
         return false;
     }
     return result1.unwrap().success;

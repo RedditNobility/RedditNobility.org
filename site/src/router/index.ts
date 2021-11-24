@@ -43,7 +43,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Moderator,
 
   }, {
-    path: "/review",
+    path: "/review/:username?",
     name: "Review",
     component: Review,
 
