@@ -1,7 +1,28 @@
-import { BasicResponse, DEFAULT_USER_LIST } from "../Response";
+import { BasicResponse } from "../Response";
 import http from "@/http-common";
+export interface Content {
+  url: string | undefined;
+  content: string | undefined;
+  over_18: boolean;
+}export interface RedditPost {
+  subreddit: string;
+  url: string;
+  id: string;
+  title: string;
+  content: Content;
+  score: number;
 
-export interface User {
+}
+export interface RedditUser {
+  name: string;
+  avatar: string;
+  comment_karma: number;
+  total_karma: number;
+  created: number;
+  top_five_posts: Array<RedditPost>
+  top_five_comments: Array<string>
+  user: User;
+}export interface User {
   id: number;
   discord_id: number;
   username: string;
@@ -43,4 +64,21 @@ export async function getUser(token: string) {
   }
 
   return null;
+} export async function reviewUser(token: string): Promise<RedditUser | undefined> {
+  //${API_URL}
+  const value = await http.get("/api/moderator/review/next", {
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  });
+
+  if (value.status != 200) {
+    return undefined;
+  }
+  const data = value.data as BasicResponse<unknown>;
+  if (data.success) {
+    return data.data as RedditUser;
+  }
+
+  return undefined;
 }

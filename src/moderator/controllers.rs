@@ -46,6 +46,8 @@ pub struct RedditUser {
     pub created: i64,
     pub top_five_posts: Vec<RedditPost>,
     pub top_five_comments: Vec<RedditPost>,
+    pub user: User,
+
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -54,8 +56,14 @@ pub struct RedditPost {
     pub url: String,
     pub id: String,
     pub title: String,
-    pub content: String,
+    pub content: RedditContent,
     pub score: i64,
+}#[derive(Debug, Serialize, Deserialize)]
+pub struct RedditContent {
+    pub content: Option<String>,
+    pub url: Option<String>,
+    pub over_18: bool,
+
 }
 
 #[get("/api/moderator/review/{user}")]
@@ -109,12 +117,18 @@ pub async fn review_user(
 
     for x in submissions.data.children {
         let x = x.data;
+        let text = x.selftext;
+        let content = if text.is_empty(){
+            RedditContent{ content: None, url: x.url, over_18: x.over_18 }
+        }else{
+            RedditContent{ content: Some(text), url: None, over_18: x.over_18 }
+        };
         let post = RedditPost {
             subreddit: x.subreddit,
-            url: format!("https://reddit.com/r/{}", x.id),
+            url: format!("https://reddit.com{}", x.permalink),
             id: x.id.clone(),
             title: x.title.clone(),
-            content: x.selftext.clone().to_string(),
+            content: content,
             score: x.score as i64,
         };
         user_posts.push(post);
@@ -126,7 +140,8 @@ pub async fn review_user(
         total_karma: about.data.total_karma as i64,
         created: about.data.created as i64,
         top_five_posts: user_posts,
-        top_five_comments: vec![]
+        top_five_comments: vec![],
+        user
     };
     let response = APIResponse::<RedditUser> {
         success: true,
