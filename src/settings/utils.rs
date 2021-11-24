@@ -16,7 +16,7 @@ pub fn quick_add(key: &str, value: String, conn: &MysqlConnection) -> Result<(),
     }
     let setting = DBSetting {
         id: 0,
-        setting_key: key.into(),
+        setting: key.into(),
         value,
         updated: get_current_time(),
     };
@@ -45,7 +45,7 @@ pub fn default_setting(string: &str) -> Result<DBSetting, InternalError> {
         .unwrap();
     Ok(DBSetting {
         id: 0,
-        setting_key: setting.clone(),
+        setting: setting.clone(),
         value: setting.default.unwrap_or_else(default_string),
         updated: get_current_time(),
     })

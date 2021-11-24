@@ -34,7 +34,7 @@ pub fn get_setting(
 ) -> Result<Option<settings::settings::DBSetting>, diesel::result::Error> {
     use crate::schema::settings::dsl::*;
     let found_user = settings
-        .filter(setting_key.like(k.to_string()))
+        .filter(setting.like(k.to_string()))
         .first::<DBSetting>(conn)
         .optional()?;
     Ok(found_user)

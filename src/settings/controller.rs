@@ -8,18 +8,18 @@ use crate::error::internal_error::InternalError;
 use crate::error::response::unauthorized;
 use crate::settings::action::get_setting;
 use crate::settings::settings::{DBSetting, SettingManager};
-use crate::settings::utils::get_setting_report;
-use crate::system::utils::get_user_by_header;
+use crate::settings::utils::{get_setting_or_empty, get_setting_report};
 use crate::utils::get_current_time;
 use crate::{settings, DbPool};
 use diesel::MysqlConnection;
+use crate::user::utils::get_user_by_header;
 
 
 #[get("/api/setting/{setting}")]
 pub async fn about_setting(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    web::Path(setting): web::Path<String>,
+    setting: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -53,7 +53,7 @@ pub async fn update_setting(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     request: web::Json<UpdateSettingRequest>,
-    web::Path(setting): web::Path<String>,
+    setting: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 

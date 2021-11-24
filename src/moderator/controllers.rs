@@ -1,19 +1,19 @@
-use std::path::Path;
+
 use actix_web::{get, post, web, HttpRequest};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::{Database, User, RN, utils};
 
-use crate::error::response::{bad_request, error, not_found, unauthorized};
+use crate::error::response::{bad_request, not_found, unauthorized};
 use crate::user::action::{get_found_users, get_user_by_name, update_properties};
 use crate::user::utils::get_user_by_header;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
-use rraw::utils::options::FeedOption;
+
 use strum::ParseError;
-use crate::schema::users::moderator;
+
 use crate::user::models::{ Status};
 use crate::utils::get_current_time;
 
@@ -41,10 +41,11 @@ pub async fn user_page(
 pub struct RedditUser {
     pub name: String,
     pub avatar: String,
-    pub commentKarma: i64,
+    pub comment_karma: i64,
     pub total_karma: i64,
     pub created: i64,
-    pub topFivePosts: Vec<RedditPost>,
+    pub top_five_posts: Vec<RedditPost>,
+    pub top_five_comments: Vec<RedditPost>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -121,10 +122,11 @@ pub async fn review_user(
     let user = RedditUser {
         name: about.data.name,
         avatar: about.data.icon_img.unwrap_or("".parse().unwrap()),
-        commentKarma: about.data.comment_karma as i64,
+        comment_karma: about.data.comment_karma as i64,
         total_karma: about.data.total_karma as i64,
         created: about.data.created as i64,
-        topFivePosts: user_posts,
+        top_five_posts: user_posts,
+        top_five_comments: vec![]
     };
     let response = APIResponse::<RedditUser> {
         success: true,
@@ -191,7 +193,7 @@ pub async fn moderator_update_properties(
     if option.is_none() {
         return unauthorized();
     }
-    let mut modetator = option.unwrap();
+    let modetator = option.unwrap();
     if !modetator.permissions.moderator {
         return unauthorized();
     }

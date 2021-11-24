@@ -73,7 +73,7 @@ impl ToSql<Text, Mysql> for Setting {
 #[table_name = "settings"]
 pub struct DBSetting {
     pub id: i64,
-    pub setting_key: Setting,
+    pub setting: Setting,
     pub value: String,
     pub updated: i64,
 }
@@ -139,7 +139,7 @@ pub trait SettingVec {
 impl SettingVec for Vec<DBSetting> {
     fn get_setting_by_key(&self, key: &str) -> Option<&DBSetting> {
         for x in self {
-            if x.setting_key.key.eq(key) {
+            if x.setting.key.eq(key) {
                 return Option::Some(x);
             }
         }

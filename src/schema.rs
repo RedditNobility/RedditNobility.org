@@ -31,7 +31,7 @@ table! {
 table! {
     settings (id) {
         id -> Bigint,
-        setting_key -> Text,
+        setting -> Text,
         value ->Text,
         updated ->Bigint,
 

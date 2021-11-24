@@ -1,13 +1,13 @@
-use crate::user::models::{AuthToken, User, UserProperties, OTP, Status};
+use crate::user::models::{Status};
 use diesel::prelude::*;
-use diesel::result::Error as DieselError;
+
 use diesel::MysqlConnection;
 
 /// Updates the User Status, Moderator Who Changed it, and the time it was changed
 pub fn update_status(
     user: &i64,
-    status: Status,
-    moderator: &String,
+    _status: Status,
+    _moderator: &String,
     time: i64,
     conn: &MysqlConnection,
 ) -> Result<(), diesel::result::Error> {

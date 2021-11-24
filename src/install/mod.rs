@@ -7,7 +7,7 @@ use crate::error::response::already_exists;
 
 use crate::{utils, DbPool};
 use actix_web::{post, HttpRequest};
-use actix_web::rt::System;
+
 use bcrypt::{hash, DEFAULT_COST};
 use serde::{Deserialize, Serialize};
 

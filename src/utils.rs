@@ -3,11 +3,11 @@ use diesel::MysqlConnection;
 
 use rand::distributions::Alphanumeric;
 use rand::Rng;
-use std::fs;
-use std::fs::{read, File};
-use std::io::{BufRead, BufReader};
-use std::path::PathBuf;
-use std::path::{Path as SysPath, Path};
+
+use std::fs::{read};
+use std::io::{BufRead};
+
+use std::path::{Path};
 use std::str::FromStr;
 
 use crate::error::internal_error::InternalError;
@@ -135,10 +135,3 @@ pub async fn get_avatar(user: &User) -> Result<String, InternalError> {
     return Ok("".to_string());
 }
 
-pub fn gen_client_key() -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(25)
-        .map(char::from)
-        .collect()
-}

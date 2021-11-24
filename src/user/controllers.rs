@@ -32,9 +32,9 @@ pub async fn submit_user(
     if let Err(error) = user_reddit {
         return match error {
             APIError::HTTPError(_) => {
-                return not_found();
+                not_found()
             }
-            _ => { return Err(error.into()); }
+            _ => { Err(error.into()) }
         };
     }
     quick_add(&suggest, &discoverer.username, &conn)?;
