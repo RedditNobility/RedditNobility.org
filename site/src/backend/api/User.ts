@@ -21,7 +21,7 @@ export interface MeResponse {
 
 export interface UserPermissions {
   admin: boolean;
-  modify_user: boolean;
+  moderator: boolean;
   submit: boolean;
   approve_user: boolean;
   login: boolean;

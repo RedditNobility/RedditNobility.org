@@ -32,7 +32,7 @@ pub fn already_exists() -> SiteResponse {
             error_code: Some("ALREADY_EXISTS".to_string()),
         }),
     )
-    .error(StatusCode::BAD_REQUEST)
+    .error(StatusCode::CONFLICT)
 }
 
 pub fn uninstalled() -> SiteResponse {

@@ -1,5 +1,6 @@
 use actix_web::web::{Json, Path};
 use actix_web::{post, HttpRequest};
+use rraw::utils::error::APIError;
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::internal_error::InternalError::Error;
@@ -7,7 +8,6 @@ use crate::error::response::{already_exists, bad_request, not_found, unauthorize
 use crate::user::action::{get_user_by_name, update_properties};
 use crate::user::utils::{get_user_by_header, quick_add};
 use crate::{Database, RN};
-use new_rawr::errors::APIError::HyperError;
 
 #[post("/api/submit/{username}")]
 pub async fn submit_user(
@@ -28,16 +28,18 @@ pub async fn submit_user(
     if result1.is_some() {
         return already_exists();
     }
-    let user_reddit = rn.reddit.user(&suggest).about();
+    let user_reddit = rn.reddit.user(suggest.to_string()).about().await;
     if let Err(error) = user_reddit {
         return match error {
-            HyperError(_) => not_found(),
-            _ => Err(error.into()),
+            APIError::HTTPError(_) => {
+                return not_found();
+            }
+            _ => { return Err(error.into()); }
         };
     }
     quick_add(&suggest, &discoverer.username, &conn)?;
     let result1 = get_user_by_name(&suggest, &conn)?;
-    if result1.is_some() {
+    if result1.is_none() {
         return Err(Error("Bad Creation?".to_string()));
     }
     if discoverer.permissions.submit {
@@ -48,7 +50,7 @@ pub async fn submit_user(
         data: Some(true),
         status_code: Some(201),
     }
-    .respond(&r);
+        .respond(&r);
 }
 
 #[derive(serde::Deserialize)]

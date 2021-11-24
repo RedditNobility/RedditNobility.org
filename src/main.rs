@@ -26,17 +26,16 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
 use log::info;
-use new_rawr::auth::PasswordAuthenticator;
-use new_rawr::client::RedditClient;
 
-use crate::install::install::Installed;
+
 use crate::user::models::User;
-use new_rawr::traits::Content;
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
+use rraw::auth::PasswordAuthenticator;
+use rraw::me::Me;
 use serde::{Deserialize, Serialize};
 
-use crate::utils::Resources;
+use crate::utils::{installed, Resources};
 
 mod admin;
 mod api_response;
@@ -55,11 +54,11 @@ pub type RN = web::Data<Arc<Mutex<RNCore>>>;
 
 pub struct RNCore {
     pub users_being_worked_on: HashMap<i64, DateTime<Local>>,
-    pub reddit: RedditClient,
+    pub reddit: Me,
 }
 
 impl RNCore {
-    fn new(client: RedditClient) -> RNCore {
+    fn new(client: Me) -> RNCore {
         RNCore {
             users_being_worked_on: HashMap::new(),
             reddit: client,
@@ -101,6 +100,24 @@ async fn main() -> std::io::Result<()> {
     let connection = pool.get().unwrap();
     info!("Checking and running Migrations");
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap();
+    std::env::set_var("INSTALLED", "false".to_string());
+
+    if !installed(&connection).unwrap() {
+        info!("Initializing In Installer");
+        return HttpServer::new(move || {
+            App::new()
+                .wrap(
+                    Cors::default()
+                        .allow_any_header()
+                        .allow_any_method()
+                        .allow_any_origin(),
+                )
+                .wrap(middleware::Logger::default())
+                .data(pool.clone())
+                .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+                .configure(install::init).service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
+        }).workers(2).bind(std::env::var("ADDRESS").unwrap())?.run().await;
+    }
     info!("Initializing Reddit Controller");
     let arc = PasswordAuthenticator::new(
         std::env::var("CLIENT_KEY").unwrap().as_str(),
@@ -108,8 +125,7 @@ async fn main() -> std::io::Result<()> {
         std::env::var("REDDIT_USER").unwrap().as_str(),
         std::env::var("PASSWORD").unwrap().as_str(),
     );
-    std::env::set_var("INSTALLED", "false".to_string());
-    let client = RedditClient::new("RedditNobility bot(by u/KingTuxWH)", arc);
+    let client = Me::login(arc, "RedditNobility bot(by u/KingTuxWH)".to_string()).await.unwrap();
     let site_core = Arc::new(Mutex::new(RNCore::new(client)));
     let reference = site_core.clone();
     thread::spawn(move || {
@@ -145,10 +161,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .data(pool.clone())
             .data(site_core.clone())
-            .wrap(Installed)
             .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
             .configure(error::handlers::init)
-            .configure(install::init)
             .configure(user::init)
             .configure(moderator::init)
             .configure(admin::init)

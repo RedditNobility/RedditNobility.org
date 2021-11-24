@@ -11,28 +11,45 @@
     <el-menu-item
       v-if="user.permissions.submit"
       index="Submit"
-      @click="router.push('/')"
+      @click="dialogVisible = true"
       >Submit</el-menu-item
     >
     <el-menu-item
       v-if="user.permissions.approve_user"
       index="Review Users"
-      @click="router.push('/')"
+      @click="router.push('/review')"
       >Review Users</el-menu-item
     >
     <el-menu-item
-      v-if="user.permissions.modify_user"
-      index="Modify User"
-      @click="router.push('/')"
-      >Modify User</el-menu-item
-    >    
+      v-if="user.permissions.moderator"
+      index="Moderator"
+      @click="router.push('/moderator')"
+      >Moderator</el-menu-item
+    >
     <el-menu-item
       v-if="user.permissions.admin"
       index="Admin"
-      @click="router.push('/')"
+      @click="router.push('/admin')"
       >Admin</el-menu-item
     >
   </el-menu>
+  <el-dialog v-model="dialogVisible" title="Submit a New User">
+    <el-form
+      :model="form"
+      label-position="top"
+      label-width="120px"
+      v-on:submit="onSubmit"
+    >
+      <el-form-item label="Username">
+        <el-input v-model="form.username"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button block native-type="submit" type="primary"
+          >Submit User</el-button
+        >
+      </el-form-item>
+    </el-form>
+  </el-dialog>
 </template>
 
 <script lang="ts">
@@ -50,8 +67,51 @@ export default defineComponent({
   },
   setup() {
     const router = useRouter();
+    let form = ref({
+      username: "",
+    });
     const activeIndex = ref(router.currentRoute.value.name);
-    return { activeIndex, router };
+    const dialogVisible = ref(false);
+    return { activeIndex, router, dialogVisible, form };
+  },
+  methods: {
+    async onSubmit(e: any) {
+      e.preventDefault();
+      const res = await http
+        .post(
+          "api/submit/" + this.form.username,
+          {},
+          {
+            headers: {
+              Authorization: "Bearer " + this.$cookie.getCookie("token"),
+            },
+          }
+        )
+        .then((res) => {
+          if (res.status != 201 && res.status != 200) {
+            return;
+          }
+          this.form.username = "";
+          this.$notify({
+            title: "User Submitted",
+          });
+        })
+        .catch((error) => {
+          if (error.response) {
+            if (error.response.status == 409) {
+              this.$notify({
+                title: "Username Already Exists",
+                type: "warn",
+              });
+            } else {
+              this.$notify({
+                title: "Unkown Error Occured",
+                type: "warn",
+              });
+            }
+          }
+        });
+    },
   },
 });
 </script>

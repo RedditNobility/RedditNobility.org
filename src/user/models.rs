@@ -47,7 +47,7 @@ pub struct UserPermissions {
     #[serde(default)]
     pub admin: bool,
     #[serde(default)]
-    pub modify_user: bool,
+    pub moderator: bool,
     #[serde(default)]
     pub submit: bool,
     #[serde(default)]
@@ -197,7 +197,7 @@ impl User {
             created: sub.created.unwrap_or_else(utils::get_current_time),
             permissions: UserPermissions {
                 admin: false,
-                modify_user: false,
+                moderator: false,
                 submit: true,
                 approve_user: false,
                 login: true,

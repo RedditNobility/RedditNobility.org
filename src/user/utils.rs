@@ -133,7 +133,7 @@ pub fn quick_add(
             properties,
             permissions: UserPermissions {
                 admin: false,
-                modify_user: false,
+                moderator: false,
                 submit: true,
                 approve_user: false,
                 login: true

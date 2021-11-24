@@ -75,7 +75,7 @@ pub async fn one_time_password_create(
     let rn = rn.lock()?;
     println!("Four");
     let string = generate_otp(&user.id, &connection)?;
-    send_login(&user.username, string, &rn.reddit)?;
+    send_login(&user.username, string, &rn.reddit).await?;
     return APIResponse {
         success: true,
         data: Some(true),

@@ -1,4 +1,3 @@
-pub mod install;
 
 use actix_web::{get, web};
 
@@ -8,6 +7,7 @@ use crate::error::response::already_exists;
 
 use crate::{utils, DbPool};
 use actix_web::{post, HttpRequest};
+use actix_web::rt::System;
 use bcrypt::{hash, DEFAULT_COST};
 use serde::{Deserialize, Serialize};
 
@@ -55,7 +55,7 @@ pub async fn install_post(
         password: hash(&form.password.clone(), DEFAULT_COST).unwrap(),
         permissions: UserPermissions {
             admin: true,
-            modify_user: true,
+            moderator: true,
             submit: true,
             approve_user: true,
             login: true

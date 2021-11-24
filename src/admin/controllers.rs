@@ -3,8 +3,6 @@ use actix_web::{get, web, HttpRequest};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::{Database, User, RN, utils};
-use new_rawr::structures::submission::Submission;
-use new_rawr::traits::{Content, Votable};
 
 use crate::error::response::{bad_request, error, not_found, unauthorized};
 use crate::user::action::{get_found_users, get_user_by_id, get_user_by_name, update_properties};
@@ -23,8 +21,9 @@ use crate::utils::get_current_time;
 pub async fn update_permission(
     database: Database,
     r: HttpRequest,
-    web::Path((user, key, value)): web::Path<(i64, String, bool)>,
+    path: web::Path<(i64, String, bool)>,
 ) -> SiteResponse {
+    let (user, key, value) = path.into_inner();
     let connection = database.get()?;
 
     let admin = get_user_by_header(r.headers(), &connection)?;
@@ -41,8 +40,8 @@ pub async fn update_permission(
         "admin" => {
             permissions.admin = value;
         }
-        "modify_user" => {
-            permissions.modify_user = value;
+        "moderator" => {
+            permissions.moderator = value;
         }
         "submit" => {
             permissions.submit = value;

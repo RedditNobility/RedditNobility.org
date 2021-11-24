@@ -2,6 +2,10 @@ import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import Home from "../views/Home.vue";
 import Install from "../views/Install.vue";
 import Login from "../views/Login.vue";
+import Admin from "../views/Admin.vue";
+import Review from "../views/Review.vue";
+import ModifyUser from "../views/ModifyUser.vue";
+import Moderator from "../views/Moderator.vue";
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
@@ -16,7 +20,7 @@ const routes: Array<RouteRecordRaw> = [
     // which is lazy-loaded when the route is visited.
     component: () =>
       import(/* webpackChunkName: "about" */ "../views/About.vue"),
-  },  {
+  }, {
     path: "/install",
     name: "Install",
     component: Install,
@@ -27,12 +31,28 @@ const routes: Array<RouteRecordRaw> = [
     name: "Login",
     component: Login,
 
+  }, 
+  {
+    path: "/admin",
+    name: "Admin",
+    component: Admin,
+
+  },  {
+    path: "/moderator",
+    name: "Moderator",
+    component: Moderator,
+
+  }, {
+    path: "/review",
+    name: "Review",
+    component: Review,
+
   },
 ];
 
-const router = createRouter({  
+const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-    routes,
+  routes,
 });
 
 export default router;

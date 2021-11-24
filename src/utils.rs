@@ -1,8 +1,6 @@
 use chrono::{DateTime, Utc};
 use diesel::MysqlConnection;
 
-use new_rawr::auth::AnonymousAuthenticator;
-use new_rawr::client::RedditClient;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::fs;
@@ -17,6 +15,9 @@ use crate::settings::action::get_setting;
 use crate::User;
 use rust_embed::RustEmbed;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use rraw::auth::AnonymousAuthenticator;
+use rraw::me::Me;
+use rraw::utils::options::FriendType;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -57,10 +58,10 @@ pub(crate) fn get_current_time() -> i64 {
         .as_millis() as i64
 }
 
-pub fn send_login(user: &String, password: String, rr: &RedditClient) -> Result<(), InternalError> {
+pub async fn send_login(user: &String, password: String, rr: &Me) -> Result<(), InternalError> {
     let string = build_message(user, password)?;
-    rr.messages()
-        .compose(user.as_str(), "RedditNobility Login", string.as_str())?;
+    rr.inbox()
+        .compose(user.clone(), "RedditNobility Login".to_string(), string, None).await?;
     return Ok(());
 }
 
@@ -72,14 +73,13 @@ fn build_message(user: &String, password: String) -> Result<String, InternalErro
     return Ok(string);
 }
 
-pub fn approve_user(user: &User, client: &RedditClient) -> bool {
-    let result1 = client
-        .subreddit("RedditNobility")
-        .invite_member(user.username.clone());
+pub async fn approve_user(user: &User, client: &Me) -> bool {
+    let result1 =  client
+        .subreddit("RedditNobility".to_string()).add_friend(user.username.clone(), FriendType::Contributor).await;
     if result1.is_err() {
         return false;
     }
-    return result1.unwrap();
+    return result1.unwrap().success;
 }
 
 
@@ -107,35 +107,32 @@ pub fn to_date(time: i64) -> String {
     return datetime.format("%m/%d/%Y").to_string();
 }
 
-pub fn get_avatar(user: &User) -> String {
+pub async fn get_avatar(user: &User) -> Result<String, InternalError> {
     let option1 = user.properties.avatar.as_ref();
     if option1.is_some() {
         if !option1.unwrap().is_empty() {
-            return option1.unwrap().clone();
+            return Ok(option1.unwrap().clone());
         }
     }
 
-    let client = RedditClient::new(
-        "Robotic Monarch by u/KingTuxWH",
+    let client = Me::login(
         AnonymousAuthenticator::new(),
-    );
-    let user1 = client.user(user.username.as_str());
-    let result = user1.about();
-    if result.is_err() {
-        return "".to_string();
-    }
-    let about = result.unwrap();
+        "Robotic Monarch by u/KingTuxWH".to_string()
+    ).await?;
+    let user1 = client.user(user.username.clone());
+    let about = user1.about().await?;
+
     let option = about.data.snoovatar_img;
     if let Some(avatar) = option {
         if !avatar.is_empty() {
-            return avatar.clone();
+            return Ok(avatar.clone());
         }
     }
     let option = about.data.icon_img;
     if option.is_some() {
-        return option.unwrap().clone();
+        return Ok(option.unwrap().clone());
     }
-    return "".to_string();
+    return Ok("".to_string());
 }
 
 pub fn gen_client_key() -> String {
