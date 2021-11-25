@@ -48,6 +48,7 @@ pub mod schema;
 mod settings;
 pub mod user;
 mod utils;
+mod frontend;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 pub type Database = web::Data<DbPool>;
@@ -116,6 +117,7 @@ async fn main() -> std::io::Result<()> {
                 .wrap(middleware::Logger::default())
                 .data(pool.clone())
                 .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+                .configure(frontend::init)
                 .configure(install::init).service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
         }).workers(2).bind(std::env::var("ADDRESS").unwrap())?.run().await;
     }
@@ -167,6 +169,7 @@ async fn main() -> std::io::Result<()> {
             .configure(error::handlers::init)
             .configure(user::init)
             .configure(moderator::init)
+            .configure(frontend::init)
             .configure(admin::init)
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
             .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
