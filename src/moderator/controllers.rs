@@ -11,7 +11,7 @@ use std::str::FromStr;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use chrono::{Date, Datelike, DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
-use log::{debug, error};
+use log::{debug, error, trace};
 use rraw::utils::error::APIError;
 
 use strum::ParseError;
@@ -182,17 +182,20 @@ pub async fn review_user(
     }
     let mut rn = rr.lock()?;
     let user = if username.eq("next") {
+        trace!("Looking for Next User");
         let mut result = get_found_users(&conn)?;
         result.sort_by_key(|x| x.created);
         let mut v = None;
         for i in 0..result.len() {
             let user = result.remove(i);
             if !rn.users_being_worked_on.contains_key(&user.id) {
+                trace!("User Found {}", &user.username);
                 v = Some(user);
                 break;
             }
         }
         if v.is_none() {
+            trace!("Unable to find User {}", &username);
             return not_found();
         }
         v.unwrap()
@@ -206,12 +209,15 @@ pub async fn review_user(
 //TODO re-add this one line
     // rn.add_id(user.id);
     let r_user = rn.reddit.user(user.username.clone());
+    trace!("Grabbing About Data for {}", &&user.username);
     let about = rn.reddit.user(user.username.clone()).about().await;
+
     if let Err(error) = about {
+        error!("Failed to grab about data for {} error {}", &user.username, &error);
         match error {
             APIError::HTTPError(http) => {
                 if http.eq(&StatusCode::NOT_FOUND) {
-                    delete_user(&user.username, &conn);
+                    delete_user(&user.username, &conn)?;
                 }
             }
             _ => {}
