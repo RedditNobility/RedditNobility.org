@@ -287,9 +287,11 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-#user-info {
-  width: 50%;
-  margin: auto;
+@media only screen and (min-width: 1200px) {
+  #user-info {
+    width: 50%;
+    margin: auto;
+  }
 }
 .post {
   border-style: solid;

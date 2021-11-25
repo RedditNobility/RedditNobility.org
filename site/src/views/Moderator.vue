@@ -13,7 +13,7 @@
               <el-descriptions-item label="Users in Queue">{{
                 stats.users_discovered - stats.users_reviewed
               }}</el-descriptions-item>
-              <br>
+              <br />
               <el-descriptions-item label="Users Discovered">{{
                 stats.users_discovered
               }}</el-descriptions-item>
@@ -105,14 +105,16 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-#user-info {
-  width: 50%;
-  margin: auto;
-}
 .post {
   border-style: solid;
 }
 .comment {
   border-style: solid;
+}
+@media only screen and (min-width: 600px) {
+  #user-info {
+    width: 50%;
+    margin: auto;
+  }
 }
 </style>

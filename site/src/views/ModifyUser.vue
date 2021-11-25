@@ -1,5 +1,5 @@
 <template>
-  <el-container direction="horizontal" style="border: 1px solid #eee">
+  <el-container style="border: 1px solid #eee">
     <el-main v-loading="loading">
       <div v-if="user != undefined">
         <h1>{{ user.name }}</h1>
@@ -265,9 +265,11 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-#user-info {
-  width: 50%;
-  margin: auto;
+@media only screen and (min-width: 1200px) {
+  #user-info {
+    width: 50%;
+    margin: auto;
+  }
 }
 .post {
   border-style: solid;
