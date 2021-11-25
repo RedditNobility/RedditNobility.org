@@ -3,7 +3,6 @@ use crate::user::models::{Status};
 use diesel::prelude::*;
 
 use diesel::MysqlConnection;
-use crate::schema::users::username;
 
 /// Updates the User Status, Moderator Who Changed it, and the time it was changed
 pub fn update_status(

@@ -43,7 +43,6 @@ mod api_response;
 mod error;
 mod install;
 mod moderator;
-mod recaptcha;
 pub mod schema;
 mod settings;
 pub mod user;
@@ -115,8 +114,8 @@ async fn main() -> std::io::Result<()> {
                         .allow_any_origin(),
                 )
                 .wrap(middleware::Logger::default())
-                .data(pool.clone())
-                .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+                .app_data(pool.clone())
+                .app_data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
                 .configure(frontend::init)
                 .configure(install::init).service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
         }).workers(2).bind(std::env::var("ADDRESS").unwrap())?.run().await;
@@ -162,14 +161,15 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_origin(),
             )
             .wrap(middleware::Logger::default())
-            .data(pool.clone())
-            .data(site_core.clone())
-            .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+            .app_data(pool.clone())
+            .app_data(site_core.clone())
+            .app_data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
             .service(titles)
             .configure(error::handlers::init)
             .configure(user::init)
             .configure(moderator::init)
             .configure(frontend::init)
+            .configure(settings::init)
             .configure(admin::init)
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
             .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())

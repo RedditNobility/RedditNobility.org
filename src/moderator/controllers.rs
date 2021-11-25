@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
-use chrono::{Date, Datelike, DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{ Datelike, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use log::{debug, error, trace};
 use rraw::utils::error::APIError;
 
@@ -18,7 +18,7 @@ use strum::ParseError;
 use crate::moderator::action::{get_approve_count, get_approve_count_total, get_discover_count, get_discover_count_total};
 
 use crate::user::models::{Status};
-use crate::utils::get_current_time;
+use crate::utils::{get_current_time, yeet};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserStats {
@@ -87,7 +87,7 @@ pub async fn user_stats(
 }
 
 fn get_month_timestamp() -> i64 {
-    let mut date = Utc::today();
+    let date = Utc::today();
     let new_month = NaiveDate::from_ymd(date.year(), date.month(), 1);
     let time = NaiveDateTime::new(new_month, NaiveTime::from_hms(0, 0, 0));
     debug!("Month Value {} UnixTime {}", &time, time.timestamp_millis());
@@ -180,7 +180,7 @@ pub async fn review_user(
     if !user.permissions.review_user {
         return unauthorized();
     }
-    let mut rn = rr.lock()?;
+    let rn = rr.lock()?;
     let user = if username.eq("next") {
         trace!("Looking for Next User");
         let mut result = get_found_users(&conn)?;
@@ -229,7 +229,7 @@ pub async fn review_user(
         .submissions(None).await?;
     let comments = r_user
         .comments(None).await?;
-
+    yeet(rn);
 
     let mut user_posts = Vec::<RedditPost>::new();
     let mut user_comments = Vec::<Comment>::new();
@@ -304,6 +304,8 @@ pub async fn review_user_update(
     if !reviewer.permissions.review_user {
         return unauthorized();
     }
+    trace!("Setting the User: {} Status {}", &username, &status);
+
     let option = get_user_by_name(&username, &conn)?;
     if option.is_none() {
         return not_found();
@@ -317,15 +319,16 @@ pub async fn review_user_update(
 
     let status = str.unwrap();
     if status == Status::Approved {
+        trace!("Attempting to Approve User {} on Reddit", &user2.username);
+
         let rr = rn.lock()?;
         let user1 = utils::approve_user(&user2, &rr.reddit).await;
+        yeet(rr);
         if !user1 {
             error!("Approval Failure");
             return crate::error::response::error("Unable to Process Approve Request Currently", Some(StatusCode::INTERNAL_SERVER_ERROR));
         }
     }
-    let x: ApproveRequest = serde_qs::from_str(req.query_string()).unwrap();
-    if let Some(title) = x.title {}
     let mut properties = user2.properties;
     let x: ApproveRequest = serde_qs::from_str(req.query_string()).unwrap();
     if let Some(title) = x.title {

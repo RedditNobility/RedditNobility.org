@@ -1,11 +1,7 @@
-use chrono::{DateTime, Utc};
 use diesel::MysqlConnection;
 
-use rand::distributions::Alphanumeric;
-use rand::Rng;
 
 use std::fs::{read};
-use std::io::{BufRead};
 
 use std::path::{Path};
 use std::str::FromStr;
@@ -14,7 +10,7 @@ use crate::error::internal_error::InternalError;
 use crate::settings::action::get_setting;
 use crate::User;
 use rust_embed::RustEmbed;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{ SystemTime, UNIX_EPOCH};
 use log::error;
 use rraw::auth::AnonymousAuthenticator;
 use rraw::me::Me;
@@ -75,7 +71,7 @@ fn build_message(user: &String, password: String) -> Result<String, InternalErro
 }
 
 pub async fn approve_user(user: &User, client: &Me) -> bool {
-    let result1 =  client
+    let result1 = client
         .subreddit("RedditNobility".to_string()).add_friend(user.username.clone(), FriendType::Contributor).await;
     if result1.is_err() {
         error!("Unable to approve User {}", result1.err().unwrap());
@@ -84,12 +80,12 @@ pub async fn approve_user(user: &User, client: &Me) -> bool {
     return result1.unwrap().success;
 }
 
-
+pub fn yeet<T>(_drop: T) {}
 
 pub fn is_valid(username: &String) -> Option<String> {
     let string1 = Resources::file_get_string("names.txt");
     let split = string1.split(",");
-    let vec :Vec<&str>= split.collect();
+    let vec: Vec<&str> = split.collect();
     let string = username.to_lowercase();
     for x in vec {
         if string.contains(&x.to_string()) {
@@ -98,16 +94,14 @@ pub fn is_valid(username: &String) -> Option<String> {
     }
     return None;
 }
+
 #[test]
-fn valid_test(){
+fn valid_test() {
     let option = is_valid(&"KingTuxWH".to_string());
     assert_eq!(option.unwrap(), "king")
 }
-pub fn to_date(time: i64) -> String {
-    let d = UNIX_EPOCH + Duration::from_millis(time as u64);
-    let datetime = DateTime::<Utc>::from(d);
-    return datetime.format("%m/%d/%Y").to_string();
-}
+
+
 
 pub async fn get_avatar(user: &User) -> Result<String, InternalError> {
     let option1 = user.properties.avatar.as_ref();
@@ -119,7 +113,7 @@ pub async fn get_avatar(user: &User) -> Result<String, InternalError> {
 
     let client = Me::login(
         AnonymousAuthenticator::new(),
-        "Robotic Monarch by u/KingTuxWH".to_string()
+        "Robotic Monarch by u/KingTuxWH".to_string(),
     ).await?;
     let user1 = client.user(user.username.clone());
     let about = user1.about().await?;
