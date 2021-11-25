@@ -18,7 +18,7 @@ use std::thread;
 
 use actix_files::Files;
 
-use actix_web::web::PayloadConfig;
+use actix_web::web::{Data, PayloadConfig};
 use actix_web::{get, middleware, web, App, HttpServer, HttpRequest};
 
 use chrono::{DateTime, Duration, Local};
@@ -114,7 +114,7 @@ async fn main() -> std::io::Result<()> {
                         .allow_any_origin(),
                 )
                 .wrap(middleware::Logger::default())
-                .app_data(pool.clone())
+                .app_data(Data::new(pool.clone()))
                 .app_data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
                 .configure(frontend::init)
                 .configure(install::init).service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
@@ -161,9 +161,9 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_origin(),
             )
             .wrap(middleware::Logger::default())
-            .app_data(pool.clone())
-            .app_data(site_core.clone())
-            .app_data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+            .app_data(Data::new(pool.clone()))
+            .app_data(Data::new(site_core.clone()))
+            .app_data(Data::new(PayloadConfig::new(1 * 1024 * 1024 * 1024)))
             .service(titles)
             .configure(error::handlers::init)
             .configure(user::init)
