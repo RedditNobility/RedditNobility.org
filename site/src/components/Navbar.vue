@@ -15,7 +15,7 @@
       >Submit</el-menu-item
     >
     <el-menu-item
-      v-if="user.permissions.approve_user"
+      v-if="user.permissions.reviewer"
       index="Review Users"
       @click="router.push('/review')"
       >Review Users</el-menu-item
