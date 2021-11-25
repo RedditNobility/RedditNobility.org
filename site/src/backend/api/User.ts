@@ -44,7 +44,7 @@ export interface RedditUser {
   permissions: UserPermissions;
   status: string;
   status_changed: number;
-  moderator: string;
+  reviewer: string;
   discoverer: string;
   properties: Properties;
   created: number;
@@ -63,7 +63,7 @@ export interface UserPermissions {
   admin: boolean;
   moderator: boolean;
   submit: boolean;
-  approve_user: boolean;
+  reviewer: boolean;
   login: boolean;
 }
 export async function getUser(token: string) {

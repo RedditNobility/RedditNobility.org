@@ -59,7 +59,7 @@ pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::re
             password.eq(&user.password),
             status.eq(&user.status),
             status_changed.eq(&user.status_changed),
-            moderator.eq(&user.moderator),
+            reviewer.eq(&user.reviewer),
             properties.eq(&user.properties),
             discoverer.eq(&user.discoverer),
         ))

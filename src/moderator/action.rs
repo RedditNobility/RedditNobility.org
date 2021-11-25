@@ -18,7 +18,7 @@ pub fn update_status(
     diesel::update(users.filter(id.eq(user)))
         .set((status.eq(&ns),
               status_changed.eq(&time),
-              moderator.eq(&md)))
+              reviewer.eq(&md)))
         .execute(conn)?;
     Ok(())
 }
@@ -38,7 +38,7 @@ pub fn get_discover_count(
     conn: &MysqlConnection,
 ) -> Result<i64, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let value: i64 = users.select(count(moderator)).filter(moderator.eq(user).and(status_changed.ge(after))).first(conn)?;
+    let value: i64 = users.select(count(reviewer)).filter(reviewer.eq(user).and(status_changed.ge(after))).first(conn)?;
 
     Ok(value)
 }
@@ -55,7 +55,7 @@ pub fn get_discover_count_total(
     conn: &MysqlConnection,
 ) -> Result<i64, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let value: i64 = users.select(count(moderator)).filter(status.not_like(Status::Found).and(status_changed.ge(after))).first(conn)?;
+    let value: i64 = users.select(count(reviewer)).filter(status.not_like(Status::Found).and(status_changed.ge(after))).first(conn)?;
 
     Ok(value)
 }

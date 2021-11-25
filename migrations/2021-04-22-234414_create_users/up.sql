@@ -1,4 +1,4 @@
-CREATE TABLE users
+CREATE TABLE IF NOT EXISTS users
 (
     id             BIGINT AUTO_INCREMENT PRIMARY KEY,
     discord_id     BIGINT,
@@ -7,7 +7,7 @@ CREATE TABLE users
     permissions    TEXT,
     status         TEXT,
     status_changed BIGINT,
-    moderator      TEXT,
+    reviewer      TEXT,
     discoverer     TEXT,
     properties     TEXT,
     created        BIGINT

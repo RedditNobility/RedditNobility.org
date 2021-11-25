@@ -176,7 +176,7 @@ pub async fn review_user(
         return unauthorized();
     }
     let user = user.unwrap();
-    if !user.permissions.approve_user {
+    if !user.permissions.review_user {
         return unauthorized();
     }
     let mut rn = rr.lock()?;
@@ -283,7 +283,7 @@ pub async fn review_user_update(
     }
 
     let user = user.unwrap();
-    if !user.permissions.approve_user {
+    if !user.permissions.review_user {
         return unauthorized();
     }
     let option = get_user_by_name(&username, &conn)?;

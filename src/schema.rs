@@ -8,7 +8,7 @@ table! {
         status -> Text,
         status_changed ->Bigint,
         discoverer -> Text,
-        moderator ->Text,
+        reviewer ->Text,
         properties ->Text,
         created ->Bigint,
     }

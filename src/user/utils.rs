@@ -125,7 +125,7 @@ pub fn quick_add(
             discord_id: 0,
             username: username.clone(),
             password: "".to_string(),
-            moderator: "".to_string(),
+            reviewer: "".to_string(),
             status,
             status_changed: 0,
             created: get_current_time(),
@@ -135,7 +135,7 @@ pub fn quick_add(
                 admin: false,
                 moderator: false,
                 submit: true,
-                approve_user: false,
+                review_user: false,
                 login: true
             }
         };

@@ -51,7 +51,7 @@ pub struct UserPermissions {
     #[serde(default)]
     pub submit: bool,
     #[serde(default)]
-    pub approve_user: bool,
+    pub review_user: bool,
     #[serde(default)]
     pub login: bool,
 }
@@ -108,7 +108,7 @@ pub struct User {
     //Who found the user BOT if bot
     pub discoverer: String,
     //The Moderator who approved them or denied them. If the user was banned it will still be set to who approved them
-    pub moderator: String,
+    pub reviewer: String,
     // Custom Properties done through json.
     pub properties: UserProperties,
     //When the data was created
@@ -192,14 +192,14 @@ impl User {
             status: sub.status.unwrap_or_else(default_status),
             status_changed: utils::get_current_time(),
             discoverer,
-            moderator: sub.moderator.unwrap_or_else(default_moderator),
+            reviewer: sub.moderator.unwrap_or_else(default_moderator),
             properties,
             created: sub.created.unwrap_or_else(utils::get_current_time),
             permissions: UserPermissions {
                 admin: false,
                 moderator: false,
                 submit: true,
-                approve_user: false,
+                review_user: false,
                 login: true,
             },
         }
@@ -209,9 +209,7 @@ impl User {
         self.status_changed = utils::get_current_time();
     }
 
-    pub fn set_moderator(&mut self, moderator: String) {
-        self.moderator = moderator;
-    }
+
     pub fn set_password(&mut self, password: String) {
         self.password = password;
     }

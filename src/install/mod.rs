@@ -57,13 +57,13 @@ pub async fn install_post(
             admin: true,
             moderator: true,
             submit: true,
-            approve_user: true,
+            review_user: true,
             login: true
         },
         status: Status::Approved,
         status_changed: utils::get_current_time(),
         discoverer: "OG".to_string(),
-        moderator: "OG".to_string(),
+        reviewer: "OG".to_string(),
         properties,
         created: utils::get_current_time(),
     };
