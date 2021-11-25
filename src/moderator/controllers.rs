@@ -4,7 +4,7 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::{Database, User, RN, utils};
 
 use crate::error::response::{bad_request, not_found, unauthorized};
-use crate::user::action::{get_found_users, get_user_by_name, update_properties};
+use crate::user::action::{delete_user, get_found_users, get_user_by_name, update_properties};
 use crate::user::utils::get_user_by_header;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -12,6 +12,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use chrono::{Date, Datelike, DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use log::{debug, error};
+use rraw::utils::error::APIError;
 
 use strum::ParseError;
 use crate::moderator::action::{get_approve_count, get_approve_count_total, get_discover_count, get_discover_count_total};
@@ -205,8 +206,19 @@ pub async fn review_user(
 //TODO re-add this one line
     // rn.add_id(user.id);
     let r_user = rn.reddit.user(user.username.clone());
-    let about = rn.reddit.user(user.username.clone()).about().await?;
-
+    let about = rn.reddit.user(user.username.clone()).about().await;
+    if let Err(error) = about {
+        match error {
+            APIError::HTTPError(http) => {
+                if http.eq(&StatusCode::NOT_FOUND) {
+                    delete_user(&user.username, &conn);
+                }
+            }
+            _ => {}
+        }
+        return Err(error.into());
+    }
+    let about = about.unwrap();
     let submissions = r_user
         .submissions(None).await?;
     let comments = r_user
