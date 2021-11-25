@@ -1,5 +1,6 @@
 import { BasicResponse } from "@/backend/Response";
 import http from "@/http-common";
+import { UserStats } from "./api/User";
 export async function getTitles() {
 
     console.log("Getting Titles");
@@ -21,3 +22,21 @@ export async function getTitles() {
         });
 
 } 
+export async function getSystemStats(token: string): Promise<UserStats | undefined> {
+    //${API_URL}
+    const value = await http.get("/moderator/stats", {
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+    });
+  
+    if (value.status != 200) {
+      return undefined;
+    }
+    const data = value.data as BasicResponse<unknown>;
+    if (data.success) {
+      return data.data as UserStats;
+    }
+  
+    return undefined;
+  }
