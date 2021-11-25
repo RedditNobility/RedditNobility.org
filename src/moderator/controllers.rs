@@ -73,7 +73,7 @@ pub async fn user_stats(
         }
     }
     let lookup = get_user_by_name(&username, &connection)?.unwrap();
-    let i= get_month_timestamp();
+    let i = get_month_timestamp();
 
     let user_stats = UserStats {
         users_discovered: get_discover_count(&lookup.username, 0, &connection)?,
@@ -103,13 +103,13 @@ pub async fn system_stats(
     let connection = database.get()?;
     let me = get_user_by_header(req.headers(), &connection)?;
     if me.is_none() {
-       // return unauthorized();
+        // return unauthorized();
     }
     //let me = me.unwrap();
 
-   // if !me.permissions.moderator {
+    // if !me.permissions.moderator {
     //    return unauthorized();
-   // }
+    // }
     let i = get_month_timestamp();
     let users_stats = UserStats {
         users_discovered: get_discover_count_total(0, &connection)?,
@@ -282,22 +282,25 @@ pub async fn review_user_update(
         return unauthorized();
     }
 
-    let user = user.unwrap();
-    if !user.permissions.review_user {
+    let reviewer = user.unwrap();
+    if !reviewer.permissions.review_user {
         return unauthorized();
     }
     let option = get_user_by_name(&username, &conn)?;
     if option.is_none() {
         return not_found();
     }
+
     let str: Result<Status, ParseError> = Status::from_str(status.as_str());
     if str.is_err() {
         return bad_request("Approved or Denied".to_string());
     }
+    let user2 = option.unwrap();
+
     let status = str.unwrap();
     if status == Status::Approved {
         let rr = rn.lock()?;
-        let user1 = utils::approve_user(&user, &rr.reddit).await;
+        let user1 = utils::approve_user(&user2, &rr.reddit).await;
         if !user1 {
             error!("Approval Failure");
             return crate::error::response::error("Unable to Process Approve Request Currently", Some(StatusCode::INTERNAL_SERVER_ERROR));
@@ -305,7 +308,6 @@ pub async fn review_user_update(
     }
     let x: ApproveRequest = serde_qs::from_str(req.query_string()).unwrap();
     if let Some(title) = x.title {}
-    let user2 = option.unwrap();
     let mut properties = user2.properties;
     let x: ApproveRequest = serde_qs::from_str(req.query_string()).unwrap();
     if let Some(title) = x.title {
@@ -313,7 +315,7 @@ pub async fn review_user_update(
         properties.title = Some(title);
         update_properties(&user2.id, properties, &conn)?;
     }
-    crate::moderator::action::update_status(&user2.id, status, &user.username, get_current_time(), &conn)?;
+    crate::moderator::action::update_status(&user2.id, status, &reviewer.username, get_current_time(), &conn)?;
     return APIResponse::new(true, Some(true)).respond(&req);
 }
 
