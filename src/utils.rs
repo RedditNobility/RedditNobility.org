@@ -1,119 +1,51 @@
-use crate::action;
-use crate::models::{AuthToken, Level, Status, User, UserProperties, SubmitUser};
-use crate::siteerror::SiteError;
-use crate::websiteerror::WebsiteError;
-
-use bcrypt::{hash, DEFAULT_COST};
-use chrono::{DateTime, Utc};
 use diesel::MysqlConnection;
-use dotenv::Error;
-use new_rawr::auth::AnonymousAuthenticator;
-use new_rawr::client::RedditClient;
-use rand::distributions::Alphanumeric;
-use rand::Rng;
-use std::fs;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::path::Path as SysPath;
-use std::path::PathBuf;
-use log::{info, warn};
 
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-pub fn quick_add(username: String, discoverer: String, conn: &MysqlConnection) {
-    info!("Adding user {}", &username);
+use std::fs::{read};
 
-    let mut status = Status::Found;
-    if username.contains("=T") {
-        status = Status::Approved;
-    } else if username.contains("=F") {
-        status = Status::Denied
+use std::path::{Path};
+use std::str::FromStr;
+
+use crate::error::internal_error::InternalError;
+use crate::settings::action::get_setting;
+use crate::User;
+use rust_embed::RustEmbed;
+use std::time::{ SystemTime, UNIX_EPOCH};
+use log::error;
+use rraw::auth::AnonymousAuthenticator;
+use rraw::me::Me;
+use rraw::utils::options::FriendType;
+
+#[derive(RustEmbed)]
+#[folder = "$CARGO_MANIFEST_DIR/resources"]
+pub struct Resources;
+
+impl Resources {
+    pub fn file_get(file: &str) -> Vec<u8> {
+        let buf = Path::new("resources").join(file);
+        if buf.exists() {
+            read(buf).unwrap()
+        } else {
+            Resources::get(file).unwrap().data.to_vec()
+        }
     }
-    let username = username
-        .replace("=T", "")
-        .replace("=F", "")
-        .replace("\r", "");
-
-    if action::get_user_by_name(username.clone(), &conn)
-        .unwrap()
-        .is_none()
-    {
-        let properties = UserProperties {
-            avatar: None,
-            description: None,
-            title: is_valid(username.clone()),
-        };
-        let user = User {
-            id: 0,
-            username: username.clone(),
-            password: "".to_string(),
-            moderator: "".to_string(),
-            status,
-            status_changed: 0,
-            created: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis() as i64,
-            level: Level::User,
-            discoverer,
-            properties,
-        };
-        action::add_new_user(&user, &conn);
+    pub fn file_get_string(file: &str) -> String {
+        let vec = Resources::file_get(file);
+        String::from_utf8(vec).unwrap()
     }
 }
 
-pub fn submit_add(sub: SubmitUser, discoverer: String, conn: &MysqlConnection) {
-    info!("Adding user {}", &sub.username);
-    if action::get_user_by_name(sub.username.clone(), &conn)
-        .unwrap()
-        .is_none()
-    {
-        let user = User::new(sub, discoverer);
-        action::add_new_user(&user, &conn);
-    }
-}
-
-///A standardized method for deciding rather a user is allowed to be where they are
-pub fn is_authorized(
-    api_token: String,
-    target_level: Level,
-    conn: &MysqlConnection,
-) -> Result<bool, Box<dyn WebsiteError>> {
-    let result = action::get_user_from_auth_token(api_token, &conn);
-    if result.is_err() {
-        return Err(Box::new(SiteError::DBError(result.err().unwrap())));
-    }
-    let user = result.unwrap();
-    if user.is_none() {
-        return Ok(false);
-    }
-
-    let user = user.unwrap();
-    if user.status != Status::Approved {
-        return Ok(false);
-    }
-    println!("HEY");
-    if user.level.level() >= target_level.level() {
+pub fn installed(conn: &MysqlConnection) -> Result<bool, InternalError> {
+    let installed: bool = bool::from_str(std::env::var("INSTALLED").unwrap().as_str()).unwrap();
+    if installed {
         return Ok(true);
     }
-    return Ok(false);
-}
-
-pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthToken, Error> {
-    let s: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(25)
-        .map(char::from)
-        .collect();
-    let token = AuthToken {
-        id: 0,
-        user: user.id.clone(),
-        token: s.clone(),
-        created: get_current_time(),
-    };
-    let _result = action::add_new_auth_token(&token, connection);
-
-    return Ok(token);
+    let option = get_setting("INSTALLED", conn)?;
+    if option.is_none() {
+        return Ok(false);
+    }
+    std::env::set_var("INSTALLED", "true");
+    Ok(true)
 }
 
 pub(crate) fn get_current_time() -> i64 {
@@ -123,111 +55,79 @@ pub(crate) fn get_current_time() -> i64 {
         .as_millis() as i64
 }
 
-pub fn send_login(user: &User, conn: &MysqlConnection, rr: &RedditClient) {
-    let password: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(10)
-        .map(char::from)
-        .collect();
-    let mut user = user.clone();
-    user.set_password(hash(&password.clone(), DEFAULT_COST).unwrap());
-    let _result = action::update_user(&user, &conn);
-    let token = create_token(&user, &conn).unwrap();
-    let string = build_message(&user, &password, &token);
-
-    let x = user.username.as_str();
-    let _result1 = rr
-        .messages()
-        .compose(x, "RedditNobility Login", string.as_str());
+pub async fn send_login(user: &String, password: String, rr: &Me) -> Result<(), InternalError> {
+    let string = build_message(user, password)?;
+    rr.inbox()
+        .compose(user.clone(), "RedditNobility Login".to_string(), string, None).await?;
+    return Ok(());
 }
 
-fn build_message(user: &User, password: &String, token: &AuthToken) -> String {
-    let url = std::env::var("URL").unwrap();
-    let string = fs::read_to_string(PathBuf::new().join("resources").join("login-message"));
-    if string.is_err() {
-        todo!();
-    }
+fn build_message(user: &String, password: String) -> Result<String, InternalError> {
+    let string = Resources::file_get_string("login-message");
     let string = string
-        .unwrap()
-        .replace(
-            "{{URL}}",
-            &*format!("{}/login/key?token={}", url, token.token),
-        )
         .replace("{{PASSWORD}}", &password)
-        .replace("{{USERNAME}}", &*user.username.clone());
-    return string;
+        .replace("{{USERNAME}}", user);
+    return Ok(string);
 }
 
-pub fn approve_user(user: &User, client: &RedditClient) -> bool {
+pub async fn approve_user(user: &User, client: &Me) -> bool {
     let result1 = client
-        .subreddit("RedditNobility")
-        .invite_member(user.username.clone());
+        .subreddit("RedditNobility".to_string()).add_friend(user.username.clone(), FriendType::Contributor).await;
     if result1.is_err() {
+        error!("Unable to approve User {}", result1.err().unwrap());
         return false;
     }
-    return result1.unwrap();
+    return result1.unwrap().success;
 }
 
-fn lines_from_file(filename: impl AsRef<SysPath>) -> Vec<String> {
-    let file = File::open(filename).expect("no such file");
-    let buf = BufReader::new(file);
-    buf.lines()
-        .map(|l| l.expect("Could not parse line"))
-        .collect()
-}
+pub fn yeet<T>(_drop: T) {}
 
-pub fn is_valid(username: String) -> Option<String> {
-    let vec = lines_from_file(SysPath::new("resources").join("names.txt"));
+pub fn is_valid(username: &String) -> Option<String> {
+    let string1 = Resources::file_get_string("names.txt");
+    let split = string1.split(",");
+    let vec: Vec<&str> = split.collect();
     let string = username.to_lowercase();
     for x in vec {
-        if string.contains(&x) {
-            return Some(x);
+        if string.contains(&x.to_string()) {
+            return Some(x.to_string());
         }
     }
     return None;
 }
 
-pub fn to_date(time: i64) -> String {
-    let d = UNIX_EPOCH + Duration::from_millis(time as u64);
-    let datetime = DateTime::<Utc>::from(d);
-    return datetime.format("%m/%d/%Y").to_string();
+#[test]
+fn valid_test() {
+    let option = is_valid(&"KingTuxWH".to_string());
+    assert_eq!(option.unwrap(), "king")
 }
 
-pub fn get_avatar(user: &User) -> String {
+
+
+pub async fn get_avatar(user: &User) -> Result<String, InternalError> {
     let option1 = user.properties.avatar.as_ref();
     if option1.is_some() {
         if !option1.unwrap().is_empty() {
-            return option1.unwrap().clone();
+            return Ok(option1.unwrap().clone());
         }
     }
 
-    let client = RedditClient::new(
-        "Robotic Monarch by u/KingTuxWH",
+    let client = Me::login(
         AnonymousAuthenticator::new(),
-    );
-    let user1 = client.user(user.username.as_str());
-    let result = user1.about();
-    if result.is_err() {
-        return "".to_string();
-    }
-    let about = result.unwrap();
+        "Robotic Monarch by u/KingTuxWH".to_string(),
+    ).await?;
+    let user1 = client.user(user.username.clone());
+    let about = user1.about().await?;
+
     let option = about.data.snoovatar_img;
     if let Some(avatar) = option {
         if !avatar.is_empty() {
-            return avatar.clone();
+            return Ok(avatar.clone());
         }
     }
     let option = about.data.icon_img;
     if option.is_some() {
-        return option.unwrap().clone();
+        return Ok(option.unwrap().clone());
     }
-    return "".to_string();
+    return Ok("".to_string());
 }
 
-pub fn gen_client_key() -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(25)
-        .map(char::from)
-        .collect()
-}

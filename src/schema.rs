@@ -1,13 +1,14 @@
 table! {
     users (id) {
         id -> Bigint,
+        discord_id -> Bigint,
         username -> Text,
         password -> Text,
-        level -> Text,
+        permissions -> Text,
         status -> Text,
         status_changed ->Bigint,
         discoverer -> Text,
-        moderator ->Text,
+        reviewer ->Text,
         properties ->Text,
         created ->Bigint,
     }
@@ -30,9 +31,19 @@ table! {
 table! {
     settings (id) {
         id -> Bigint,
-        setting_key -> Text,
+        setting -> Text,
         value ->Text,
         updated ->Bigint,
+
+    }
+}
+table! {
+    otps (id) {
+        id -> Bigint,
+        user -> Bigint,
+        password ->Text,
+        expiration ->Bigint,
+        created ->Bigint,
 
     }
 }

@@ -1,15 +1,7 @@
-/target
-.env*
-.idea/
-*.iml
-log/
-site/node_modules/
-Cargo.lock
 .DS_Store
 node_modules
 /dist
-*.log
-test/
+
 
 # local env files
 .env.local
@@ -29,4 +21,3 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
-config.json
