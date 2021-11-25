@@ -41,7 +41,7 @@ pub async fn update_permission(
         "submit" => {
             permissions.submit = value;
         }
-        "approve_user" => {
+        "review_user" => {
             permissions.review_user = value;
         }
         "login" => {
