@@ -38,6 +38,11 @@ const routes: Array<RouteRecordRaw> = [
     component: Admin,
 
   },  {
+    path: "/user/:username",
+    name: "User",
+    component: ModifyUser,
+
+  },  {
     path: "/moderator",
     name: "Moderator",
     component: Moderator,

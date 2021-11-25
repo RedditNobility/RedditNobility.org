@@ -149,6 +149,7 @@ import { useCookie } from "vue-cookie-next";
 import { BasicResponse } from "../Response";
 import http from "@/http-common";
 import { useRoute } from "vue-router";
+import { getTitles } from "@/backend/Generic";
 export default defineComponent({
   setup() {
     const titles = ref<string[]>([]);
@@ -161,42 +162,24 @@ export default defineComponent({
       reddit_created: "",
     });
     const title = ref<string | undefined>(undefined);
-        const route = useRoute();
+    const route = useRoute();
 
     let username = route.params.username as string;
 
-    const getTitles = async () => {
-      try {
-        console.log("Getting Titles");
-        const value = await http
-          .get("/titles")
-          .then((res) => {
-            console.log(typeof res);
-            if (res.status != 200) {
-              return;
-            }
-            const result = res.data;
-            let value = JSON.stringify(result);
-            let response: BasicResponse<unknown> = JSON.parse(value);
-            const data = response as BasicResponse<Array<string>>;
-            console.log("Getting Titles");
-
-            for (const title of data.data) {
-              titles.value.push({ value: title });
-            }
-          })
-          .catch((error) => {
-            console.error(error);
-          });
-      } catch (e) {
-        console.error(e);
-      }
+    const load = async () => {
+     let value =  await getTitles();
+        for (const title of value) {
+          titles.value.push({ value: title });
+        }
+      
     };
+
     const getRedditUser = async () => {
       loading.value = true;
       user.value = undefined;
       try {
         let value;
+
         if (username != undefined && username !== "") {
           value = await reviewUserByName(cookie.getCookie("token"), username);
         } else {
@@ -219,8 +202,9 @@ export default defineComponent({
         console.error(e);
       }
     };
-    getTitles();
+
     getRedditUser();
+    load();
     return { loading, user, cookie, tab, dates, title, titles, getRedditUser };
   },
   methods: {
@@ -264,7 +248,6 @@ export default defineComponent({
         });
     },
     async denied() {
-
       const res = await http
         .post(
           "/api/moderator/review/" +
