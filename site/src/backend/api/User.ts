@@ -63,7 +63,7 @@ export interface UserPermissions {
   admin: boolean;
   moderator: boolean;
   submit: boolean;
-  reviewer: boolean;
+  review_user: boolean;
   login: boolean;
 }
 export async function getUser(token: string) {

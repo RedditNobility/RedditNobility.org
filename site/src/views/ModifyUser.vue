@@ -96,7 +96,7 @@
                 </el-form-item>
                 <el-form-item label="Recruit Users">
                   <el-switch
-                    v-model="user.permissions.reviewer"
+                    v-model="user.permissions.review_user"
                     @change="updatePermission('reviewer')"
                   />
                 </el-form-item>
