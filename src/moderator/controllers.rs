@@ -10,12 +10,23 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
+use chrono::{Date, Datelike, DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use log::{debug, error};
 
 use strum::ParseError;
+use crate::moderator::action::{get_approve_count, get_approve_count_total, get_discover_count, get_discover_count_total};
 
 use crate::user::models::{Status};
 use crate::utils::get_current_time;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserStats {
+    pub users_discovered: i64,
+    pub users_discovered_this_month: i64,
+    pub users_reviewed: i64,
+    pub users_reviewed_this_month: i64,
+
+}
 
 #[get("/moderator/user/{user}")]
 pub async fn user_page(
@@ -35,6 +46,79 @@ pub async fn user_page(
     }
     let lookup = get_user_by_name(&username, &connection)?;
     return APIResponse::<User>::respond_new(lookup, &req);
+}
+
+#[get("/moderator/user/{user}/stats")]
+pub async fn user_stats(
+    database: Database,
+    path: web::Path<String>,
+    req: HttpRequest,
+) -> SiteResponse {
+    let username = path.into_inner();
+    let connection = database.get()?;
+    let me = get_user_by_header(req.headers(), &connection)?;
+
+    if me.is_none() {
+        return unauthorized();
+    }
+    let me = me.unwrap();
+    let lookup = get_user_by_name(&username, &connection)?;
+    if lookup.is_none() {
+        return not_found();
+    }
+    let lookup = lookup.unwrap();
+    if !me.username.eq(&lookup.username) {
+        if !me.permissions.moderator {
+            return unauthorized();
+        }
+    }
+    let lookup = get_user_by_name(&username, &connection)?.unwrap();
+    let i= get_month_timestamp();
+
+    let user_stats = UserStats {
+        users_discovered: get_discover_count(&lookup.username, 0, &connection)?,
+        users_discovered_this_month: get_discover_count(&lookup.username, i.clone(), &connection)?,
+        users_reviewed: get_approve_count(&lookup.username, 0, &connection)?,
+        users_reviewed_this_month: get_approve_count(&lookup.username, i.clone(), &connection)?,
+    };
+
+    return APIResponse::<UserStats>::respond_new(Some(user_stats), &req);
+}
+
+fn get_month_timestamp() -> i64 {
+    let mut date = Utc::today();
+    let new_month = NaiveDate::from_ymd(date.year(), date.month(), 1);
+    let time = NaiveDateTime::new(new_month, NaiveTime::from_hms(0, 0, 0));
+    debug!("Month Value {} UnixTime {}", &time, time.timestamp_millis());
+
+    return time.timestamp_millis();
+}
+
+
+#[get("/moderator/stats")]
+pub async fn system_stats(
+    database: Database,
+    req: HttpRequest,
+) -> SiteResponse {
+    let connection = database.get()?;
+    let me = get_user_by_header(req.headers(), &connection)?;
+    if me.is_none() {
+       // return unauthorized();
+    }
+    //let me = me.unwrap();
+
+   // if !me.permissions.moderator {
+    //    return unauthorized();
+   // }
+    let i = get_month_timestamp();
+    let users_stats = UserStats {
+        users_discovered: get_discover_count_total(0, &connection)?,
+        users_discovered_this_month: get_discover_count_total(i.clone(), &connection)?,
+        users_reviewed: get_approve_count_total(0, &connection)?,
+        users_reviewed_this_month: get_approve_count_total(i.clone(), &connection)?,
+    };
+
+    return APIResponse::<UserStats>::respond_new(Some(users_stats), &req);
 }
 
 #[derive(Debug, Serialize, Deserialize)]
