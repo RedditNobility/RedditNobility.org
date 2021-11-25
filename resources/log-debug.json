@@ -38,7 +38,7 @@
           "type": "file-logger",
           "properties": {
             "format": "%datetime_{format='$Y-$m-$d $H:$M:$S'}% %module% %level%: %message%",
-            "file": "%env_{key='LOG_LOCATION'}%/%module%/nitro-repo.log"
+            "file": "%env_{key='LOG_LOCATION'}%/%module%/log.log"
           }
         }
       ]

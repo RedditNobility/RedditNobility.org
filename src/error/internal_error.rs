@@ -10,6 +10,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::string::FromUtf8Error;
 use std::sync::PoisonError;
+use log::{error, trace};
 use rraw::utils::error::APIError;
 
 #[derive(Debug)]
@@ -38,6 +39,7 @@ impl InternalError {
 
 impl actix_web::error::ResponseError for InternalError {
     fn error_response(&self) -> HttpResponse {
+        error!("Error Occurred {}", self);
         self.json_error()
     }
 }
