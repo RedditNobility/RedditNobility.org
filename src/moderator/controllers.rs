@@ -271,7 +271,7 @@ pub async fn review_user(
         avatar: about.data.icon_img.unwrap_or("".parse().unwrap()),
         comment_karma: about.data.comment_karma.unwrap_or(0),
         total_karma: about.data.total_karma.unwrap_or(0),
-        created: about.data.created.unwrap_or(0),
+        created: about.data.created.unwrap_or(0.0) as i64,
         top_posts: user_posts,
         top_comments: user_comments,
         user,
