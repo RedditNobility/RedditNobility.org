@@ -212,10 +212,7 @@ pub struct InstallRequest {
     pub password: String,
 }
 
-#[get("/favicon.ico")]
-async fn favicon() -> actix_web::Result<actix_files::NamedFile> {
-    Ok(actix_files::NamedFile::open("site/static/favicon.ico")?)
-}
+
 
 #[get("/titles")]
 async fn titles(req: HttpRequest) -> SiteResponse {

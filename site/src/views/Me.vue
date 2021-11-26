@@ -160,6 +160,7 @@ import userStore from "@/store/user";
 import http from "@/http-common";
 import useStore from "element-plus/es/components/table/src/store";
 export default defineComponent({
+  name: "Me",
   setup() {
     const loadingStats = ref(true);
     const loading = ref(true);
