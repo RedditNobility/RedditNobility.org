@@ -32,6 +32,12 @@
       @click="router.push('/admin')"
       >Admin</el-menu-item
     >
+    <el-menu-item
+      v-if="user.permissions.login"
+      index="Me"
+      @click="router.push('/me')"
+      >Me</el-menu-item
+    >
   </el-menu>
   <el-dialog v-model="dialogVisible" title="Submit a New User">
     <el-form

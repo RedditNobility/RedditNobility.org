@@ -76,7 +76,20 @@ pub fn update_properties(
     use crate::schema::users::dsl::*;
 
     diesel::update(users.filter(id.eq(user)))
-        .set((properties.eq(&props),))
+        .set((properties.eq(&props), ))
+        .execute(conn)?;
+    Ok(())
+}
+
+pub fn update_password(
+    user: &i64,
+    pass: String,
+    conn: &MysqlConnection,
+) -> Result<(), diesel::result::Error> {
+    use crate::schema::users::dsl::*;
+
+    diesel::update(users.filter(id.eq(user)))
+        .set((password.eq(&pass), ))
         .execute(conn)?;
     Ok(())
 }

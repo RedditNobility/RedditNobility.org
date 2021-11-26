@@ -1,5 +1,6 @@
 use actix_web::web::{Json, Path};
 use actix_web::{post, HttpRequest};
+use bcrypt::{DEFAULT_COST, hash};
 use rraw::utils::error::APIError;
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -84,5 +85,22 @@ pub async fn change_property(
         }
     }
     update_properties(&user.id, user.properties, &conn)?;
+    return APIResponse::new(true, Some(true)).respond(&r);
+}
+
+#[post("/api/me/password/change")]
+pub async fn update_password(
+    database: Database,
+    request: Json<ChangeRequest>,
+    r: HttpRequest,
+) -> SiteResponse {
+    let conn = database.get()?;
+    let option = get_user_by_header(r.headers(), &conn)?;
+    if option.is_none() {
+        return unauthorized();
+    }
+    let user = option.unwrap();
+    let result = hash(&request.0.value, DEFAULT_COST)?;
+    crate::user::action::update_password(&user.id, result, &conn)?;
     return APIResponse::new(true, Some(true)).respond(&r);
 }

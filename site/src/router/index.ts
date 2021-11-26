@@ -6,6 +6,7 @@ import Admin from "../views/Admin.vue";
 import Review from "../views/Review.vue";
 import ModifyUser from "../views/ModifyUser.vue";
 import Moderator from "../views/Moderator.vue";
+import Me from "../views/Me.vue";
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
@@ -51,6 +52,11 @@ const routes: Array<RouteRecordRaw> = [
     path: "/review/:username?",
     name: "Review",
     component: Review,
+
+  }, {
+    path: "/me",
+    name: "Me",
+    component: Me,
 
   },
 ];

@@ -1,6 +1,6 @@
 <template>
   <el-container style="border: 1px solid #eee">
-    <el-main v-loading="loading">
+    <el-main v-loading="user == undefined">
       <div v-if="user != undefined">
         <h1>{{ user.name }}</h1>
         <el-tabs id="user-info" type="border-card">
@@ -39,21 +39,11 @@
                 <el-descriptions-item>
                   <template #label> Status</template>
                   <el-select disabled v-model="user.status" placeholder="">
-                    <el-option
-                      @click="updateStatus"
-                      label="Approved"
-                      value="Approved"
-                    >
-                    </el-option>
-                    <el-option
-                      @click="updateStatus"
-                      label="Denied"
-                      value="Denied"
-                    >
-                    </el-option>
+                    <el-option label="Approved" value="Approved"> </el-option>
+                    <el-option label="Denied" value="Denied"> </el-option>
                   </el-select>
                 </el-descriptions-item>
-                <el-descriptions-item v-if="titles.length > 1">
+                <el-descriptions-item>
                   <template #label> Title </template>
                   <el-select
                     disabled
@@ -61,11 +51,9 @@
                     placeholder=""
                   >
                     <el-option
-                      v-for="title in titles"
-                      @click="updateTitle"
-                      :key="title.value"
-                      :label="title.value"
-                      :value="title.value"
+                      :key="user.properties.title"
+                      :label="user.properties.title"
+                      :value="user.properties.title"
                     >
                     </el-option>
                   </el-select>
@@ -75,36 +63,21 @@
           </el-tab-pane>
           <el-tab-pane label="Permissions">
             <div>
-              <el-form :disabled="!userStore.state.user.permissions.admin">
+              <el-form disabled>
                 <el-form-item label="Admin">
-                  <el-switch
-                    v-model="user.permissions.admin"
-                    @change="updatePermission('admin')"
-                  />
+                  <el-switch v-model="user.permissions.admin" />
                 </el-form-item>
                 <el-form-item label="Moderator">
-                  <el-switch
-                    v-model="user.permissions.moderator"
-                    @change="updatePermission('moderator')"
-                  />
+                  <el-switch v-model="user.permissions.moderator" />
                 </el-form-item>
                 <el-form-item label="Login">
-                  <el-switch
-                    v-model="user.permissions.login"
-                    @change="updatePermission('login')"
-                  />
+                  <el-switch v-model="user.permissions.login" />
                 </el-form-item>
                 <el-form-item label="Recruit Users">
-                  <el-switch
-                    v-model="user.permissions.review_user"
-                    @change="updatePermission('reviewer')"
-                  />
+                  <el-switch v-model="user.permissions.review_user" />
                 </el-form-item>
                 <el-form-item label="Submit Users">
-                  <el-switch
-                    v-model="user.permissions.submit"
-                    @change="updatePermission('submit')"
-                  />
+                  <el-switch v-model="user.permissions.submit" />
                 </el-form-item>
               </el-form>
             </div>
@@ -127,6 +100,44 @@
               </el-descriptions>
             </div>
           </el-tab-pane>
+          <el-tab-pane label="Change Password">
+            <el-form
+              v-on:submit="updatePassword"
+              label-position="top"
+              :model="password"
+              label-width="120px"
+            >
+              <el-form-item>
+                <el-form-item label="Password">
+                  <el-input
+                    v-model="password.password"
+                    placeholder="Please input password"
+                    show-password
+                    autocomplete="off"
+                  />
+                </el-form-item>
+                <el-form-item label="Confirm Password">
+                  <el-input
+                    autocomplete="off"
+                    v-model="password.confirm_password"
+                    placeholder="Please input password"
+                    show-password
+                  />
+                </el-form-item>
+                <!--Yeah, I know. But please don't judge -->
+                <el-button
+                  :disabled="
+                    password.password.length == 0 ||
+                    password.password != password.confirm_password
+                  "
+                  type="primary"
+                  native-type="submit"
+                  @click="updatePassword"
+                  >Update Passwords</el-button
+                >
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
         </el-tabs>
       </div>
       <div v-else>Unable to FInd User</div>
@@ -135,44 +146,39 @@
 </template>
 <script lang="ts">
 import {
+  getUser,
   getUserByName,
   getUserStats,
   User,
   UserStats,
 } from "@/backend/api/User";
 import { getTitles } from "@/backend/Generic";
-import { defineComponent, ref } from "vue";
+import { defineComponent, onBeforeMount, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
 import { useRoute } from "vue-router";
 import userStore from "@/store/user";
-import { BasicResponse } from "../Response";
 import http from "@/http-common";
+import useStore from "element-plus/es/components/table/src/store";
 export default defineComponent({
   setup() {
-    const titles = ref<string[]>([]);
-    const loading = ref(true);
     const loadingStats = ref(true);
-    const date = ref("");
-    const status_changed = ref("");
+    const loading = ref(true);
     const user = ref<User | undefined>(undefined);
     let value: UserStats = {};
     const stats = ref<UserStats>(value);
-
-    const load = async () => {
-      let value = await getTitles();
-      for (const title of value) {
-        titles.value.push({ value: title });
-      }
-    };
+    const password = ref({
+      password: "",
+      confirm_password: "",
+    });
     const route = useRoute();
-    let username = route.params.username as string;
     const cookie = useCookie();
+    const date = ref("");
+    const status_changed = ref("");
     const loadUser = async () => {
       loading.value = true;
       user.value = undefined;
       try {
-        let value = await getUserByName(username, cookie.getCookie("token"));
-        loading.value = false;
+        let value = await getUser(cookie.getCookie("token"));
         if (value == undefined) {
           return;
         }
@@ -182,6 +188,7 @@ export default defineComponent({
           "en-US"
         );
         user.value = u;
+        loadStats();
       } catch (e) {
         console.error(e);
       }
@@ -189,7 +196,10 @@ export default defineComponent({
     const loadStats = async () => {
       loadingStats.value = true;
       try {
-        let value = await getUserStats(username, cookie.getCookie("token"));
+        let value = await getUserStats(
+          user.value.username,
+          cookie.getCookie("token")
+        );
         loadingStats.value = false;
         if (loadingStats == undefined) {
           return;
@@ -199,66 +209,63 @@ export default defineComponent({
         console.error(e);
       }
     };
-    loadStats();
     loadUser();
-    load();
     return {
       userStore,
       user,
       stats,
       loadStats,
-      loading,
       loadingStats,
-      titles,
       date,
       status_changed,
+      password,
     };
   },
   methods: {
-    async updateTitle() {
-      console.log("HEY");
-    },
-    async updateStatus() {},
-    async updatePermission(permission: string) {
-      let user = this.user as User;
-      let value = user.permissions[permission];
-      let url =
-        "/api/admin/user/" +
-        user.id +
-        "/permission/" +
-        permission +
-        "/" +
-        value;
-      let response = await http
-        .post(
-          url,
-          {},
-          {
-            headers: {
-              Authorization: "Bearer " + this.$cookie.getCookie("token"),
-            },
-          }
-        )
+    async updatePassword(e: any) {
+      e.preventDefault();
+      if (this.password.password !== this.password.confirm_password) {
+        this.$notify({
+          title: "Passwords Do Not Match",
+          type: "warn",
+        });
+        this.password.password = "";
+        this.password.confirm_password = "";
+        return;
+      }
+      let body = {
+        value: this.password.password,
+      };
+
+      await http
+        .post("api/me/password/change", body, {
+          headers: {
+            Authorization: "Bearer " + this.$cookie.getCookie("token"),
+          },
+        })
         .then((res) => {
           console.log(typeof res);
-          if (res.status == 200) {
+          if (res.status != 200) {
+            console.error(res.data);
             this.$notify({
-              title: "Updated Permission: "+permission + ": "+value,
-              type: "info",
+              title: "Unable to Update Password",
+              type: "warn",
             });
           } else {
+            this.password.password = "";
+            this.password.confirm_password = "";
             this.$notify({
-              title: "Unable to update ermission",
-              type: "warn",
+              title: "Password Updated",
+              type: "info",
             });
           }
         })
         .catch((error) => {
           console.error(error);
-            this.$notify({
-              title: "Unable to update ermission",
-              type: "warn",
-            });
+          this.$notify({
+            title: "Unable to Update Password",
+            type: "warn",
+          });
         });
     },
   },
