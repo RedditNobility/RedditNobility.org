@@ -126,6 +126,41 @@ pub struct SubmitUser {
     pub created: Option<i64>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize,Queryable)]
+pub struct TeamUser {
+    pub username: String,
+    pub properties: UserProperties,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TeamResponse {
+    pub user: TeamUser,
+    pub description: String,
+    pub level: Level,
+    pub created: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
+#[table_name = "team_members"]
+pub struct TeamMember {
+    pub id: i64,
+    pub user: i64,
+    pub description: String,
+    pub level: Level,
+    pub created: i64,
+}
+
+#[derive(
+AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString, Hash, Eq
+)]
+#[sql_type = "Text"]
+pub enum Level {
+    Moderator,
+    Recruiter,
+    Retired,
+}
+
+
 #[derive(
 AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
 )]
@@ -170,6 +205,29 @@ impl FromSql<Text, Mysql> for Status {
         }
         let string = t.unwrap();
         let result: Result<Status, strum::ParseError> = Status::from_str(string.as_str());
+        if result.is_err() {
+            //IDK break
+        }
+        return Ok(result.unwrap());
+    }
+}
+impl ToSql<Text, Mysql> for Level {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+        let s = self.to_string();
+        <String as ToSql<Text, Mysql>>::to_sql(&s, out)
+    }
+}
+
+impl FromSql<Text, Mysql> for Level {
+    fn from_sql(
+        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
+    ) -> deserialize::Result<Level> {
+        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes);
+        if t.is_err() {
+            //IDK break
+        }
+        let string = t.unwrap();
+        let result: Result<Level, strum::ParseError> = Level::from_str(string.as_str());
         if result.is_err() {
             //IDK break
         }

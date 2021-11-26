@@ -47,3 +47,13 @@ table! {
 
     }
 }
+table! {
+    team_members (id) {
+        id -> Bigint,
+        user -> Bigint,
+        level ->Text,
+        description ->Text,
+        created ->Bigint,
+
+    }
+}

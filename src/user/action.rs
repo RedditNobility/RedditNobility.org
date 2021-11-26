@@ -1,4 +1,4 @@
-use crate::user::models::{AuthToken, User, UserProperties, OTP};
+use crate::user::models::{AuthToken, User, UserProperties, OTP, TeamMember, TeamUser};
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel::MysqlConnection;
@@ -168,4 +168,15 @@ pub fn add_opt(value: &OTP, conn: &MysqlConnection) -> Result<(), DieselError> {
 
     diesel::insert_into(otps).values(value).execute(conn)?;
     return Ok(());
+}
+
+pub fn get_team_members(conn: &MysqlConnection) -> Result<Vec<TeamMember>, DieselError> {
+    use crate::schema::team_members::dsl::*;
+
+    team_members.load::<TeamMember>(conn)
+}
+
+pub fn get_team_user(user: &i64,conn: &MysqlConnection) -> Result<Option<TeamUser>, diesel::result::Error> {
+    use crate::schema::users::dsl::*;
+    users.filter(id.eq(user)).select((username, properties)).first::<TeamUser>(conn).optional()
 }
