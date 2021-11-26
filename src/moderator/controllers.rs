@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
-use chrono::{ Datelike, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use log::{debug, error, trace};
 use rraw::utils::error::APIError;
 
@@ -225,50 +225,53 @@ pub async fn review_user(
         return Err(error.into());
     }
     let about = about.unwrap();
-    let submissions = r_user
-        .submissions(None).await?;
-    let comments = r_user
-        .comments(None).await?;
-    yeet(rn);
-
     let mut user_posts = Vec::<RedditPost>::new();
     let mut user_comments = Vec::<Comment>::new();
-    for x in comments.data.children {
-        let x = x.data;
-        let post = Comment {
-            subreddit: x.subreddit,
-            url: format!("https://reddit.com{}", x.permalink.unwrap()),
-            id: x.id.clone(),
-            og_post_title: x.link_title.clone(),
-            content: x.body,
-            score: x.score as i64,
-        };
-        user_comments.push(post);
-    }
-    for x in submissions.data.children {
-        let x = x.data;
-        let text = x.selftext;
-        let content = if text.is_empty() {
-            RedditContent { content: None, url: x.url, over_18: x.over_18 }
-        } else {
-            RedditContent { content: Some(text), url: None, over_18: x.over_18 }
-        };
-        let post = RedditPost {
-            subreddit: x.subreddit,
-            url: format!("https://reddit.com{}", x.permalink),
-            id: x.id.clone(),
-            title: x.title.clone(),
-            content: content,
-            score: x.score as i64,
-        };
-        user_posts.push(post);
+    if !about.data.is_suspended.unwrap_or(false) {
+        let submissions = r_user
+            .submissions(None).await?;
+        let comments = r_user
+            .comments(None).await?;
+        yeet(rn);
+
+
+        for x in comments.data.children {
+            let x = x.data;
+            let post = Comment {
+                subreddit: x.subreddit,
+                url: format!("https://reddit.com{}", x.permalink.unwrap()),
+                id: x.id.clone(),
+                og_post_title: x.link_title.clone(),
+                content: x.body,
+                score: x.score as i64,
+            };
+            user_comments.push(post);
+        }
+        for x in submissions.data.children {
+            let x = x.data;
+            let text = x.selftext;
+            let content = if text.is_empty() {
+                RedditContent { content: None, url: x.url, over_18: x.over_18 }
+            } else {
+                RedditContent { content: Some(text), url: None, over_18: x.over_18 }
+            };
+            let post = RedditPost {
+                subreddit: x.subreddit,
+                url: format!("https://reddit.com{}", x.permalink),
+                id: x.id.clone(),
+                title: x.title.clone(),
+                content: content,
+                score: x.score as i64,
+            };
+            user_posts.push(post);
+        }
     }
     let user = RedditUser {
         name: about.data.name,
         avatar: about.data.icon_img.unwrap_or("".parse().unwrap()),
-        comment_karma: about.data.comment_karma as i64,
-        total_karma: about.data.total_karma as i64,
-        created: about.data.created as i64,
+        comment_karma: about.data.comment_karma.unwrap_or(0),
+        total_karma: about.data.total_karma.unwrap_or(0),
+        created: about.data.created.unwrap_or(0),
         top_posts: user_posts,
         top_comments: user_comments,
         user,
