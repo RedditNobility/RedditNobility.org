@@ -218,6 +218,7 @@ pub async fn review_user(
             APIError::HTTPError(http) => {
                 if http.eq(&StatusCode::NOT_FOUND) {
                     delete_user(&user.username, &conn)?;
+                    return bad_request("We have fixed the issue please try again");
                 }
             }
             _ => {}
