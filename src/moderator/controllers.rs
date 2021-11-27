@@ -213,18 +213,18 @@ pub async fn review_user(
     trace!("Grabbing About Data for {}", &user.username);
     let r_user = client.user(user.username.clone());
     let about = r_user.about().await;
-
     if let Err(error) = about {
         error!("Failed to grab about data for {} error {}", &user.username, &error);
         match error {
             APIError::NotFound => {
-                delete_user(&user.username, &conn)?;
+                delete_user(&user.id, &conn)?;
                 return bad_request("We have fixed the issue please try again");
             }
             _ => {}
         }
         return Err(error.into());
     }
+
     let about = about.unwrap();
     let mut user_posts = Vec::<RedditPost>::new();
     let mut user_comments = Vec::<Comment>::new();

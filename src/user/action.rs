@@ -42,10 +42,10 @@ pub fn get_users(conn: &MysqlConnection) -> Result<Vec<User>, diesel::result::Er
     return users.load::<User>(conn);
 }
 
-pub fn delete_user(us: &String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+pub fn delete_user(us: &i64, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
 
-    diesel::delete(users.filter(username.eq(us)))
+    diesel::delete(users.filter(id.eq(us)))
         .execute(conn)
         .unwrap();
     Ok(())
