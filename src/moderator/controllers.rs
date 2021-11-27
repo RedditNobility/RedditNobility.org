@@ -208,8 +208,9 @@ pub async fn review_user(
     };
 //TODO re-add this one line
     // rn.add_id(user.id);
-    let r_user = rn.reddit.user(user.username);
-    trace!("Grabbing About Data for {}", &&user.username);
+
+    trace!("Grabbing About Data for {}", &user.username);
+    let r_user = rn.reddit.user(user.username.clone());
     let about = r_user.about().await;
 
     if let Err(error) = about {
