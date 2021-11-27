@@ -215,11 +215,9 @@ pub async fn review_user(
     if let Err(error) = about {
         error!("Failed to grab about data for {} error {}", &user.username, &error);
         match error {
-            APIError::HTTPError(http) => {
-                if http.eq(&StatusCode::NOT_FOUND) {
-                    delete_user(&user.username, &conn)?;
-                    return bad_request("We have fixed the issue please try again");
-                }
+            APIError::NotFound => {
+                delete_user(&user.username, &conn)?;
+                return bad_request("We have fixed the issue please try again");
             }
             _ => {}
         }
