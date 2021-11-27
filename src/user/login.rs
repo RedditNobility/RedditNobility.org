@@ -3,7 +3,7 @@ use bcrypt::verify;
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::response::unauthorized;
-use crate::{Database, RN};
+use crate::{Database, RedditClient, RN};
 use serde::{Deserialize, Serialize};
 
 use crate::user::action::{delete_otp, get_opt, get_user_by_id, get_user_by_name};
@@ -55,27 +55,21 @@ pub struct CreateOTP {
 #[post("/api/login/otp/create")]
 pub async fn one_time_password_create(
     otp_request: Json<CreateOTP>,
-    rn: RN,
+    redditClient: RedditClient,
     database: Database,
     request: HttpRequest,
 ) -> SiteResponse {
-    println!("One");
     let connection = database.get()?;
     let option = get_user_by_name(&otp_request.username, &connection)?;
     if option.is_none() {
         return unauthorized();
     }
-    println!("Two");
     let user = option.unwrap();
     if user.status != Status::Approved || !user.permissions.login {
         return unauthorized();
     }
-    println!("Three");
-
-    let rn = rn.lock()?;
-    println!("Four");
     let string = generate_otp(&user.id, &connection)?;
-    send_login(&user.username, string, &rn.reddit).await?;
+    send_login(&user.username, string, &redditClient).await?;
     return APIResponse {
         success: true,
         data: Some(true),

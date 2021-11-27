@@ -8,28 +8,27 @@ use crate::error::internal_error::InternalError::Error;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
 use crate::user::action::{get_user_by_name, update_properties};
 use crate::user::utils::{get_user_by_header, quick_add};
-use crate::{Database, RN};
+use crate::{Database, RedditClient, RN};
 
 #[post("/api/submit/{username}")]
 pub async fn submit_user(
     pool: Database,
     suggest: Path<String>,
     r: HttpRequest,
-    rn: RN,
+    redditClient: RedditClient
 ) -> SiteResponse {
     let conn = pool.get()?;
     let option = get_user_by_header(r.headers(), &conn)?;
     if option.is_none() {
         return unauthorized();
     }
-    let rn = rn.lock()?;
 
     let discoverer = option.unwrap();
     let result1 = get_user_by_name(&suggest, &conn)?;
     if result1.is_some() {
         return already_exists();
     }
-    let user_reddit = rn.reddit.user(suggest.to_string()).about().await;
+    let user_reddit = redditClient.user(suggest.to_string()).about().await;
     if let Err(error) = user_reddit {
         return match error {
             APIError::HTTPError(_) => {

@@ -1,7 +1,7 @@
 use actix_web::{get, post, web, HttpRequest};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::{Database, User, RN, utils};
+use crate::{Database, User, RN, utils, RedditClient};
 
 use crate::error::response::{bad_request, not_found, unauthorized};
 use crate::user::action::{delete_user, get_found_users, get_user_by_name, update_properties};
@@ -169,6 +169,7 @@ pub async fn review_user(
     path: web::Path<String>,
     req: HttpRequest,
     rr: RN,
+    client: RedditClient,
 ) -> SiteResponse {
     let username = path.into_inner();
     let conn = database.get()?;
@@ -210,7 +211,7 @@ pub async fn review_user(
     // rn.add_id(user.id);
 
     trace!("Grabbing About Data for {}", &user.username);
-    let r_user = rn.reddit.user(user.username.clone());
+    let r_user = client.user(user.username.clone());
     let about = r_user.about().await;
 
     if let Err(error) = about {
@@ -294,8 +295,7 @@ pub async fn review_user_update(
     database: Database,
     value: web::Path<(String, String)>,
     req: HttpRequest,
-    rn: RN,
-) -> SiteResponse {
+    redditClient: RedditClient) -> SiteResponse {
     let (username, status) = value.into_inner();
     let conn = database.get()?;
     let user = get_user_by_header(req.headers(), &conn)?;
@@ -324,9 +324,7 @@ pub async fn review_user_update(
     if status == Status::Approved {
         trace!("Attempting to Approve User {} on Reddit", &user2.username);
 
-        let rr = rn.lock()?;
-        let user1 = utils::approve_user(&user2, &rr.reddit).await;
-        yeet(rr);
+        let user1 = utils::approve_user(&user2, &redditClient).await;
         if !user1 {
             error!("Approval Failure");
             return crate::error::response::error("Unable to Process Approve Request Currently", Some(StatusCode::INTERNAL_SERVER_ERROR));

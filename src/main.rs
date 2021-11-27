@@ -52,17 +52,16 @@ mod frontend;
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 pub type Database = web::Data<DbPool>;
 pub type RN = web::Data<Arc<Mutex<RNCore>>>;
+pub type RedditClient = web::Data<Me>;
 
 pub struct RNCore {
     pub users_being_worked_on: HashMap<i64, DateTime<Local>>,
-    pub reddit: Me,
 }
 
 impl RNCore {
-    fn new(client: Me) -> RNCore {
+    fn new() -> RNCore {
         RNCore {
             users_being_worked_on: HashMap::new(),
-            reddit: client,
         }
     }
     pub fn add_id(&mut self, id: i64) {
@@ -128,7 +127,7 @@ async fn main() -> std::io::Result<()> {
         std::env::var("PASSWORD").unwrap().as_str(),
     );
     let client = Me::login(arc, "RedditNobility bot(by u/KingTuxWH)".to_string()).await.unwrap();
-    let site_core = Arc::new(Mutex::new(RNCore::new(client)));
+    let site_core = Arc::new(Mutex::new(RNCore::new()));
     let reference = site_core.clone();
     thread::spawn(move || {
         {
@@ -163,6 +162,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .app_data(Data::new(pool.clone()))
             .app_data(Data::new(site_core.clone()))
+            .app_data(Data::new(client.clone()))
             .app_data(Data::new(PayloadConfig::new(1 * 1024 * 1024 * 1024)))
             .service(titles)
             .configure(error::handlers::init)
