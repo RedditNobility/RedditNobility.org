@@ -208,10 +208,22 @@ pub async fn review_user(
     };
 //TODO re-add this one line
     // rn.add_id(user.id);
-    let r_user = rn.reddit.user(user.username.clone());
+    let r_user = rn.reddit.user(user.username);
     trace!("Grabbing About Data for {}", &&user.username);
-    let about = rn.reddit.user(user.username.clone()).about().await?;
+    let about = r_user.about().await;
 
+    if let Err(error) = about {
+        error!("Failed to grab about data for {} error {}", &user.username, &error);
+        match error {
+            APIError::NotFound => {
+                delete_user(&user.username, &conn)?;
+                return bad_request("We have fixed the issue please try again");
+            }
+            _ => {}
+        }
+        return Err(error.into());
+    }
+    let about = about.unwrap();
     let mut user_posts = Vec::<RedditPost>::new();
     let mut user_comments = Vec::<Comment>::new();
     if !about.data.is_suspended.unwrap_or(false) {
