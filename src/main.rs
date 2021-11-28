@@ -28,7 +28,7 @@ use hyper::{Body, Client, Method, Request};
 use hyper::client::Builder;
 use hyper_tls::HttpsConnector;
 
-use log::{error, info};
+use log::{debug, error, info};
 
 
 use crate::user::models::{Status, User};
@@ -181,8 +181,8 @@ async fn main() -> std::io::Result<()> {
                 for x in rr.users_being_worked_on.clone() {
 
                     let x1: Duration = Local::now().sub(x.1.clone());
-                    if x1.num_minutes() > 5 {
-                        info!("Removing User {}", &x.0);
+                    if x1.num_minutes() > 3 {
+                        debug!("Removing User {}", &x.0);
                         rr.remove_id(&x.0);
                     }
                 }
