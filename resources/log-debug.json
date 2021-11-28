@@ -46,8 +46,6 @@
     {
       "module": "rraw",
       "levels": [
-        "TRACE",
-        "DEBUG",
         "INFO",
         "WARN",
         "ERROR"

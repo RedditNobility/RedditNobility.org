@@ -47,13 +47,13 @@
                   <template #label> Title </template>
                   <el-select
                     disabled
-                    v-model="user.properties.title"
+                    v-model="user.title"
                     placeholder=""
                   >
                     <el-option
-                      :key="user.properties.title"
-                      :label="user.properties.title"
-                      :value="user.properties.title"
+                      :key="user.title"
+                      :label="user.title"
+                      :value="user.title"
                     >
                     </el-option>
                   </el-select>

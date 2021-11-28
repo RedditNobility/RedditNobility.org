@@ -4,7 +4,7 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::{Database, User, RN, utils, RedditClient};
 
 use crate::error::response::{bad_request, not_found, unauthorized};
-use crate::user::action::{delete_user, get_found_users, get_user_by_name, update_properties};
+use crate::user::action::{delete_user, get_found_users, get_user_by_name, update_properties, update_title};
 use crate::user::utils::get_user_by_header;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -334,8 +334,7 @@ pub async fn review_user_update(
     let x: ApproveRequest = serde_qs::from_str(req.query_string()).unwrap();
     if let Some(title) = x.title {
         debug!("Changing {} title to {}", &user2.username, &title);
-        properties.title = Some(title);
-        update_properties(&user2.id, properties, &conn)?;
+        update_title(&user2.id, &title, &conn)?;
     }
     crate::moderator::action::update_status(&user2.id, status, &reviewer.username, get_current_time(), &conn)?;
     return APIResponse::new(true, Some(true)).respond(&req);

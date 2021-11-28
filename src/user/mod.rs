@@ -4,6 +4,7 @@ mod login;
 pub mod models;
 pub mod utils;
 mod team_controllers;
+pub mod title;
 
 use controllers::*;
 use actix_web::web;

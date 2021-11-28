@@ -47,6 +47,7 @@ export interface RedditUser {
   reviewer: string;
   discoverer: string;
   properties: Properties;
+  title: string;
   created: number;
 }
 export interface MeResponse {
@@ -56,7 +57,7 @@ export interface MeResponse {
   created: number;
 }
 export interface Properties {
-  title: string | undefined;
+  avatar: string | undefined;
 }
 
 export interface UserPermissions {

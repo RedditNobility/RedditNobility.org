@@ -10,6 +10,7 @@ table! {
         discoverer -> Text,
         reviewer ->Text,
         properties ->Text,
+        title -> Text,
         created ->Bigint,
     }
 }
