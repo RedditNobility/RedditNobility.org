@@ -181,7 +181,7 @@ pub async fn review_user(
     if !user.permissions.review_user {
         return unauthorized();
     }
-    let rn = rr.lock()?;
+    let mut rn = rr.lock()?;
     let user = if username.eq("next") {
         trace!("Looking for Next User");
         let mut result = get_found_users(&conn)?;
@@ -207,8 +207,7 @@ pub async fn review_user(
         }
         user.unwrap()
     };
-//TODO re-add this one line
-    // rn.add_id(user.id);
+     rn.add_id(user.id);
 
     trace!("Grabbing About Data for {}", &user.username);
     let r_user = client.user(user.username.clone());
