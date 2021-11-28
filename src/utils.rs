@@ -8,9 +8,10 @@ use std::str::FromStr;
 
 use crate::error::internal_error::InternalError;
 use crate::settings::action::get_setting;
-use crate::User;
+use crate::{Titles, User};
 use rust_embed::RustEmbed;
-use std::time::{ SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use log::error;
 use rraw::auth::AnonymousAuthenticator;
 use rraw::me::Me;
@@ -82,25 +83,46 @@ pub async fn approve_user(user: &User, client: &Me) -> bool {
 
 pub fn yeet<T>(_drop: T) {}
 
-pub fn is_valid(username: &String) -> Option<String> {
-    let string1 = Resources::file_get_string("names.txt");
-    let split = string1.split(",");
-    let vec: Vec<&str> = split.collect();
-    let string = username.to_lowercase();
-    for x in vec {
-        if string.contains(&x.to_string()) {
-            return Some(x.to_string());
+pub fn is_valid(username: &String, titles: &Titles) -> Option<String> {
+    let username = username.to_lowercase();
+    for title in &titles.titles {
+        if username.contains(&title.value) {
+            if let Some(possibles) = &title.possible_titles {
+                for possible in possibles {
+                    if username.contains(possible) {
+                        return Some(possible.clone());
+                    }
+                }
+            }
+            return Some(title.value.clone());
         }
     }
     return None;
 }
 
-#[test]
-fn valid_test() {
-    let option = is_valid(&"KingTuxWH".to_string());
-    assert_eq!(option.unwrap(), "king")
-}
+#[tokio::test]
+async fn valid_test() {
+    use hyper::{Body, Client, Method, Request};
 
+    let https = hyper_tls::HttpsConnector::new();
+    let client = Client::builder().build::<_, hyper::Body>(https);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("https://raw.githubusercontent.com/RedditNobility/Titles/master/titles.json")
+        .body(Body::empty())
+        .unwrap();
+    let response = client.request(request).await.unwrap();
+    let bytes = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let string = String::from_utf8(bytes.to_vec()).unwrap();
+    let titles: Titles = serde_json::from_str(string.as_str()).unwrap();
+    let option = is_valid(&"KingTuxWH".to_string(), &titles);
+    assert_eq!(is_valid(&"KingTuxWH".to_string(), &titles).unwrap(), "king");
+    assert_eq!(is_valid(&"QueenTux".to_string(), &titles).unwrap(), "queen");
+    assert_eq!(is_valid(&"VikingTux".to_string(), &titles).unwrap(), "viking");
+    assert_eq!(is_valid(&"LordTux".to_string(), &titles).unwrap(), "lord");
+    assert_eq!(is_valid(&"CzArTux".to_string(), &titles).unwrap(), "czar");
+}
 
 
 pub async fn get_avatar(user: &User) -> Result<String, InternalError> {

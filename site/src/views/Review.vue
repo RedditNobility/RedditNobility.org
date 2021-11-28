@@ -196,7 +196,7 @@ export default defineComponent({
         dates.value.founded = new Date(u.user.created).toLocaleDateString(
           "en-US"
         );
-        title.value = u.user.properties.title;
+        title.value = u.user.title;
         user.value = u;
       } catch (e) {
         console.error(e);

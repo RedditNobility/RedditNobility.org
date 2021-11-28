@@ -8,6 +8,7 @@ use std::ops::Add;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::error::internal_error::InternalError;
+use crate::Titles;
 use crate::user::action;
 use crate::user::action::{
     add_new_auth_token, add_opt, get_user_by_name, get_user_from_auth_token,
@@ -100,6 +101,7 @@ pub fn quick_add(
     username: &String,
     discoverer: &String,
     conn: &MysqlConnection,
+    titles: &Titles,
 ) -> Result<(), InternalError> {
     info!("Adding user {}", &username);
 
@@ -118,7 +120,6 @@ pub fn quick_add(
         let properties = UserProperties {
             avatar: None,
             description: None,
-            title: is_valid(&username),
         };
         let user = User {
             id: 0,
@@ -131,6 +132,7 @@ pub fn quick_add(
             created: get_current_time(),
             discoverer: discoverer.clone(),
             properties,
+            title: is_valid(&username, titles).unwrap_or("No Title Identified".to_string()),
             permissions: UserPermissions {
                 admin: false,
                 moderator: false,

@@ -1,5 +1,5 @@
 use crate::schema::*;
-use crate::utils;
+use crate::{Titles, utils};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
@@ -38,7 +38,6 @@ pub struct OTP {
 pub struct UserProperties {
     pub avatar: Option<String>,
     pub description: Option<String>,
-    pub title: Option<String>,
 }
 
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
@@ -112,6 +111,8 @@ pub struct User {
     // Custom Properties done through json.
     pub properties: UserProperties,
     //When the data was created
+    pub title: String,
+
     pub created: i64,
 }
 
@@ -236,11 +237,10 @@ impl FromSql<Text, Mysql> for Level {
 }
 
 impl User {
-    pub fn new(sub: SubmitUser, discoverer: String) -> User {
+    pub fn new(sub: SubmitUser, discoverer: String, titles: &Titles) -> User {
         let properties = UserProperties {
             avatar: None,
             description: None,
-            title: is_valid(&sub.username),
         };
         User {
             id: 0,
@@ -252,6 +252,7 @@ impl User {
             discoverer,
             reviewer: sub.moderator.unwrap_or_else(default_moderator),
             properties,
+            title: is_valid(&sub.username, titles).unwrap_or("No Title Identified".to_string()),
             created: sub.created.unwrap_or_else(utils::get_current_time),
             permissions: UserPermissions {
                 admin: false,

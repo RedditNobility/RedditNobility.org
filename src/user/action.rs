@@ -80,6 +80,18 @@ pub fn update_properties(
         .execute(conn)?;
     Ok(())
 }
+pub fn update_title(
+    user: &i64,
+    tit: &String,
+    conn: &MysqlConnection,
+) -> Result<(), diesel::result::Error> {
+    use crate::schema::users::dsl::*;
+
+    diesel::update(users.filter(id.eq(user)))
+        .set((title.eq(tit), ))
+        .execute(conn)?;
+    Ok(())
+}
 
 pub fn update_password(
     user: &i64,

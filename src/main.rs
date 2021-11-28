@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 
 use actix_cors::Cors;
-use std::thread;
+use std::{env, thread};
 
 use actix_files::Files;
 
@@ -24,19 +24,27 @@ use actix_web::{get, middleware, web, App, HttpServer, HttpRequest};
 use chrono::{DateTime, Duration, Local};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
+use hyper::{Body, Client, Method, Request};
+use hyper::client::Builder;
+use hyper_tls::HttpsConnector;
 
-use log::info;
+use log::{error, info};
 
 
-use crate::user::models::User;
+use crate::user::models::{Status, User};
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
 use rraw::auth::PasswordAuthenticator;
 use rraw::me::Me;
+use rraw::utils::error::APIError;
 use serde::{Deserialize, Serialize};
 use crate::api_response::{APIResponse, SiteResponse};
+use crate::error::internal_error::InternalError::Error;
+use crate::moderator::action::update_status;
+use crate::user::action::{delete_user, get_users, update_title};
+use crate::user::title::Titles;
 
-use crate::utils::{installed, Resources};
+use crate::utils::{get_current_time, installed, is_valid, Resources};
 
 mod admin;
 mod api_response;
@@ -53,6 +61,7 @@ type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 pub type Database = web::Data<DbPool>;
 pub type RN = web::Data<Arc<Mutex<RNCore>>>;
 pub type RedditClient = web::Data<Me>;
+pub type TitleData = web::Data<Titles>;
 
 pub struct RNCore {
     pub users_being_worked_on: HashMap<i64, DateTime<Local>>,
@@ -129,6 +138,59 @@ async fn main() -> std::io::Result<()> {
     let client = Me::login(arc, "RedditNobility bot(by u/KingTuxWH)".to_string()).await.unwrap();
     let site_core = Arc::new(Mutex::new(RNCore::new()));
     let reference = site_core.clone();
+
+    info!("Loading Title Info From");
+    let https = HttpsConnector::new();
+    let hyper = Client::builder().build::<_, hyper::Body>(https);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("https://raw.githubusercontent.com/RedditNobility/Titles/master/titles.json")
+        .body(Body::empty())
+        .unwrap();
+    let result = hyper.request(request).await;
+    if let Err(error) = result {
+        error!("Unable to Load Titles File: {}",error);
+        return Ok(());
+    }
+    let response = result.unwrap();
+    let bytes = hyper::body::to_bytes(response.into_body()).await;
+    if let Err(error) = bytes {
+        error!("Unable to Load Titles File: {}",error);
+        return Ok(());
+    }
+    let string = String::from_utf8(bytes.unwrap().to_vec()).unwrap();
+    let result1: Result<Titles, serde_json::Error> =
+        serde_json::from_str(string.as_str());
+    if let Err(error) = result1 {
+        error!("Unable to Load Titles File: {}",error);
+        return Ok(());
+    }
+    let titlesData = result1.unwrap();
+    let args: Vec<String> = env::args().collect();
+    if args.contains(&"db_cleanup_1".to_string()) {
+        info!("Going to cleanup the Database(Cleanup Titles and Living Reddit Accounts). This could take a bit");
+        let i = get_current_time();
+        info!("Starting Time: {}", &i);
+        let users = get_users(&connection).unwrap();
+        let mut number = users.len();
+        for user in users {
+            if user.title.eq("No Title Identified"){
+                continue;
+            }
+            number = number-1;
+            let option = is_valid(&user.username, &titlesData);
+            if let Some(title) = option {
+                println!("Users Left: {} Updating Title for {} to {}",&number, &user.username, &title);
+                update_title(&user.id, &title, &connection).map_err(|t| {
+                    error!("Error Updating Title for User {} Error: {}", &user.username, t)
+                });
+            }
+        }
+        info!("Total Time: {}", (get_current_time()-i));
+
+        return Ok(());
+    }
     thread::spawn(move || {
         {
             let site_core = reference.clone();
@@ -163,6 +225,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(pool.clone()))
             .app_data(Data::new(site_core.clone()))
             .app_data(Data::new(client.clone()))
+            .app_data(Data::new(titlesData.clone()))
             .app_data(Data::new(PayloadConfig::new(1 * 1024 * 1024 * 1024)))
             .service(titles)
             .configure(error::handlers::init)
@@ -213,11 +276,7 @@ pub struct InstallRequest {
 }
 
 
-
 #[get("/titles")]
-async fn titles(req: HttpRequest) -> SiteResponse {
-    let string1 = Resources::file_get_string("names.txt");
-    let split = string1.split(",");
-    let vec: Vec<&str> = split.collect();
-    return APIResponse::respond_new(Some(vec), &req);
+async fn titles(req: HttpRequest, title: TitleData) -> SiteResponse {
+    return APIResponse::respond_new(Some(title.clone()), &req);
 }

@@ -57,7 +57,7 @@
                   <template #label> Title </template>
                   <el-select
                     disabled
-                    v-model="user.properties.title"
+                    v-model="user.title"
                     placeholder=""
                   >
                     <el-option

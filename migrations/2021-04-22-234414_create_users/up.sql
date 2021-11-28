@@ -7,8 +7,9 @@ CREATE TABLE IF NOT EXISTS users
     permissions    TEXT,
     status         TEXT,
     status_changed BIGINT,
-    reviewer      TEXT,
+    reviewer       TEXT,
     discoverer     TEXT,
     properties     TEXT,
+    title          TEXT,
     created        BIGINT
 )
