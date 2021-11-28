@@ -172,18 +172,22 @@ async fn main() -> std::io::Result<()> {
         {
             let site_core = reference.clone();
             loop {
+                info!("Starting Core Cleanup!");
                 let result = site_core.lock();
                 if result.is_err() {
                     panic!("Oh NO!.... The Site Core..... It's Broken")
                 }
                 let mut rr = result.unwrap();
                 for x in rr.users_being_worked_on.clone() {
+
                     let x1: Duration = Local::now().sub(x.1.clone());
                     if x1.num_minutes() > 5 {
+                        info!("Removing User {}", &x.0);
                         rr.remove_id(&x.0);
                     }
                 }
                 drop(rr);
+                info!("Core Cleanup Over!");
                 sleep(Duration::minutes(5).to_std().unwrap())
             }
         }
@@ -214,7 +218,7 @@ async fn main() -> std::io::Result<()> {
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
             .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
     })
-        .workers(2);
+        .workers(4);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added
