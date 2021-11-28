@@ -167,30 +167,7 @@ async fn main() -> std::io::Result<()> {
         return Ok(());
     }
     let titlesData = result1.unwrap();
-    let args: Vec<String> = env::args().collect();
-    if args.contains(&"db_cleanup_1".to_string()) {
-        info!("Going to cleanup the Database(Cleanup Titles and Living Reddit Accounts). This could take a bit");
-        let i = get_current_time();
-        info!("Starting Time: {}", &i);
-        let users = get_users(&connection).unwrap();
-        let mut number = users.len();
-        for user in users {
-            if user.title.eq("No Title Identified"){
-                continue;
-            }
-            number = number-1;
-            let option = is_valid(&user.username, &titlesData);
-            if let Some(title) = option {
-                println!("Users Left: {} Updating Title for {} to {}",&number, &user.username, &title);
-                update_title(&user.id, &title, &connection).map_err(|t| {
-                    error!("Error Updating Title for User {} Error: {}", &user.username, t)
-                });
-            }
-        }
-        info!("Total Time: {}", (get_current_time()-i));
 
-        return Ok(());
-    }
     thread::spawn(move || {
         {
             let site_core = reference.clone();

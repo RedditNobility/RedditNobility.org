@@ -64,7 +64,7 @@
                       v-for="title in titles"
                       @click="updateTitle"
                       :key="title.value"
-                      :label="title.value"
+                      :label="title.properName"
                       :value="title.value"
                     >
                     </el-option>
@@ -140,7 +140,7 @@ import {
   User,
   UserStats,
 } from "@/backend/api/User";
-import { getTitles } from "@/backend/Generic";
+import { getTitles, TitleElement } from "@/backend/Generic";
 import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
 import { useRoute } from "vue-router";
@@ -149,7 +149,7 @@ import { BasicResponse } from "../Response";
 import http from "@/http-common";
 export default defineComponent({
   setup() {
-    const titles = ref<string[]>([]);
+    const titles = ref<TitleElement[]>([]);
     const loading = ref(true);
     const loadingStats = ref(true);
     const date = ref("");
@@ -160,8 +160,11 @@ export default defineComponent({
 
     const load = async () => {
       let value = await getTitles();
-      for (const title of value) {
-        titles.value.push({ value: title });
+      if (!value) {
+        return;
+      }
+      for (const title of value.titles) {
+        titles.value.push(title);
       }
     };
     const route = useRoute();

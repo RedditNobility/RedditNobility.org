@@ -36,7 +36,7 @@
                     <el-option
                       v-for="title in titles"
                       :key="title.value"
-                      :label="title.value"
+                      :label="title.properName"
                       :value="title.value"
                     >
                     </el-option>
@@ -149,10 +149,10 @@ import { useCookie } from "vue-cookie-next";
 import { BasicResponse } from "../Response";
 import http from "@/http-common";
 import { useRoute } from "vue-router";
-import { getTitles } from "@/backend/Generic";
+import { getTitles, TitleElement } from "@/backend/Generic";
 export default defineComponent({
   setup() {
-    const titles = ref<string[]>([]);
+    const titles = ref<TitleElement[]>([]);
     let cookie = useCookie();
     const loading = ref(true);
     const tab = ref("User");
@@ -167,11 +167,13 @@ export default defineComponent({
     let username = route.params.username as string;
 
     const load = async () => {
-     let value =  await getTitles();
-        for (const title of value) {
-          titles.value.push({ value: title });
-        }
-      
+      let value = await getTitles();
+      if (!value) {
+        return;
+      }
+      for (const title of value.titles) {
+        titles.value.push(title);
+      }
     };
 
     const getRedditUser = async () => {
