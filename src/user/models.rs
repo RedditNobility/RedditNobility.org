@@ -7,11 +7,11 @@ use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::{deserialize, serialize, Queryable};
 use serde::{Deserialize, Serialize};
-
 use crate::utils::is_valid;
 use std::fmt::{Display, Error, Formatter};
 use std::io::Write;
 use std::str::FromStr;
+use log::error;
 use strum_macros::Display;
 use strum_macros::EnumString;
 
@@ -127,8 +127,9 @@ pub struct SubmitUser {
     pub created: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize,Queryable)]
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
 pub struct TeamUser {
+    pub id: i64,
     pub username: String,
     pub properties: UserProperties,
 }
@@ -146,8 +147,8 @@ pub struct TeamResponse {
 pub struct TeamMember {
     pub id: i64,
     pub user: i64,
-    pub description: String,
     pub level: Level,
+    pub description: String,
     pub created: i64,
 }
 
@@ -200,18 +201,15 @@ impl FromSql<Text, Mysql> for Status {
     fn from_sql(
         bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
     ) -> deserialize::Result<Status> {
-        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes);
-        if t.is_err() {
-            //IDK break
-        }
-        let string = t.unwrap();
-        let result: Result<Status, strum::ParseError> = Status::from_str(string.as_str());
+        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
+        let result: Result<Status, strum::ParseError> = Status::from_str(t.as_str());
         if result.is_err() {
             //IDK break
         }
         return Ok(result.unwrap());
     }
 }
+
 impl ToSql<Text, Mysql> for Level {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
         let s = self.to_string();
@@ -223,14 +221,11 @@ impl FromSql<Text, Mysql> for Level {
     fn from_sql(
         bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
     ) -> deserialize::Result<Level> {
-        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes);
-        if t.is_err() {
-            //IDK break
-        }
-        let string = t.unwrap();
-        let result: Result<Level, strum::ParseError> = Level::from_str(string.as_str());
-        if result.is_err() {
-            //IDK break
+        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
+        let result: Result<Level, strum::ParseError> = Level::from_str(t.as_str());
+        if let Err(error) = result {
+            error!("Unable to Parse Level {} Value {}", error, t);
+            return Err(Box::new(error));
         }
         return Ok(result.unwrap());
     }

@@ -16,6 +16,7 @@ use log::error;
 use rraw::auth::AnonymousAuthenticator;
 use rraw::me::Me;
 use rraw::utils::options::FriendType;
+use crate::user::models::UserProperties;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -125,8 +126,8 @@ async fn valid_test() {
 }
 
 
-pub async fn get_avatar(user: &User) -> Result<String, InternalError> {
-    let option1 = user.properties.avatar.as_ref();
+pub async fn get_avatar(username: &String ,user: &UserProperties) -> Result<String, InternalError> {
+    let option1 = user.avatar.as_ref();
     if option1.is_some() {
         if !option1.unwrap().is_empty() {
             return Ok(option1.unwrap().clone());
@@ -137,7 +138,7 @@ pub async fn get_avatar(user: &User) -> Result<String, InternalError> {
         AnonymousAuthenticator::new(),
         "Robotic Monarch by u/KingTuxWH".to_string(),
     ).await?;
-    let user1 = client.user(user.username.clone());
+    let user1 = client.user(username.clone());
     let about = user1.about().await?;
 
     let option = about.data.snoovatar_img;

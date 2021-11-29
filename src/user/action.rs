@@ -22,6 +22,16 @@ pub fn get_user_by_name(
         .first::<User>(conn)
         .optional();
 }
+pub fn get_id_by_name(
+    user: &String,
+    conn: &MysqlConnection,
+) -> Result<Option<i64>, diesel::result::Error> {
+    use crate::schema::users::dsl::*;
+    return users.select(id)
+        .filter(username.eq(user))
+        .first(conn)
+        .optional();
+}
 
 pub fn get_user_by_id(
     l_id: &i64,
@@ -186,9 +196,13 @@ pub fn get_team_members(conn: &MysqlConnection) -> Result<Vec<TeamMember>, Diese
     use crate::schema::team_members::dsl::*;
 
     team_members.load::<TeamMember>(conn)
+}pub fn get_team_member(u: &i64,conn: &MysqlConnection) -> Result<Option<TeamMember>, DieselError> {
+    use crate::schema::team_members::dsl::*;
+
+    team_members.filter(user.eq(u)).first::<TeamMember>(conn).optional()
 }
 
 pub fn get_team_user(user: &i64,conn: &MysqlConnection) -> Result<Option<TeamUser>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    users.filter(id.eq(user)).select((username, properties)).first::<TeamUser>(conn).optional()
+    users.filter(id.eq(user)).select((id, username, properties)).first::<TeamUser>(conn).optional()
 }
