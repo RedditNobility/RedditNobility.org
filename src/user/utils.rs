@@ -1,4 +1,4 @@
-use actix_web::http::HeaderMap;
+
 use chrono::Duration;
 use diesel::MysqlConnection;
 use log::info;
@@ -6,6 +6,7 @@ use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::ops::Add;
 use std::time::{SystemTime, UNIX_EPOCH};
+use actix_web::http::header::HeaderMap;
 
 use crate::error::internal_error::InternalError;
 use crate::Titles;
