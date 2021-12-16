@@ -23,6 +23,7 @@
     "vue-meta": "3.0.0-alpha.9",
     "vue-router": "^4.0.12",
     "vue-upload-component": "^3.0.50",
+    "vue3-markdown-it": "^1.0.9",
     "vuex": "^4.0.0-0"
   },
   "devDependencies": {

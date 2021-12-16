@@ -8,6 +8,7 @@ import { createMetaManager } from 'vue-meta'
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 import "~/styles/index.scss";
+import Markdown from 'vue3-markdown-it';
 
 import VueUploadComponent from "vue-upload-component";
 
@@ -16,6 +17,8 @@ app.use(VueCookieNext);
 app.use(ElementPlus);
 app.use(Notifications);
 app.use(router);
+app.use(Markdown);
+
 app.component("file-upload", VueUploadComponent);
 app.use(createMetaManager());
 app.mount("#app");
