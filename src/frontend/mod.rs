@@ -9,5 +9,6 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(controllers::review)
         .service(controllers::review_with)
         .service(controllers::user)
+        .service(controllers::about)
         .service(controllers::login);
 }

@@ -24,6 +24,10 @@ pub async fn moderator(_r: HttpRequest) -> SiteResponse {
 pub async fn review(_r: HttpRequest) -> SiteResponse {
     get_file()
 }
+#[get("/about")]
+pub async fn about(_r: HttpRequest) -> SiteResponse {
+    get_file()
+}
 
 #[get("/review/{file:.*}")]
 pub async fn review_with(_r: HttpRequest) -> SiteResponse {
