@@ -14,11 +14,11 @@
           welcome you to the community with open arms, pictures of pets, and
           friendships you can find only here. So whether ye be Philosopher or
           Jester, General or Politician, Active or Lurker: You have your crown,
-          your throne, and your community. 
-          <br>
-          Welcome to Reddit Nobility! Be that in the newly created Subreddit, our Discord, any other community of
-          your making, or just in your hearts, we sincerely hope you find some
-          value in Nobility. ~
+          your throne, and your community.
+          <br />
+          Welcome to Reddit Nobility! Be that in the newly created Subreddit,
+          our Discord, any other community of your making, or just in your
+          hearts, we sincerely hope you find some value in Nobility. ~
           <i>Reddit Nobility mod team</i>
         </p>
       </div>
@@ -81,19 +81,13 @@ export default defineComponent({
 </script>
 <style>
 #intro {
-  width: 50%;
-  margin: auto;
   border-radius: 4px;
   border: 1px solid var(--el-border-color-base);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04)
-}
-#titles {
-  width: 50%;
-  margin: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
 }
 .title {
   padding: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04)
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
 }
 .titleHeader {
   text-align: left;
@@ -103,11 +97,16 @@ export default defineComponent({
   border-bottom: 1px solid var(--el-border-color-base);
   border-left: 1px solid var(--el-border-color-base);
   border-right: 1px solid var(--el-border-color-base);
-  
 }
-.el-card {
-  width: 50%;
-  height: 500px;
-  margin: auto;
+
+@media only screen and (min-width: 600px) {
+  #intro {
+    width: 50%;
+    margin: auto;
+  }
+  #titles {
+    width: 50%;
+    margin: auto;
+  }
 }
 </style>
