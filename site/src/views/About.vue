@@ -68,6 +68,7 @@ export default defineComponent({
       if (!value) {
         return;
       }
+      value.titles.sort((a, b) => a.properName.localeCompare(b.properName));
       for (const title of value.titles) {
         titles.value.push(title);
       }
