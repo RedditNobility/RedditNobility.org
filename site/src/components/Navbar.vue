@@ -1,6 +1,7 @@
 <template>
   <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
-    <el-menu-item index="Home" @click="router.push('/')">Index</el-menu-item>
+    <el-menu-item index="Home" @click="router.push('/')">Home</el-menu-item>
+    <el-menu-item index="About" @click="router.push('/about')">About</el-menu-item>
 
     <el-menu-item
       v-if="user.id == 0"
@@ -72,6 +73,7 @@ export default defineComponent({
     },
   },
   setup() {
+    
     const router = useRouter();
     let form = ref({
       username: "",
