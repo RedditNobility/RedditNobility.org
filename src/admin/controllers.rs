@@ -1,14 +1,14 @@
 use actix_web::{web, HttpRequest};
 
+use crate::admin::action::{add_new_team_member, delete_team, delete_team_user};
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::{Database, get_current_time};
 use crate::error::response::{bad_request, not_found, unauthorized};
 use crate::user::action::{get_id_by_name, get_team_member, get_user_by_id};
-use crate::user::utils::get_user_by_header;
-use actix_web::{post, delete, put};
-use crate::admin::action::{add_new_team_member, delete_team, delete_team_user};
 use crate::user::models::{Level, TeamMember};
-use serde::{Serialize, Deserialize};
+use crate::user::utils::get_user_by_header;
+use crate::{get_current_time, Database};
+use actix_web::{delete, post, put};
+use serde::{Deserialize, Serialize};
 
 #[post("/api/admin/user/{user}/permission/{key}/{value}")]
 pub async fn update_permission(
@@ -50,7 +50,7 @@ pub async fn update_permission(
         }
     };
     crate::admin::action::set_permissions(&user, permissions, &connection)?;
-    return APIResponse::respond_new(Some(true), &r);
+    APIResponse::respond_new(Some(true), &r)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,7 +86,7 @@ pub async fn add_team(
         created: get_current_time(),
     };
     add_new_team_member(&member, &connection);
-    return APIResponse::respond_new(get_team_member(&member.user, &connection)?, &r);
+    APIResponse::respond_new(get_team_member(&member.user, &connection)?, &r)
 }
 
 #[delete("/api/admin/team/{member}")]
@@ -95,7 +95,7 @@ pub async fn delete_team_member(
     r: HttpRequest,
     path: web::Path<i64>,
 ) -> SiteResponse {
-    let (team) = path.into_inner();
+    let team = path.into_inner();
     let connection = database.get()?;
 
     let admin = get_user_by_header(r.headers(), &connection)?;
@@ -107,5 +107,5 @@ pub async fn delete_team_member(
         return not_found();
     }
     delete_team(&team, &connection)?;
-    return APIResponse::respond_new(Some(true), &r);
+    APIResponse::respond_new(Some(true), &r)
 }

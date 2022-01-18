@@ -4,7 +4,7 @@ use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::response::already_exists;
 
-use crate::{utils, DbPool, Titles, TitleData};
+use crate::{utils, DbPool, TitleData};
 use actix_web::{post, HttpRequest};
 
 use bcrypt::{hash, DEFAULT_COST};
@@ -64,7 +64,8 @@ pub async fn install_post(
         discoverer: "OG".to_string(),
         reviewer: "OG".to_string(),
         properties,
-        title: utils::is_valid(&form.username, &titles).unwrap_or("No Title Identified".to_string()),
+        title: utils::is_valid(&form.username, &titles)
+            .unwrap_or("No Title Identified".to_string()),
         created: utils::get_current_time(),
     };
     add_new_user(&user, &conn).unwrap();

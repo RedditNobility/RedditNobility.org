@@ -1,9 +1,8 @@
 use diesel::MysqlConnection;
 
+use std::fs::read;
 
-use std::fs::{read};
-
-use std::path::{Path};
+use std::path::Path;
 use std::str::FromStr;
 
 use crate::error::internal_error::InternalError;
@@ -12,11 +11,11 @@ use crate::{Titles, User};
 use rust_embed::RustEmbed;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::user::models::UserProperties;
 use log::error;
 use rraw::auth::AnonymousAuthenticator;
 use rraw::me::Me;
 use rraw::utils::options::FriendType;
-use crate::user::models::UserProperties;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -60,8 +59,14 @@ pub(crate) fn get_current_time() -> i64 {
 pub async fn send_login(user: &String, password: String, rr: &Me) -> Result<(), InternalError> {
     let string = build_message(user, password)?;
     rr.inbox()
-        .compose(user.clone(), "RedditNobility Login".to_string(), string, None).await?;
-    return Ok(());
+        .compose(
+            user.clone(),
+            "RedditNobility Login".to_string(),
+            string,
+            None,
+        )
+        .await?;
+    Ok(())
 }
 
 fn build_message(user: &String, password: String) -> Result<String, InternalError> {
@@ -69,17 +74,19 @@ fn build_message(user: &String, password: String) -> Result<String, InternalErro
     let string = string
         .replace("{{PASSWORD}}", &password)
         .replace("{{USERNAME}}", user);
-    return Ok(string);
+    Ok(string)
 }
 
 pub async fn approve_user(user: &User, client: &Me) -> bool {
     let result1 = client
-        .subreddit("RedditNobility".to_string()).add_friend(user.username.clone(), FriendType::Contributor).await;
+        .subreddit("RedditNobility".to_string())
+        .add_friend(user.username.clone(), FriendType::Contributor)
+        .await;
     if result1.is_err() {
         error!("Unable to approve User {}", result1.err().unwrap());
         return false;
     }
-    return result1.unwrap().success;
+    result1.unwrap().success
 }
 
 pub fn yeet<T>(_drop: T) {}
@@ -98,7 +105,7 @@ pub fn is_valid(username: &String, titles: &Titles) -> Option<String> {
             return Some(title.value.clone());
         }
     }
-    return None;
+    None
 }
 
 #[tokio::test]
@@ -117,40 +124,40 @@ async fn valid_test() {
     let bytes = hyper::body::to_bytes(response.into_body()).await.unwrap();
     let string = String::from_utf8(bytes.to_vec()).unwrap();
     let titles: Titles = serde_json::from_str(string.as_str()).unwrap();
-    let option = is_valid(&"KingTuxWH".to_string(), &titles);
+    let _option = is_valid(&"KingTuxWH".to_string(), &titles);
     assert_eq!(is_valid(&"KingTuxWH".to_string(), &titles).unwrap(), "king");
     assert_eq!(is_valid(&"QueenTux".to_string(), &titles).unwrap(), "queen");
-    assert_eq!(is_valid(&"VikingTux".to_string(), &titles).unwrap(), "viking");
+    assert_eq!(
+        is_valid(&"VikingTux".to_string(), &titles).unwrap(),
+        "viking"
+    );
     assert_eq!(is_valid(&"LordTux".to_string(), &titles).unwrap(), "lord");
     assert_eq!(is_valid(&"CzArTux".to_string(), &titles).unwrap(), "czar");
 }
 
-
-pub async fn get_avatar(username: &String ,user: &UserProperties) -> Result<String, InternalError> {
+pub async fn get_avatar(username: &String, user: &UserProperties) -> Result<String, InternalError> {
     let option1 = user.avatar.as_ref();
-    if option1.is_some() {
-        if !option1.unwrap().is_empty() {
-            return Ok(option1.unwrap().clone());
-        }
+    if option1.is_some() && !option1.unwrap().is_empty() {
+        return Ok(option1.unwrap().clone());
     }
 
     let client = Me::login(
         AnonymousAuthenticator::new(),
         "Robotic Monarch by u/KingTuxWH".to_string(),
-    ).await?;
+    )
+    .await?;
     let user1 = client.user(username.clone());
     let about = user1.about().await?;
 
     let option = about.data.snoovatar_img;
     if let Some(avatar) = option {
         if !avatar.is_empty() {
-            return Ok(avatar.clone());
+            return Ok(avatar);
         }
     }
     let option = about.data.icon_img;
     if option.is_some() {
-        return Ok(option.unwrap().clone());
+        return Ok(option.unwrap());
     }
-    return Ok("".to_string());
+    Ok("".to_string())
 }
-

@@ -3,13 +3,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 
-
 use crate::error::response::unauthorized;
 use crate::settings::action::get_setting;
 use crate::settings::utils::{get_setting_or_empty, get_setting_report};
-use crate::{settings, DbPool};
 use crate::user::utils::get_user_by_header;
-
+use crate::{settings, DbPool};
 
 #[get("/api/setting/{setting}")]
 pub async fn about_setting(

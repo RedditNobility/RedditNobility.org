@@ -1,4 +1,4 @@
-
+use actix_web::http::header::HeaderMap;
 use chrono::Duration;
 use diesel::MysqlConnection;
 use log::info;
@@ -6,16 +6,15 @@ use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::ops::Add;
 use std::time::{SystemTime, UNIX_EPOCH};
-use actix_web::http::header::HeaderMap;
 
 use crate::error::internal_error::InternalError;
-use crate::Titles;
 use crate::user::action;
 use crate::user::action::{
     add_new_auth_token, add_opt, get_user_by_name, get_user_from_auth_token,
 };
-use crate::user::models::{AuthToken, Status, User, UserProperties, OTP, UserPermissions};
+use crate::user::models::{AuthToken, Status, User, UserPermissions, UserProperties, OTP};
 use crate::utils::{get_current_time, is_valid};
+use crate::Titles;
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
@@ -64,13 +63,13 @@ pub fn generate_otp(user: &i64, conn: &MysqlConnection) -> Result<String, Intern
     };
     let opt = OTP {
         id: 0,
-        user: user.clone(),
+        user: *user,
         password: value,
         expiration: otp_expiration(),
         created: get_current_time(),
     };
     add_opt(&opt, conn)?;
-    return Ok(opt.password);
+    Ok(opt.password)
 }
 
 fn generate_otp_value() -> String {
@@ -89,13 +88,13 @@ pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthTok
         .collect();
     let token = AuthToken {
         id: 0,
-        user: user.id.clone(),
-        token: s.clone(),
+        user: user.id,
+        token: s,
         created: get_current_time(),
     };
     let _result = add_new_auth_token(&token, connection);
 
-    return Ok(token);
+    Ok(token)
 }
 
 pub fn quick_add(
@@ -117,7 +116,7 @@ pub fn quick_add(
         .replace("=F", "")
         .replace("\r", "");
 
-    if get_user_by_name(&username, &conn)?.is_none() {
+    if get_user_by_name(&username, conn)?.is_none() {
         let properties = UserProperties {
             avatar: None,
             description: None,
@@ -139,10 +138,10 @@ pub fn quick_add(
                 moderator: false,
                 submit: true,
                 review_user: false,
-                login: true
-            }
+                login: true,
+            },
         };
-        action::add_new_user(&user, &conn)?;
+        action::add_new_user(&user, conn)?;
     }
-    return Ok(());
+    Ok(())
 }

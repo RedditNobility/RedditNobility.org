@@ -1,6 +1,6 @@
 mod action;
-mod models;
 mod controllers;
+mod models;
 
 use actix_web::web;
 

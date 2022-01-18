@@ -1,4 +1,4 @@
-use crate::user::models::{AuthToken, User, UserProperties, OTP, TeamMember, TeamUser};
+use crate::user::models::{AuthToken, TeamMember, TeamUser, User, UserProperties, OTP};
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel::MysqlConnection;
@@ -17,20 +17,21 @@ pub fn get_user_by_name(
     conn: &MysqlConnection,
 ) -> Result<Option<User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    return users
+    users
         .filter(username.eq(user))
         .first::<User>(conn)
-        .optional();
+        .optional()
 }
 pub fn get_id_by_name(
     user: &String,
     conn: &MysqlConnection,
 ) -> Result<Option<i64>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    return users.select(id)
+    users
+        .select(id)
         .filter(username.eq(user))
         .first(conn)
-        .optional();
+        .optional()
 }
 
 pub fn get_user_by_id(
@@ -38,18 +39,18 @@ pub fn get_user_by_id(
     conn: &MysqlConnection,
 ) -> Result<Option<User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    return users.filter(id.eq(l_id)).first::<User>(conn).optional();
+    users.filter(id.eq(l_id)).first::<User>(conn).optional()
 }
 
 pub fn get_found_users(conn: &MysqlConnection) -> Result<Vec<User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    return users.filter(status.eq("Found")).load::<User>(conn);
+    users.filter(status.eq("Found")).load::<User>(conn)
 }
 
 pub fn get_users(conn: &MysqlConnection) -> Result<Vec<User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
 
-    return users.load::<User>(conn);
+    users.load::<User>(conn)
 }
 
 pub fn delete_user(us: &i64, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
@@ -86,7 +87,7 @@ pub fn update_properties(
     use crate::schema::users::dsl::*;
 
     diesel::update(users.filter(id.eq(user)))
-        .set((properties.eq(&props), ))
+        .set((properties.eq(&props),))
         .execute(conn)?;
     Ok(())
 }
@@ -98,7 +99,7 @@ pub fn update_title(
     use crate::schema::users::dsl::*;
 
     diesel::update(users.filter(id.eq(user)))
-        .set((title.eq(tit), ))
+        .set((title.eq(tit),))
         .execute(conn)?;
     Ok(())
 }
@@ -111,7 +112,7 @@ pub fn update_password(
     use crate::schema::users::dsl::*;
 
     diesel::update(users.filter(id.eq(user)))
-        .set((password.eq(&pass), ))
+        .set((password.eq(&pass),))
         .execute(conn)?;
     Ok(())
 }
@@ -129,7 +130,7 @@ pub fn get_user_from_auth_token(
         return Ok(None);
     }
     let result = result.unwrap();
-    return get_user_by_id(&result.user, conn);
+    get_user_by_id(&result.user, conn)
 }
 
 //Auth Token
@@ -166,13 +167,13 @@ pub fn get_opt(
         .filter(password.eq(value))
         .first::<OTP>(conn)
         .optional()?;
-    return Ok(x);
+    Ok(x)
 }
 
 pub fn delete_otp(otp_id: i64, conn: &MysqlConnection) -> Result<(), DieselError> {
     use crate::schema::otps::dsl::*;
     diesel::delete(otps).filter(id.eq(otp_id)).execute(conn)?;
-    return Ok(());
+    Ok(())
 }
 
 pub fn opt_exist(value: &String, conn: &MysqlConnection) -> Result<bool, diesel::result::Error> {
@@ -182,27 +183,38 @@ pub fn opt_exist(value: &String, conn: &MysqlConnection) -> Result<bool, diesel:
         .filter(password.eq(value))
         .first(conn)
         .optional()?;
-    return Ok(x.is_some());
+    Ok(x.is_some())
 }
 
 pub fn add_opt(value: &OTP, conn: &MysqlConnection) -> Result<(), DieselError> {
     use crate::schema::otps::dsl::*;
 
     diesel::insert_into(otps).values(value).execute(conn)?;
-    return Ok(());
+    Ok(())
 }
 
 pub fn get_team_members(conn: &MysqlConnection) -> Result<Vec<TeamMember>, DieselError> {
     use crate::schema::team_members::dsl::*;
 
     team_members.load::<TeamMember>(conn)
-}pub fn get_team_member(u: &i64,conn: &MysqlConnection) -> Result<Option<TeamMember>, DieselError> {
+}
+pub fn get_team_member(u: &i64, conn: &MysqlConnection) -> Result<Option<TeamMember>, DieselError> {
     use crate::schema::team_members::dsl::*;
 
-    team_members.filter(user.eq(u)).first::<TeamMember>(conn).optional()
+    team_members
+        .filter(user.eq(u))
+        .first::<TeamMember>(conn)
+        .optional()
 }
 
-pub fn get_team_user(user: &i64,conn: &MysqlConnection) -> Result<Option<TeamUser>, diesel::result::Error> {
+pub fn get_team_user(
+    user: &i64,
+    conn: &MysqlConnection,
+) -> Result<Option<TeamUser>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    users.filter(id.eq(user)).select((id, username, properties)).first::<TeamUser>(conn).optional()
+    users
+        .filter(id.eq(user))
+        .select((id, username, properties))
+        .first::<TeamUser>(conn)
+        .optional()
 }

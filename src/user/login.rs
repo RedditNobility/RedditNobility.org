@@ -3,7 +3,7 @@ use bcrypt::verify;
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::response::unauthorized;
-use crate::{Database, RedditClient, RN};
+use crate::{Database, RedditClient};
 use serde::{Deserialize, Serialize};
 
 use crate::user::action::{delete_otp, get_opt, get_user_by_id, get_user_by_name};
@@ -44,7 +44,7 @@ pub async fn login(login: Json<Login>, database: Database, request: HttpRequest)
         let x = create_token(&user, &connection)?;
         return APIResponse::new(true, Some(x)).respond(&request);
     }
-    return unauthorized();
+    unauthorized()
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -70,12 +70,12 @@ pub async fn one_time_password_create(
     }
     let string = generate_otp(&user.id, &connection)?;
     send_login(&user.username, string, &redditClient).await?;
-    return APIResponse {
+    APIResponse {
         success: true,
         data: Some(true),
         status_code: Some(201),
     }
-        .respond(&request);
+    .respond(&request)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -108,5 +108,5 @@ pub async fn one_time_password(
     }
     delete_otp(option.id, &connection)?;
     let x = create_token(&user, &connection)?;
-    return APIResponse::new(true, Some(x)).respond(&request);
+    APIResponse::new(true, Some(x)).respond(&request)
 }

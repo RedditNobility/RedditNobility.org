@@ -6,12 +6,12 @@ use crate::RNCore;
 use actix_web::http::StatusCode;
 use base64::DecodeError;
 use bcrypt::BcryptError;
+use log::error;
+use rraw::utils::error::APIError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::string::FromUtf8Error;
 use std::sync::PoisonError;
-use log::{error};
-use rraw::utils::error::APIError;
 
 #[derive(Debug)]
 pub enum InternalError {

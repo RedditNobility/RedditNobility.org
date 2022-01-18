@@ -25,11 +25,16 @@ pub fn delete_team(i: &i64, conn: &MysqlConnection) -> Result<(), DieselError> {
 pub fn delete_team_user(i: &i64, conn: &MysqlConnection) -> Result<(), DieselError> {
     use crate::schema::team_members::dsl::*;
 
-    diesel::delete(team_members).filter(user.eq(i)).execute(conn);
+    diesel::delete(team_members)
+        .filter(user.eq(i))
+        .execute(conn);
     Ok(())
 }
 
-pub fn add_new_team_member(value: &TeamMember, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+pub fn add_new_team_member(
+    value: &TeamMember,
+    conn: &MysqlConnection,
+) -> Result<(), diesel::result::Error> {
     use crate::schema::team_members::dsl::*;
     diesel::insert_into(team_members)
         .values(value)

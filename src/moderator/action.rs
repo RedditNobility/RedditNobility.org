@@ -1,5 +1,5 @@
+use crate::user::models::Status;
 use diesel::dsl::count;
-use crate::user::models::{Status};
 use diesel::prelude::*;
 
 use diesel::MysqlConnection;
@@ -15,9 +15,7 @@ pub fn update_status(
     use crate::schema::users::dsl::*;
 
     diesel::update(users.filter(id.eq(user)))
-        .set((status.eq(&ns),
-              status_changed.eq(&time),
-              reviewer.eq(&md)))
+        .set((status.eq(&ns), status_changed.eq(&time), reviewer.eq(&md)))
         .execute(conn)?;
     Ok(())
 }
@@ -28,16 +26,23 @@ pub fn get_discover_count(
     conn: &MysqlConnection,
 ) -> Result<i64, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let value: i64 = users.select(count(discoverer)).filter(discoverer.eq(user).and(created.ge(after))).first(conn)?;
+    let value: i64 = users
+        .select(count(discoverer))
+        .filter(discoverer.eq(user).and(created.ge(after)))
+        .first(conn)?;
 
     Ok(value)
-}pub fn get_approve_count(
-    user:  &String,
+}
+pub fn get_approve_count(
+    user: &String,
     after: i64,
     conn: &MysqlConnection,
 ) -> Result<i64, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let value: i64 = users.select(count(reviewer)).filter(reviewer.eq(user).and(status_changed.ge(after))).first(conn)?;
+    let value: i64 = users
+        .select(count(reviewer))
+        .filter(reviewer.eq(user).and(status_changed.ge(after)))
+        .first(conn)?;
 
     Ok(value)
 }
@@ -46,15 +51,22 @@ pub fn get_discover_count_total(
     conn: &MysqlConnection,
 ) -> Result<i64, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let value: i64 = users.select(count(discoverer)).filter(created.ge(after)).first(conn)?;
+    let value: i64 = users
+        .select(count(discoverer))
+        .filter(created.ge(after))
+        .first(conn)?;
 
     Ok(value)
-}pub fn get_approve_count_total(
+}
+pub fn get_approve_count_total(
     after: i64,
     conn: &MysqlConnection,
 ) -> Result<i64, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let value: i64 = users.select(count(reviewer)).filter(status.not_like(Status::Found).and(status_changed.ge(after))).first(conn)?;
+    let value: i64 = users
+        .select(count(reviewer))
+        .filter(status.not_like(Status::Found).and(status_changed.ge(after)))
+        .first(conn)?;
 
     Ok(value)
 }

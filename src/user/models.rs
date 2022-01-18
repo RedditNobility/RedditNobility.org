@@ -1,17 +1,17 @@
 use crate::schema::*;
-use crate::{Titles, utils};
+use crate::utils::is_valid;
+use crate::{utils, Titles};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::{deserialize, serialize, Queryable};
+use log::error;
 use serde::{Deserialize, Serialize};
-use crate::utils::is_valid;
 use std::fmt::{Display, Error, Formatter};
 use std::io::Write;
 use std::str::FromStr;
-use log::error;
 use strum_macros::Display;
 use strum_macros::EnumString;
 
@@ -78,7 +78,7 @@ impl FromSql<Text, Mysql> for UserProperties {
         if result.is_err() {
             //IDK break
         }
-        return Ok(result.unwrap());
+        Ok(result.unwrap())
     }
 }
 
@@ -153,7 +153,17 @@ pub struct TeamMember {
 }
 
 #[derive(
-AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString, Hash, Eq
+    AsExpression,
+    Debug,
+    Deserialize,
+    Serialize,
+    FromSqlRow,
+    Clone,
+    Display,
+    PartialEq,
+    EnumString,
+    Hash,
+    Eq,
 )]
 #[sql_type = "Text"]
 pub enum Level {
@@ -162,9 +172,8 @@ pub enum Level {
     Retired,
 }
 
-
 #[derive(
-AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
+    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
 )]
 #[sql_type = "Text"]
 pub enum Status {
@@ -186,7 +195,7 @@ impl FromSql<Text, Mysql> for UserPermissions {
     ) -> deserialize::Result<UserPermissions> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
         let result = serde_json::from_str(&t)?;
-        return Ok(result);
+        Ok(result)
     }
 }
 
@@ -206,7 +215,7 @@ impl FromSql<Text, Mysql> for Status {
         if result.is_err() {
             //IDK break
         }
-        return Ok(result.unwrap());
+        Ok(result.unwrap())
     }
 }
 
@@ -227,7 +236,7 @@ impl FromSql<Text, Mysql> for Level {
             error!("Unable to Parse Level {} Value {}", error, t);
             return Err(Box::new(error));
         }
-        return Ok(result.unwrap());
+        Ok(result.unwrap())
     }
 }
 
@@ -262,7 +271,6 @@ impl User {
         self.status = status;
         self.status_changed = utils::get_current_time();
     }
-
 
     pub fn set_password(&mut self, password: String) {
         self.password = password;

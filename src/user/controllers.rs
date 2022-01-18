@@ -1,6 +1,6 @@
 use actix_web::web::{Json, Path};
 use actix_web::{post, HttpRequest};
-use bcrypt::{DEFAULT_COST, hash};
+use bcrypt::{hash, DEFAULT_COST};
 use rraw::utils::error::APIError;
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -8,7 +8,7 @@ use crate::error::internal_error::InternalError::Error;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
 use crate::user::action::{get_user_by_name, update_properties};
 use crate::user::utils::{get_user_by_header, quick_add};
-use crate::{Database, RedditClient, RN, TitleData};
+use crate::{Database, RedditClient, TitleData};
 
 #[post("/api/submit/{username}")]
 pub async fn submit_user(
@@ -17,7 +17,6 @@ pub async fn submit_user(
     r: HttpRequest,
     redditClient: RedditClient,
     titles: TitleData,
-
 ) -> SiteResponse {
     let conn = pool.get()?;
     let option = get_user_by_header(r.headers(), &conn)?;
@@ -33,10 +32,8 @@ pub async fn submit_user(
     let user_reddit = redditClient.user(suggest.to_string()).about().await;
     if let Err(error) = user_reddit {
         return match error {
-            APIError::HTTPError(_) => {
-                not_found()
-            }
-            _ => { Err(error.into()) }
+            APIError::HTTPError(_) => not_found(),
+            _ => Err(error.into()),
         };
     }
     quick_add(&suggest, &discoverer.username, &conn, &titles)?;
@@ -47,12 +44,12 @@ pub async fn submit_user(
     if discoverer.permissions.submit {
         return APIResponse::respond_new(result1, &r);
     }
-    return APIResponse {
+    APIResponse {
         success: true,
         data: Some(true),
         status_code: Some(201),
     }
-        .respond(&r);
+    .respond(&r)
 }
 
 #[derive(serde::Deserialize)]
@@ -86,7 +83,7 @@ pub async fn change_property(
         }
     }
     update_properties(&user.id, user.properties, &conn)?;
-    return APIResponse::new(true, Some(true)).respond(&r);
+    APIResponse::new(true, Some(true)).respond(&r)
 }
 
 #[post("/api/me/password/change")]
@@ -103,5 +100,5 @@ pub async fn update_password(
     let user = option.unwrap();
     let result = hash(&request.0.value, DEFAULT_COST)?;
     crate::user::action::update_password(&user.id, result, &conn)?;
-    return APIResponse::new(true, Some(true)).respond(&r);
+    APIResponse::new(true, Some(true)).respond(&r)
 }

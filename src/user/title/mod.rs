@@ -1,6 +1,5 @@
+use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use serde::{Serialize, Deserialize};
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Titles {

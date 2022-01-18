@@ -1,23 +1,27 @@
 use actix_web::{get, post, web, HttpRequest};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::{Database, User, RN, utils, RedditClient};
+use crate::{utils, Database, RedditClient, User, RN};
 
 use crate::error::response::{bad_request, not_found, unauthorized};
-use crate::user::action::{delete_user, get_found_users, get_user_by_name, update_properties, update_title};
+use crate::user::action::{
+    delete_user, get_found_users, get_user_by_name, update_properties, update_title,
+};
 use crate::user::utils::get_user_by_header;
-use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use log::{debug, error, trace};
 use rraw::utils::error::APIError;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
+use crate::moderator::action::{
+    get_approve_count, get_approve_count_total, get_discover_count, get_discover_count_total,
+};
 use strum::ParseError;
-use crate::moderator::action::{get_approve_count, get_approve_count_total, get_discover_count, get_discover_count_total};
 
-use crate::user::models::{Status};
+use crate::user::models::Status;
 use crate::utils::{get_current_time, yeet};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -26,7 +30,6 @@ pub struct UserStats {
     pub users_discovered_this_month: i64,
     pub users_reviewed: i64,
     pub users_reviewed_this_month: i64,
-
 }
 
 #[get("/moderator/user/{user}")]
@@ -46,7 +49,7 @@ pub async fn user_page(
         return unauthorized();
     }
     let lookup = get_user_by_name(&username, &connection)?;
-    return APIResponse::<User>::respond_new(lookup, &req);
+    APIResponse::<User>::respond_new(lookup, &req)
 }
 
 #[get("/moderator/user/{user}/stats")]
@@ -68,22 +71,20 @@ pub async fn user_stats(
         return not_found();
     }
     let lookup = lookup.unwrap();
-    if !me.username.eq(&lookup.username) {
-        if !me.permissions.moderator {
-            return unauthorized();
-        }
+    if !me.username.eq(&lookup.username) && !me.permissions.moderator {
+        return unauthorized();
     }
     let lookup = get_user_by_name(&username, &connection)?.unwrap();
     let i = get_month_timestamp();
 
     let user_stats = UserStats {
         users_discovered: get_discover_count(&lookup.username, 0, &connection)?,
-        users_discovered_this_month: get_discover_count(&lookup.username, i.clone(), &connection)?,
+        users_discovered_this_month: get_discover_count(&lookup.username, i, &connection)?,
         users_reviewed: get_approve_count(&lookup.username, 0, &connection)?,
-        users_reviewed_this_month: get_approve_count(&lookup.username, i.clone(), &connection)?,
+        users_reviewed_this_month: get_approve_count(&lookup.username, i, &connection)?,
     };
 
-    return APIResponse::<UserStats>::respond_new(Some(user_stats), &req);
+    APIResponse::<UserStats>::respond_new(Some(user_stats), &req)
 }
 
 fn get_month_timestamp() -> i64 {
@@ -92,15 +93,11 @@ fn get_month_timestamp() -> i64 {
     let time = NaiveDateTime::new(new_month, NaiveTime::from_hms(0, 0, 0));
     debug!("Month Value {} UnixTime {}", &time, time.timestamp_millis());
 
-    return time.timestamp_millis();
+    time.timestamp_millis()
 }
 
-
 #[get("/moderator/stats")]
-pub async fn system_stats(
-    database: Database,
-    req: HttpRequest,
-) -> SiteResponse {
+pub async fn system_stats(database: Database, req: HttpRequest) -> SiteResponse {
     let connection = database.get()?;
     let me = get_user_by_header(req.headers(), &connection)?;
     if me.is_none() {
@@ -114,12 +111,12 @@ pub async fn system_stats(
     let i = get_month_timestamp();
     let users_stats = UserStats {
         users_discovered: get_discover_count_total(0, &connection)?,
-        users_discovered_this_month: get_discover_count_total(i.clone(), &connection)?,
+        users_discovered_this_month: get_discover_count_total(i, &connection)?,
         users_reviewed: get_approve_count_total(0, &connection)?,
-        users_reviewed_this_month: get_approve_count_total(i.clone(), &connection)?,
+        users_reviewed_this_month: get_approve_count_total(i, &connection)?,
     };
 
-    return APIResponse::<UserStats>::respond_new(Some(users_stats), &req);
+    APIResponse::<UserStats>::respond_new(Some(users_stats), &req)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -132,7 +129,6 @@ pub struct RedditUser {
     pub top_posts: Vec<RedditPost>,
     pub top_comments: Vec<Comment>,
     pub user: User,
-
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -160,7 +156,6 @@ pub struct RedditContent {
     pub content: Option<String>,
     pub url: Option<String>,
     pub over_18: bool,
-
 }
 
 #[get("/api/moderator/review/{user}")]
@@ -207,13 +202,16 @@ pub async fn review_user(
         }
         user.unwrap()
     };
-     rn.add_id(user.id);
+    rn.add_id(user.id);
 
     trace!("Grabbing About Data for {}", &user.username);
     let r_user = client.user(user.username.clone());
     let about = r_user.about().await;
     if let Err(error) = about {
-        error!("Failed to grab about data for {} error {}", &user.username, &error);
+        error!(
+            "Failed to grab about data for {} error {}",
+            &user.username, &error
+        );
         match error {
             APIError::NotFound => {
                 delete_user(&user.id, &conn)?;
@@ -228,12 +226,9 @@ pub async fn review_user(
     let mut user_posts = Vec::<RedditPost>::new();
     let mut user_comments = Vec::<Comment>::new();
     if !about.data.is_suspended.unwrap_or(false) {
-        let submissions = r_user
-            .submissions(None).await?;
-        let comments = r_user
-            .comments(None).await?;
+        let submissions = r_user.submissions(None).await?;
+        let comments = r_user.comments(None).await?;
         yeet(rn);
-
 
         for x in comments.data.children {
             let x = x.data;
@@ -251,16 +246,24 @@ pub async fn review_user(
             let x = x.data;
             let text = x.selftext;
             let content = if text.is_empty() {
-                RedditContent { content: None, url: x.url, over_18: x.over_18 }
+                RedditContent {
+                    content: None,
+                    url: x.url,
+                    over_18: x.over_18,
+                }
             } else {
-                RedditContent { content: Some(text), url: None, over_18: x.over_18 }
+                RedditContent {
+                    content: Some(text),
+                    url: None,
+                    over_18: x.over_18,
+                }
             };
             let post = RedditPost {
                 subreddit: x.subreddit,
                 url: format!("https://reddit.com{}", x.permalink),
                 id: x.id.clone(),
                 title: x.title.clone(),
-                content: content,
+                content,
                 score: x.score as i64,
             };
             user_posts.push(post);
@@ -294,7 +297,8 @@ pub async fn review_user_update(
     database: Database,
     value: web::Path<(String, String)>,
     req: HttpRequest,
-    redditClient: RedditClient) -> SiteResponse {
+    reddit_client: RedditClient,
+) -> SiteResponse {
     let (username, status) = value.into_inner();
     let conn = database.get()?;
     let user = get_user_by_header(req.headers(), &conn)?;
@@ -323,22 +327,30 @@ pub async fn review_user_update(
     if status == Status::Approved {
         trace!("Attempting to Approve User {} on Reddit", &user2.username);
 
-        let user1 = utils::approve_user(&user2, &redditClient).await;
+        let user1 = utils::approve_user(&user2, &reddit_client).await;
         if !user1 {
             error!("Approval Failure");
-            return crate::error::response::error("Unable to Process Approve Request Currently", Some(StatusCode::INTERNAL_SERVER_ERROR));
+            return crate::error::response::error(
+                "Unable to Process Approve Request Currently",
+                Some(StatusCode::INTERNAL_SERVER_ERROR),
+            );
         }
     }
-    let mut properties = user2.properties;
+    let _properties = user2.properties;
     let x: ApproveRequest = serde_qs::from_str(req.query_string()).unwrap();
     if let Some(title) = x.title {
         debug!("Changing {} title to {}", &user2.username, &title);
         update_title(&user2.id, &title, &conn)?;
     }
-    crate::moderator::action::update_status(&user2.id, status, &reviewer.username, get_current_time(), &conn)?;
-    return APIResponse::new(true, Some(true)).respond(&req);
+    crate::moderator::action::update_status(
+        &user2.id,
+        status,
+        &reviewer.username,
+        get_current_time(),
+        &conn,
+    )?;
+    APIResponse::new(true, Some(true)).respond(&req)
 }
-
 
 #[derive(serde::Deserialize)]
 pub struct ChangeRequest {
@@ -382,5 +394,5 @@ pub async fn moderator_update_properties(
         }
     }
     update_properties(&user.id, user.properties, &conn)?;
-    return APIResponse::new(true, Some(true)).respond(&r);
+    APIResponse::new(true, Some(true)).respond(&r)
 }

@@ -2,12 +2,12 @@ pub mod action;
 mod controllers;
 mod login;
 pub mod models;
-pub mod utils;
 mod team_controllers;
 pub mod title;
+pub mod utils;
 
-use controllers::*;
 use actix_web::web;
+use controllers::*;
 use log::debug;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
@@ -21,5 +21,6 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(submit_user)
         .service(update_password);
     debug!("Loading Team Controllers");
-    cfg.service(team_controllers::get_team).service(team_controllers::get_team_as_list);
+    cfg.service(team_controllers::get_team)
+        .service(team_controllers::get_team_as_list);
 }
