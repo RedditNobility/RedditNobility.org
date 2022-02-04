@@ -107,42 +107,6 @@ async fn main() -> std::io::Result<()> {
     info!("Checking and running Migrations");
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap();
     std::env::set_var("INSTALLED", "false".to_string());
-
-    if !installed(&connection).unwrap() {
-        info!("Initializing In Installer");
-        return HttpServer::new(move || {
-            App::new()
-                .wrap(
-                    Cors::default()
-                        .allow_any_header()
-                        .allow_any_method()
-                        .allow_any_origin(),
-                )
-                .wrap(middleware::Logger::default())
-                .app_data(Data::new(pool.clone()))
-                .app_data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
-                .configure(frontend::init)
-                .configure(install::init)
-                .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
-        })
-        .workers(2)
-        .bind(std::env::var("ADDRESS").unwrap())?
-        .run()
-        .await;
-    }
-    info!("Initializing Reddit Controller");
-    let arc = PasswordAuthenticator::new(
-        std::env::var("CLIENT_KEY").unwrap().as_str(),
-        std::env::var("CLIENT_SECRET").unwrap().as_str(),
-        std::env::var("REDDIT_USER").unwrap().as_str(),
-        std::env::var("PASSWORD").unwrap().as_str(),
-    );
-    let client = Me::login(arc, "RedditNobility bot(by u/KingTuxWH)".to_string())
-        .await
-        .unwrap();
-    let site_core = Arc::new(Mutex::new(RNCore::new()));
-    let reference = site_core.clone();
-
     info!("Loading Title Info From");
     let https = HttpsConnector::new();
     let hyper = Client::builder().build::<_, hyper::Body>(https);
@@ -170,6 +134,43 @@ async fn main() -> std::io::Result<()> {
         return Ok(());
     }
     let titles_data = result1.unwrap();
+
+    if !installed(&connection).unwrap() {
+        info!("Initializing In Installer");
+        return HttpServer::new(move || {
+            App::new()
+                .wrap(
+                    Cors::default()
+                        .allow_any_header()
+                        .allow_any_method()
+                        .allow_any_origin(),
+                )
+                .wrap(middleware::Logger::default())
+                .app_data(Data::new(pool.clone()))
+                .app_data(Data::new(titles_data.clone()))
+                .app_data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+                .configure(frontend::init)
+                .configure(install::init)
+                .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
+        })
+        .workers(2)
+        .bind(std::env::var("ADDRESS").unwrap())?
+        .run()
+        .await;
+    }
+    info!("Initializing Reddit Controller");
+    let arc = PasswordAuthenticator::new(
+        std::env::var("CLIENT_KEY").unwrap().as_str(),
+        std::env::var("CLIENT_SECRET").unwrap().as_str(),
+        std::env::var("REDDIT_USER").unwrap().as_str(),
+        std::env::var("PASSWORD").unwrap().as_str(),
+    );
+    let client = Me::login(arc, "RedditNobility bot(by u/KingTuxWH)".to_string())
+        .await
+        .unwrap();
+    let site_core = Arc::new(Mutex::new(RNCore::new()));
+    let reference = site_core.clone();
+
 
     thread::spawn(move || {
         let site_core = reference;
