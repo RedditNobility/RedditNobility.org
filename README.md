@@ -1,31 +1,41 @@
 # RedditNobility
 
 ## Building
+---
+# Requirements to Build or To Contribute
+1. Rust 1.56 or newer installed
+2. Mysql C++ Driver/Connector installed
+3. Mysql Database Ready for use
+4. For SSL openssl library installed
+5. Node 16 installed and NPM  installed
+6. Lots of Patience.
+# Setup for Build
+1. Pull the latest code and go into the site directory. Execute `npm install`
+2. If on Linux execute the build.sh add the argument `ssl` if you want ssl support
+3. if on Windows. Execute `npm run build` in the site directory. Then `cargo build --release` for the final build. Add --features ssl if you want ssl
+4. After the build is complete an executable will be available at `target/release/rn_site` This is your website
+# Configuring Website
+1. Copy example.env to your working directory of the application and name it .env
+2. The only one you will need to edit will be the `DATABASE_URL` and BIND_URL if that port is already in use
 
-### Universal
 
-1. Install Rust at https://www.rust-lang.org/
-2. Follow OS specific steps first!
-3. Setting up the Diesel
-    1. Install Diesel: `cargo install diesel_cli`
-4. Please add a .env file and use the below template for reference
-5. Run `cargo build`
-
-### Windows
-
-1. Mysql C++ Library Install: https://dev.mysql.com/downloads/connector/cpp/
-2. Set Mysql Dev Path inside the PATH variable.
-3. Follow Steps here https://stackoverflow.com/a/61921362
 
 ### Example `.env`
 
 ```
 DATABASE_URL={DATABSE URL- Read Diesel Docs} 
+# Location of the Frontend
+SITE_DIR=../site/dist
+LOG_LOCATION="./"
+# Binding Address
+ADDRESS="0.0.0.0:6742"
+
+# Reddit Login Details
 CLIENT_SECRET={Reddit Secret}
 CLIENT_KEY={Reddit Client KEY}
 REDDIT_USER={Reddit Username}
 PASSWORD={REDDIT_PASSWORD}
-URL={URL}
-RECAPTCHA_SECRET={RECAOTCHA SECRET}
-RECAPTCHA_PUB={RECAPTCHA PUB}
+
+# System Mode
+MODE=DEBUG
 ```
