@@ -81,7 +81,7 @@ fn generate_otp_value() -> String {
 }
 
 pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthToken, InternalError> {
-    let s: String = rand::thread_rng()
+    let s: String= rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(25)
         .map(char::from)
@@ -98,8 +98,8 @@ pub fn create_token(user: &User, connection: &MysqlConnection) -> Result<AuthTok
 }
 
 pub fn quick_add(
-    username: &String,
-    discoverer: &String,
+    username: &str,
+    discoverer: &str,
     conn: &MysqlConnection,
     titles: &Titles,
 ) -> Result<(), InternalError> {
@@ -130,9 +130,9 @@ pub fn quick_add(
             status,
             status_changed: 0,
             created: get_current_time(),
-            discoverer: discoverer.clone(),
+            discoverer: discoverer.to_string(),
             properties,
-            title: is_valid(&username, titles).unwrap_or("No Title Identified".to_string()),
+            title: is_valid(&username, titles).unwrap_or_else(||"No Title Identified".to_string()),
             permissions: UserPermissions {
                 admin: false,
                 moderator: false,

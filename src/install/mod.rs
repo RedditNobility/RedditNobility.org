@@ -65,7 +65,7 @@ pub async fn install_post(
         reviewer: "OG".to_string(),
         properties,
         title: utils::is_valid(&form.username, &titles)
-            .unwrap_or("No Title Identified".to_string()),
+            .unwrap_or_else(||"No Title Identified".to_string()),
         created: utils::get_current_time(),
     };
     add_new_user(&user, &conn).unwrap();

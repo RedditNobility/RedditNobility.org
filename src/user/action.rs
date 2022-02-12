@@ -13,7 +13,7 @@ pub fn add_new_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::r
 }
 
 pub fn get_user_by_name(
-    user: &String,
+    user: &str,
     conn: &MysqlConnection,
 ) -> Result<Option<User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -23,7 +23,7 @@ pub fn get_user_by_name(
         .optional()
 }
 pub fn get_id_by_name(
-    user: &String,
+    user: &str,
     conn: &MysqlConnection,
 ) -> Result<Option<i64>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -93,7 +93,7 @@ pub fn update_properties(
 }
 pub fn update_title(
     user: &i64,
-    tit: &String,
+    tit: &str,
     conn: &MysqlConnection,
 ) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -159,7 +159,7 @@ pub fn add_new_auth_token(
 }
 
 pub fn get_opt(
-    value: &String,
+    value: &str,
     conn: &MysqlConnection,
 ) -> Result<Option<OTP>, diesel::result::Error> {
     use crate::schema::otps::dsl::*;
@@ -176,7 +176,7 @@ pub fn delete_otp(otp_id: i64, conn: &MysqlConnection) -> Result<(), DieselError
     Ok(())
 }
 
-pub fn opt_exist(value: &String, conn: &MysqlConnection) -> Result<bool, diesel::result::Error> {
+pub fn opt_exist(value: &str, conn: &MysqlConnection) -> Result<bool, diesel::result::Error> {
     use crate::schema::otps::dsl::*;
     let x: Option<i64> = otps
         .select(id)

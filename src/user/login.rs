@@ -55,7 +55,7 @@ pub struct CreateOTP {
 #[post("/api/login/otp/create")]
 pub async fn one_time_password_create(
     otp_request: Json<CreateOTP>,
-    redditClient: RedditClient,
+    reddit_client: RedditClient,
     database: Database,
     request: HttpRequest,
 ) -> SiteResponse {
@@ -69,7 +69,7 @@ pub async fn one_time_password_create(
         return unauthorized();
     }
     let string = generate_otp(&user.id, &connection)?;
-    send_login(&user.username, string, &redditClient).await?;
+    send_login(&user.username, string, &reddit_client).await?;
     APIResponse {
         success: true,
         data: Some(true),

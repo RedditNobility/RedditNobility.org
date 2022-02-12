@@ -8,7 +8,7 @@ use diesel::MysqlConnection;
 pub fn update_status(
     user: &i64,
     ns: Status,
-    md: &String,
+    md: &str,
     time: i64,
     conn: &MysqlConnection,
 ) -> Result<(), diesel::result::Error> {
@@ -21,7 +21,7 @@ pub fn update_status(
 }
 
 pub fn get_discover_count(
-    user: &String,
+    user: &str,
     after: i64,
     conn: &MysqlConnection,
 ) -> Result<i64, diesel::result::Error> {
@@ -34,7 +34,7 @@ pub fn get_discover_count(
     Ok(value)
 }
 pub fn get_approve_count(
-    user: &String,
+    user: &str,
     after: i64,
     conn: &MysqlConnection,
 ) -> Result<i64, diesel::result::Error> {

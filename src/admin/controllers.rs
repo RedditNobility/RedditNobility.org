@@ -85,7 +85,7 @@ pub async fn add_team(
         level: data.level.clone(),
         created: get_current_time(),
     };
-    add_new_team_member(&member, &connection);
+    add_new_team_member(&member, &connection)?;
     APIResponse::respond_new(get_team_member(&member.user, &connection)?, &r)
 }
 

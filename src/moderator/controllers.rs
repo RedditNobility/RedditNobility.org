@@ -212,12 +212,9 @@ pub async fn review_user(
             "Failed to grab about data for {} error {}",
             &user.username, &error
         );
-        match error {
-            APIError::NotFound => {
-                delete_user(&user.id, &conn)?;
-                return bad_request("We have fixed the issue please try again");
-            }
-            _ => {}
+        if let APIError::NotFound = error {
+            delete_user(&user.id, &conn)?;
+            return bad_request("We have fixed the issue please try again");
         }
         return Err(error.into());
     }
@@ -271,7 +268,7 @@ pub async fn review_user(
     }
     let user = RedditUser {
         name: about.data.name,
-        avatar: about.data.icon_img.unwrap_or("".parse().unwrap()),
+        avatar: about.data.icon_img.unwrap_or_else(||"".to_string()),
         comment_karma: about.data.comment_karma.unwrap_or(0),
         total_karma: about.data.total_karma.unwrap_or(0),
         created: about.data.created.unwrap_or(0.0) as i64,

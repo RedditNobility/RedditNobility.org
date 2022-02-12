@@ -56,11 +56,11 @@ pub(crate) fn get_current_time() -> i64 {
         .as_millis() as i64
 }
 
-pub async fn send_login(user: &String, password: String, rr: &Me) -> Result<(), InternalError> {
+pub async fn send_login(user: &str, password: String, rr: &Me) -> Result<(), InternalError> {
     let string = build_message(user, password)?;
     rr.inbox()
         .compose(
-            user.clone(),
+            user.to_string(),
             "RedditNobility Login".to_string(),
             string,
             None,
@@ -69,7 +69,7 @@ pub async fn send_login(user: &String, password: String, rr: &Me) -> Result<(), 
     Ok(())
 }
 
-fn build_message(user: &String, password: String) -> Result<String, InternalError> {
+fn build_message(user: &str, password: String) -> Result<String, InternalError> {
     let string = Resources::file_get_string("login-message");
     let string = string
         .replace("{{PASSWORD}}", &password)
@@ -91,7 +91,7 @@ pub async fn approve_user(user: &User, client: &Me) -> bool {
 
 pub fn yeet<T>(_drop: T) {}
 
-pub fn is_valid(username: &String, titles: &Titles) -> Option<String> {
+pub fn is_valid(username: &str, titles: &Titles) -> Option<String> {
     let username = username.to_lowercase();
     for title in &titles.titles {
         if username.contains(&title.value) {
@@ -135,7 +135,7 @@ async fn valid_test() {
     assert_eq!(is_valid(&"CzArTux".to_string(), &titles).unwrap(), "czar");
 }
 
-pub async fn get_avatar(username: &String, user: &UserProperties) -> Result<String, InternalError> {
+pub async fn get_avatar(username: &str, user: &UserProperties) -> Result<String, InternalError> {
     let option1 = user.avatar.as_ref();
     if option1.is_some() && !option1.unwrap().is_empty() {
         return Ok(option1.unwrap().clone());
@@ -146,7 +146,7 @@ pub async fn get_avatar(username: &String, user: &UserProperties) -> Result<Stri
         "Robotic Monarch by u/KingTuxWH".to_string(),
     )
     .await?;
-    let user1 = client.user(username.clone());
+    let user1 = client.user(username);
     let about = user1.about().await?;
 
     let option = about.data.snoovatar_img;

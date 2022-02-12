@@ -15,7 +15,7 @@ pub async fn submit_user(
     pool: Database,
     suggest: Path<String>,
     r: HttpRequest,
-    redditClient: RedditClient,
+    reddit_client: RedditClient,
     titles: TitleData,
 ) -> SiteResponse {
     let conn = pool.get()?;
@@ -25,11 +25,12 @@ pub async fn submit_user(
     }
 
     let discoverer = option.unwrap();
+    let suggest = suggest.into_inner();
     let result1 = get_user_by_name(&suggest, &conn)?;
     if result1.is_some() {
         return already_exists();
     }
-    let user_reddit = redditClient.user(suggest.to_string()).about().await;
+    let user_reddit = reddit_client.user(suggest.clone()).about().await;
     if let Err(error) = user_reddit {
         return match error {
             APIError::HTTPError(_) => not_found(),

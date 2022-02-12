@@ -1,9 +1,8 @@
 use actix_web::web;
 
 pub mod action;
-//TODO pub mod controller;
 pub mod controller;
-pub mod settings;
+pub mod models;
 pub mod utils;
 
 pub fn init(cfg: &mut web::ServiceConfig) {

@@ -1,7 +1,7 @@
 use crate::error::internal_error::InternalError;
 
 use crate::settings::action::{add_new_setting, get_setting, get_settings, update_setting};
-use crate::settings::settings::{
+use crate::settings::models::{
     DBSetting, EmailSetting, GeneralSettings, SecuritySettings, SettingManager, SettingReport,
     SettingVec,
 };
@@ -27,7 +27,7 @@ pub fn get_setting_or_empty(
     string: &str,
     connection: &MysqlConnection,
 ) -> Result<DBSetting, InternalError> {
-    let result = get_setting(string.clone(), connection)?;
+    let result = get_setting(string, connection)?;
     if let Some(some) = result {
         Ok(some)
     } else {
@@ -41,7 +41,7 @@ pub fn default_string() -> String {
 
 pub fn default_setting(string: &str) -> Result<DBSetting, InternalError> {
     let setting = SettingManager::get_setting(string.to_string())
-        .ok_or(InternalError::Error("Unable to find setting".to_string()))
+        .ok_or_else(||InternalError::Error("Unable to find setting".to_string()))
         .unwrap();
     Ok(DBSetting {
         id: 0,
