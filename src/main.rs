@@ -85,7 +85,9 @@ async fn main() -> std::io::Result<()> {
         println!("Unable to load dotenv {}", error);
         return Ok(());
     }
-    let file = match std::env::var("MODE").expect("MODE must be RELEASE OR DEBUG").as_str()
+    let file = match std::env::var("MODE")
+        .expect("MODE must be RELEASE OR DEBUG")
+        .as_str()
     {
         "DEBUG" => "log-debug.json",
         "RELEASE" => "log-release.json",
@@ -146,7 +148,7 @@ async fn main() -> std::io::Result<()> {
                 .wrap(middleware::Logger::default())
                 .app_data(Data::new(pool.clone()))
                 .app_data(Data::new(titles_data.clone()))
-                .app_data(PayloadConfig::new( 1024 * 1024 * 1024))
+                .app_data(PayloadConfig::new(1024 * 1024 * 1024))
                 .configure(frontend::init)
                 .configure(install::init)
                 .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
@@ -168,7 +170,6 @@ async fn main() -> std::io::Result<()> {
         .unwrap();
     let site_core = Arc::new(Mutex::new(RNCore::new()));
     let reference = site_core.clone();
-
 
     thread::spawn(move || {
         let site_core = reference;

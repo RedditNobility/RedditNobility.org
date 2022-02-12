@@ -1,8 +1,6 @@
 use crate::api_response::{APIResponse, RequestErrorResponse, SiteResponse};
 use actix_web::http::StatusCode;
 
-
-
 pub fn not_found() -> SiteResponse {
     APIResponse::<bool>::new(false, None).error(StatusCode::NOT_FOUND)
 }
@@ -21,8 +19,6 @@ pub fn already_exists() -> SiteResponse {
     )
     .error(StatusCode::CONFLICT)
 }
-
-
 
 pub fn bad_request<S: Into<String>>(value: S) -> SiteResponse {
     APIResponse::new(

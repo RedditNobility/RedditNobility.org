@@ -158,10 +158,7 @@ pub fn add_new_auth_token(
     Ok(())
 }
 
-pub fn get_opt(
-    value: &str,
-    conn: &MysqlConnection,
-) -> Result<Option<OTP>, diesel::result::Error> {
+pub fn get_opt(value: &str, conn: &MysqlConnection) -> Result<Option<OTP>, diesel::result::Error> {
     use crate::schema::otps::dsl::*;
     let x: Option<OTP> = otps
         .filter(password.eq(value))

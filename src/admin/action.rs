@@ -19,7 +19,9 @@ pub fn set_permissions(
 pub fn delete_team(i: &i64, conn: &MysqlConnection) -> Result<(), DieselError> {
     use crate::schema::team_members::dsl::*;
 
-    diesel::delete(team_members).filter(id.eq(i)).execute(conn)?;
+    diesel::delete(team_members)
+        .filter(id.eq(i))
+        .execute(conn)?;
     Ok(())
 }
 pub fn delete_team_user(i: &i64, conn: &MysqlConnection) -> Result<(), DieselError> {

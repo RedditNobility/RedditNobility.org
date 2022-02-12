@@ -41,7 +41,7 @@ pub fn default_string() -> String {
 
 pub fn default_setting(string: &str) -> Result<DBSetting, InternalError> {
     let setting = SettingManager::get_setting(string.to_string())
-        .ok_or_else(||InternalError::Error("Unable to find setting".to_string()))
+        .ok_or_else(|| InternalError::Error("Unable to find setting".to_string()))
         .unwrap();
     Ok(DBSetting {
         id: 0,

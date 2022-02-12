@@ -268,7 +268,7 @@ pub async fn review_user(
     }
     let user = RedditUser {
         name: about.data.name,
-        avatar: about.data.icon_img.unwrap_or_else(||"".to_string()),
+        avatar: about.data.icon_img.unwrap_or_else(|| "".to_string()),
         comment_karma: about.data.comment_karma.unwrap_or(0),
         total_karma: about.data.total_karma.unwrap_or(0),
         created: about.data.created.unwrap_or(0.0) as i64,

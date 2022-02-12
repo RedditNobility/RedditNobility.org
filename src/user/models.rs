@@ -256,7 +256,8 @@ impl User {
             discoverer,
             reviewer: sub.moderator.unwrap_or_else(default_moderator),
             properties,
-            title: is_valid(&sub.username, titles).unwrap_or_else(||"No Title Identified".to_string()),
+            title: is_valid(&sub.username, titles)
+                .unwrap_or_else(|| "No Title Identified".to_string()),
             created: sub.created.unwrap_or_else(utils::get_current_time),
             permissions: UserPermissions {
                 admin: false,
