@@ -211,7 +211,7 @@ export default defineComponent({
   },
   methods: {
     async approve() {
-      if ((this.title === "") | (this.title == undefined)) {
+      if ((this.title === "") || (this.title == undefined) || (this.title =="No Title Identified")) {
         this.$notify({
           title: "Please Specifiy A Title",
           type: "warn",
