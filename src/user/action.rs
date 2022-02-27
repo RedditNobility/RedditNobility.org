@@ -2,6 +2,7 @@ use crate::user::models::{AuthToken, TeamMember, TeamUser, User, UserProperties,
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel::MysqlConnection;
+use crate::get_current_time;
 
 pub fn add_new_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -112,7 +113,7 @@ pub fn update_password(
     use crate::schema::users::dsl::*;
 
     diesel::update(users.filter(id.eq(user)))
-        .set((password.eq(&pass),))
+        .set((password.eq(&pass), password_changed.eq(get_current_time())))
         .execute(conn)?;
     Ok(())
 }
