@@ -1,6 +1,6 @@
 use crate::schema::*;
 use crate::utils::is_valid;
-use crate::{utils, Titles};
+use crate::{utils, Titles, get_current_time};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
@@ -98,6 +98,8 @@ pub struct User {
     // The users password. If they are just going to use the Reddit login feature. This will be changed to the latest login token
     #[serde(skip_serializing)]
     pub password: String,
+    #[serde(skip_serializing)]
+    pub password_changed: i64,
     //USER, MODERATOR, ADMIN
     pub permissions: UserPermissions,
     //FOUND, DENIED, APPROVED, BANNED
@@ -266,6 +268,7 @@ impl User {
                 review_user: false,
                 login: true,
             },
+            password_changed: get_current_time()
         }
     }
     pub fn set_status(&mut self, status: Status) {

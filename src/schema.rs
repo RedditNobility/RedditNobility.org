@@ -4,6 +4,7 @@ table! {
         discord_id -> Bigint,
         username -> Text,
         password -> Text,
+        password_changed -> Bigint,
         permissions -> Text,
         status -> Text,
         status_changed ->Bigint,

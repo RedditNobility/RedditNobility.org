@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users
     discord_id     BIGINT,
     username       TEXT,
     password       TEXT,
+    password_changed       BIGINT,
     permissions    TEXT,
     status         TEXT,
     status_changed BIGINT,
