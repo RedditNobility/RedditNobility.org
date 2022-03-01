@@ -27,7 +27,7 @@ zip = "0.5.13"
 futures = "0.3.15"
 sanitize-filename = "0.3"
 rraw = "0.0.3"
-bcrypt = "0.10.1"
+bcrypt = "0.12.0"
 rand = "0.8.4"
 futures-util = "0.3.17"
 nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }
