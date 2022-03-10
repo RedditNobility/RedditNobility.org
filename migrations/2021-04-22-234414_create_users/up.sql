@@ -12,5 +12,6 @@ CREATE TABLE IF NOT EXISTS users
     discoverer     TEXT,
     properties     TEXT,
     title          TEXT,
+    birthday       TEXT DEFAULT NULL,
     created        BIGINT
 )

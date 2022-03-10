@@ -140,7 +140,8 @@ pub fn quick_add(
                 review_user: false,
                 login: true,
             },
-            password_changed: get_current_time()
+            password_changed: get_current_time(),
+            birthday: None
         };
         action::add_new_user(&user, conn)?;
     }

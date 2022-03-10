@@ -114,7 +114,7 @@ pub struct User {
     pub properties: UserProperties,
     //When the data was created
     pub title: String,
-
+    pub birthday: Option<String>,
     pub created: i64,
 }
 
@@ -155,17 +155,17 @@ pub struct TeamMember {
 }
 
 #[derive(
-    AsExpression,
-    Debug,
-    Deserialize,
-    Serialize,
-    FromSqlRow,
-    Clone,
-    Display,
-    PartialEq,
-    EnumString,
-    Hash,
-    Eq,
+AsExpression,
+Debug,
+Deserialize,
+Serialize,
+FromSqlRow,
+Clone,
+Display,
+PartialEq,
+EnumString,
+Hash,
+Eq,
 )]
 #[sql_type = "Text"]
 pub enum Level {
@@ -175,7 +175,7 @@ pub enum Level {
 }
 
 #[derive(
-    AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
+AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Display, PartialEq, EnumString,
 )]
 #[sql_type = "Text"]
 pub enum Status {
@@ -260,6 +260,7 @@ impl User {
             properties,
             title: is_valid(&sub.username, titles)
                 .unwrap_or_else(|| "No Title Identified".to_string()),
+            birthday: None,
             created: sub.created.unwrap_or_else(utils::get_current_time),
             permissions: UserPermissions {
                 admin: false,
@@ -268,7 +269,7 @@ impl User {
                 review_user: false,
                 login: true,
             },
-            password_changed: get_current_time()
+            password_changed: get_current_time(),
         }
     }
     pub fn set_status(&mut self, status: Status) {

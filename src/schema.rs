@@ -12,6 +12,7 @@ table! {
         reviewer ->Text,
         properties ->Text,
         title -> Text,
+        birthday -> Nullable<Text>,
         created ->Bigint,
     }
 }

@@ -67,6 +67,7 @@ pub async fn install_post(
         properties,
         title: utils::is_valid(&form.username, &titles)
             .unwrap_or_else(|| "No Title Identified".to_string()),
+        birthday: None,
         created: utils::get_current_time(),
     };
     add_new_user(&user, &conn).unwrap();
