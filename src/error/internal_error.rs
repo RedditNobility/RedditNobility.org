@@ -5,7 +5,6 @@ use actix_web::HttpResponse;
 use crate::RNCore;
 use actix_web::http::StatusCode;
 use base64::DecodeError;
-use bcrypt::BcryptError;
 use log::error;
 use rraw::utils::error::APIError;
 use std::error::Error;
@@ -22,6 +21,7 @@ pub enum InternalError {
     R2D2Error(r2d2::Error),
     BooleanParseError(ParseBoolError),
     DecodeError(DecodeError),
+    ArgonError(argon2::Error),
     UTF8Error(FromUtf8Error),
     MissingArgument(String),
     Error(String),
@@ -58,9 +58,9 @@ impl From<DecodeError> for InternalError {
         InternalError::DecodeError(err)
     }
 }
-impl From<BcryptError> for InternalError {
-    fn from(err: BcryptError) -> InternalError {
-        InternalError::Error(err.to_string())
+impl From<argon2::Error> for InternalError {
+    fn from(err: argon2::Error) -> InternalError {
+        InternalError::ArgonError(err)
     }
 }
 impl From<APIError> for InternalError {

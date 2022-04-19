@@ -1,5 +1,5 @@
 use actix_web::{get, post, web::Json, HttpRequest};
-use bcrypt::verify;
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::response::unauthorized;
@@ -40,11 +40,17 @@ pub async fn login(login: Json<Login>, database: Database, request: HttpRequest)
     if user.status != Status::Approved || !user.permissions.login {
         return unauthorized();
     }
-    if verify(&login.password, &user.password)? {
+
+    let argon2 = Argon2::default();
+
+    let parsed_hash = PasswordHash::new(user.password.as_str()).unwrap();
+    let x = argon2.verify_password(login.password.clone().as_bytes(), &parsed_hash);
+    if x.is_err() {
+        return unauthorized();
+    }
         let x = create_token(&user, &connection)?;
         return APIResponse::new(true, Some(x)).respond(&request);
-    }
-    unauthorized()
+
 }
 
 #[derive(Serialize, Deserialize, Debug)]

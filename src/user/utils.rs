@@ -15,7 +15,9 @@ use crate::user::action::{
 use crate::user::models::{AuthToken, Status, User, UserPermissions, UserProperties, OTP};
 use crate::utils::{get_current_time, is_valid};
 use crate::Titles;
-
+use argon2::password_hash::rand_core::OsRng;
+use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHasher};
 pub fn get_user_by_header(
     header_map: &HeaderMap,
     conn: &MysqlConnection,
@@ -70,6 +72,15 @@ pub fn generate_otp(user: &i64, conn: &MysqlConnection) -> Result<String, Intern
     };
     add_opt(&opt, conn)?;
     Ok(opt.password)
+}
+pub fn hash(password: String) -> Result<String, InternalError> {
+    let salt = SaltString::generate(&mut OsRng);
+
+    let argon2 = Argon2::default();
+    let password_hash = argon2
+        .hash_password(password.as_bytes(), salt.as_ref()).unwrap()
+        .to_string();
+    Ok(password_hash)
 }
 
 fn generate_otp_value() -> String {

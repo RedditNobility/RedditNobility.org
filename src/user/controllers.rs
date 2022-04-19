@@ -1,6 +1,5 @@
 use actix_web::web::{Json, Path};
 use actix_web::{post, HttpRequest};
-use bcrypt::{hash, DEFAULT_COST};
 use rraw::utils::error::APIError;
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -99,7 +98,7 @@ pub async fn update_password(
         return unauthorized();
     }
     let user = option.unwrap();
-    let result = hash(&request.0.value, DEFAULT_COST)?;
+    let result = crate::user::utils::hash(request.0.value)?;
     crate::user::action::update_password(&user.id, result, &conn)?;
     APIResponse::new(true, Some(true)).respond(&r)
 }

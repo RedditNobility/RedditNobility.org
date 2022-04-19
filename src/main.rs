@@ -2,7 +2,6 @@
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
-extern crate bcrypt;
 extern crate dotenv;
 extern crate strum;
 extern crate strum_macros;
@@ -52,7 +51,7 @@ mod moderator;
 pub mod schema;
 mod settings;
 pub mod user;
-mod utils;
+pub mod utils;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 pub type Database = web::Data<DbPool>;
@@ -113,7 +112,7 @@ async fn main() -> std::io::Result<()> {
 
     let request = Request::builder()
         .method(Method::GET)
-        .uri("https://raw.githubusercontent.com/RedditNobility/Titles/master/titles.json")
+        .uri(std::env::var("TITLES").unwrap_or_else(|_| "https://raw.githubusercontent.com/RedditNobility/Titles/master/titles.json".to_string()))
         .body(Body::empty())
         .unwrap();
     let result = hyper.request(request).await;

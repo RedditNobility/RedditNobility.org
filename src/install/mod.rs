@@ -7,7 +7,6 @@ use crate::error::response::already_exists;
 use crate::{utils, DbPool, TitleData, get_current_time};
 use actix_web::{post, HttpRequest};
 
-use bcrypt::{hash, DEFAULT_COST};
 use serde::{Deserialize, Serialize};
 
 use crate::settings::utils::quick_add;
@@ -51,7 +50,7 @@ pub async fn install_post(
         id: 0,
         discord_id: 0,
         username: form.username.clone(),
-        password: hash(&form.password.clone(), DEFAULT_COST).unwrap(),
+        password: crate::user::utils::hash(form.password.clone())?,
         password_changed: get_current_time(),
         permissions: UserPermissions {
             admin: true,
