@@ -89,6 +89,48 @@ impl ToSql<Text, Mysql> for UserProperties {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+pub struct BackupUser {
+    pub username: String,
+    //USER, MODERATOR, ADMIN
+    pub permissions: UserPermissions,
+    //FOUND, DENIED, APPROVED, BANNED
+    pub status: Status,
+    //When was their status changed from FOUND to DENIED or APPROVED
+    pub status_changed: i64,
+    //Who found the user BOT if bot
+    pub discoverer: String,
+    //The Moderator who approved them or denied them. If the user was banned it will still be set to who approved them
+    pub reviewer: String,
+    // Custom Properties done through json.
+    pub properties: UserProperties,
+    //When the data was created
+    pub title: String,
+    pub birthday: Option<String>,
+    pub created: i64,
+}
+
+impl Into<User> for BackupUser {
+    fn into(self) -> User {
+        User {
+            id: 0,
+            discord_id: 0,
+            username: self.username,
+            password: "".to_string(),
+            password_changed: 0,
+            permissions: self.permissions,
+            status: self.status,
+            status_changed: self.status_changed,
+            discoverer: self.discoverer,
+            reviewer: self.reviewer,
+            properties: self.properties,
+            title: self.title,
+            birthday: self.birthday,
+            created: self.created,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 pub struct User {
     pub id: i64,

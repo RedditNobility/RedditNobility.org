@@ -7,7 +7,10 @@ extern crate strum;
 extern crate strum_macros;
 
 use std::collections::HashMap;
+use std::fs::{ OpenOptions, read_to_string};
+use std::io::Write;
 use std::ops::Sub;
+use std::path::Path;
 
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
@@ -29,7 +32,7 @@ use hyper_tls::HttpsConnector;
 
 use log::{debug, error, info};
 
-use crate::user::models::User;
+use crate::user::models::{BackupUser, User};
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
 use rraw::auth::PasswordAuthenticator;
@@ -52,6 +55,18 @@ pub mod schema;
 mod settings;
 pub mod user;
 pub mod utils;
+
+use clap::Parser;
+use crate::user::action::{add_new_user, get_user_by_name, get_users_for_backup};
+
+#[derive(Parser)]
+#[clap(author, version, about, long_about = None)]
+struct Cli {
+    #[clap(short, long)]
+    export: bool,
+    #[clap(short, long)]
+    import: Option<String>,
+}
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 pub type Database = web::Data<DbPool>;
@@ -105,7 +120,46 @@ async fn main() -> std::io::Result<()> {
     let connection = pool.get().unwrap();
     info!("Checking and running Migrations");
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap();
-    std::env::set_var("INSTALLED", "false".to_string());
+
+    let parser: Cli = Cli::parse();
+    if parser.export {
+        let users = Path::new("users.json");
+        if users.exists() {
+            println!("Hey!. A users.json file already exist! Delete and re run to continue");
+            return Ok(());
+        }
+        let mut file = OpenOptions::new().create_new(true).write(true).open(users)?;
+        let users_value = get_users_for_backup(&connection).unwrap();
+        let data = serde_json::to_string_pretty(&users_value)?;
+        file.write_all(data.as_bytes())?;
+        return Ok(());
+    } else if let Some(value) = parser.import {
+        let users = Path::new(&value);
+        if !users.exists() {
+            println!("Hey!. A users.json file does not exist!");
+            return Ok(());
+        }
+        let value = read_to_string(users)?;
+        let data: Vec<BackupUser> = serde_json::from_str(&value)?;
+        let mut data = data.into_iter();
+        for user in data.by_ref() {
+            let user_query = get_user_by_name(&user.username, &connection);
+            if let Err(query_e) = user_query {
+                error!("Unable to find user. Error {}", query_e);
+            } else if let Ok(user_query) = user_query {
+                if user_query.is_none() {
+                    let user: User = user.into();
+                    if let Err(error) = add_new_user(&user, &connection) {
+                        error!("Unable to add user {}. Error {}", user.username, error);
+                    }
+                }
+            }
+        }
+
+        return Ok(());
+    }
+
+    std::env::set_var("INSTALLED", "false");
     info!("Loading Title Info From");
     let https = HttpsConnector::new();
     let hyper = Client::builder().build::<_, hyper::Body>(https);
@@ -152,10 +206,10 @@ async fn main() -> std::io::Result<()> {
                 .configure(install::init)
                 .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
         })
-        .workers(2)
-        .bind(std::env::var("ADDRESS").unwrap())?
-        .run()
-        .await;
+            .workers(2)
+            .bind(std::env::var("ADDRESS").unwrap())?
+            .run()
+            .await;
     }
     info!("Initializing Reddit Controller");
     let arc = PasswordAuthenticator::new(
@@ -217,7 +271,7 @@ async fn main() -> std::io::Result<()> {
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
             .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
     })
-    .workers(4);
+        .workers(4);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added

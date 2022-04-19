@@ -1,4 +1,4 @@
-use crate::user::models::{AuthToken, TeamMember, TeamUser, User, UserProperties, OTP};
+use crate::user::models::{AuthToken, TeamMember, TeamUser, User, UserProperties, OTP, BackupUser};
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel::MysqlConnection;
@@ -23,6 +23,7 @@ pub fn get_user_by_name(
         .first::<User>(conn)
         .optional()
 }
+
 pub fn get_id_by_name(
     user: &str,
     conn: &MysqlConnection,
@@ -88,10 +89,11 @@ pub fn update_properties(
     use crate::schema::users::dsl::*;
 
     diesel::update(users.filter(id.eq(user)))
-        .set((properties.eq(&props),))
+        .set((properties.eq(&props), ))
         .execute(conn)?;
     Ok(())
 }
+
 pub fn update_title(
     user: &i64,
     tit: &str,
@@ -100,7 +102,7 @@ pub fn update_title(
     use crate::schema::users::dsl::*;
 
     diesel::update(users.filter(id.eq(user)))
-        .set((title.eq(tit),))
+        .set((title.eq(tit), ))
         .execute(conn)?;
     Ok(())
 }
@@ -196,6 +198,7 @@ pub fn get_team_members(conn: &MysqlConnection) -> Result<Vec<TeamMember>, Diese
 
     team_members.load::<TeamMember>(conn)
 }
+
 pub fn get_team_member(u: &i64, conn: &MysqlConnection) -> Result<Option<TeamMember>, DieselError> {
     use crate::schema::team_members::dsl::*;
 
@@ -215,4 +218,9 @@ pub fn get_team_user(
         .select((id, username, properties))
         .first::<TeamUser>(conn)
         .optional()
+}
+
+pub fn get_users_for_backup(conn: &MysqlConnection) -> Result<Vec<BackupUser>, diesel::result::Error> {
+    use crate::schema::users::dsl::*;
+    users.select((username, permissions, status, status_changed, discoverer, reviewer, properties, title, birthday, created)).load::<BackupUser>(conn)
 }
