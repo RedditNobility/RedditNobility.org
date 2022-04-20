@@ -48,9 +48,8 @@ pub async fn login(login: Json<Login>, database: Database, request: HttpRequest)
     if x.is_err() {
         return unauthorized();
     }
-        let x = create_token(&user, &connection)?;
-        return APIResponse::new(true, Some(x)).respond(&request);
-
+    let x = create_token(&user, &connection)?;
+    return APIResponse::new(true, Some(x)).respond(&request);
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -81,7 +80,7 @@ pub async fn one_time_password_create(
         data: Some(true),
         status_code: Some(201),
     }
-    .respond(&request)
+        .respond(&request)
 }
 
 #[derive(Serialize, Deserialize, Debug)]

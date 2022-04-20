@@ -7,7 +7,7 @@ extern crate strum;
 extern crate strum_macros;
 
 use std::collections::HashMap;
-use std::fs::{ OpenOptions, read_to_string};
+use std::fs::{OpenOptions, read_to_string};
 use std::io::Write;
 use std::ops::Sub;
 use std::path::Path;
@@ -35,7 +35,7 @@ use log::{debug, error, info};
 use crate::user::models::{BackupUser, User};
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
-use rraw::auth::PasswordAuthenticator;
+use rraw::auth::{AnonymousAuthenticator, PasswordAuthenticator};
 use rraw::me::Me;
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -43,7 +43,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::user::title::Titles;
 
-use crate::utils::{get_current_time, installed, Resources};
+use crate::utils::{get_current_time, installed, is_valid, Resources};
 
 mod admin;
 mod api_response;
@@ -57,7 +57,13 @@ pub mod user;
 pub mod utils;
 
 use clap::Parser;
+use futures_util::TryFutureExt;
+use rraw::comments::CommentRetriever;
+use rraw::responses::RedditType;
+use rraw::submission::response::SubmissionsResponse;
+use rraw::submission::{SubmissionRetriever, SubmissionType};
 use crate::user::action::{add_new_user, get_user_by_name, get_users_for_backup};
+use crate::user::utils::quick_add;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -246,7 +252,38 @@ async fn main() -> std::io::Result<()> {
         }
     });
     info!("Initializing Web Server");
-
+    let my_titles = titles_data.clone();
+    thread::spawn( || async move{
+        let my_titles = my_titles.clone();
+        loop {
+            let string = std::env::var("DATABASE_URL").expect("DATABASE_URL");
+            let result = MysqlConnection::establish(&*string).unwrap();
+            let client = rraw::me::Me::login(AnonymousAuthenticator::new(), "RedditNobility bot(by u/KingTuxWH)".to_string()).await.unwrap();
+            let r_all = client.subreddit("all");
+            let new_list: SubmissionsResponse = r_all.get_submissions("hot", None).await.unwrap();
+            for submission_response in new_list.data.children.iter() {
+                let author = submission_response.data.author.clone();
+                if let Some(title) = crate::utils::is_valid(&author, &my_titles) {
+                    quick_add(&author, "Bot", &result, &my_titles).unwrap();
+                }
+                let submission = submission_response.data.to_submission(&client);
+                let comments = submission.get_comments(None).await.unwrap();
+                let listings = &comments.get(1).unwrap().data;
+                for comment in listings.children.iter() {
+                    if let RedditType::Comment(comment) = &comment.data {
+                        let author = comment.author.as_ref().unwrap();
+                        if let Some(title) = crate::utils::is_valid(&author, &my_titles) {
+                            quick_add(&author, "Bot", &result, &my_titles).unwrap();
+                        }
+                    }
+                }
+                let time = Duration::seconds(60);
+                thread::sleep(time.to_std().unwrap());
+            }
+            let time = Duration::seconds(7200);
+            thread::sleep(time.to_std().unwrap());
+        }
+    });
     let server = HttpServer::new(move || {
         App::new()
             .wrap(

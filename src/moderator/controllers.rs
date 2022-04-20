@@ -231,9 +231,9 @@ pub async fn review_user(
             let x = x.data;
             let post = Comment {
                 subreddit: x.subreddit,
-                url: format!("https://reddit.com{}", x.permalink.unwrap()),
+                url: format!("https://reddit.com{}", x.permalink),
                 id: x.id.clone(),
-                og_post_title: x.link_title.clone(),
+                og_post_title: x.link_title.unwrap().clone(),
                 content: x.body,
                 score: x.score as i64,
             };
