@@ -1,6 +1,7 @@
 use actix_web::web::{Json, Path};
 use actix_web::{post, HttpRequest};
-use rraw::utils::error::APIError;
+use rraw::error::Error::HTTPError;
+use rraw::error::http_error::HTTPError::NotFound;
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::internal_error::InternalError::Error;
@@ -29,13 +30,7 @@ pub async fn submit_user(
     if result1.is_some() {
         return already_exists();
     }
-    let user_reddit = reddit_client.user(suggest.clone()).about().await;
-    if let Err(error) = user_reddit {
-        return match error {
-            APIError::HTTPError(_) => not_found(),
-            _ => Err(error.into()),
-        };
-    }
+    let user_reddit = reddit_client.user(suggest.clone()).about().await?;
     quick_add(&suggest, &discoverer.username, &conn, &titles)?;
     let result1 = get_user_by_name(&suggest, &conn)?;
     if result1.is_none() {
@@ -49,7 +44,7 @@ pub async fn submit_user(
         data: Some(true),
         status_code: Some(201),
     }
-    .respond(&r)
+        .respond(&r)
 }
 
 #[derive(serde::Deserialize)]

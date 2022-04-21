@@ -6,7 +6,6 @@ use crate::RNCore;
 use actix_web::http::StatusCode;
 use base64::DecodeError;
 use log::error;
-use rraw::utils::error::APIError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::string::FromUtf8Error;
@@ -24,6 +23,7 @@ pub enum InternalError {
     ArgonError(argon2::Error),
     UTF8Error(FromUtf8Error),
     MissingArgument(String),
+    RRAWError(rraw::error::Error),
     Error(String),
 }
 
@@ -58,16 +58,24 @@ impl From<DecodeError> for InternalError {
         InternalError::DecodeError(err)
     }
 }
+
 impl From<argon2::Error> for InternalError {
     fn from(err: argon2::Error) -> InternalError {
         InternalError::ArgonError(err)
     }
 }
-impl From<APIError> for InternalError {
-    fn from(err: APIError) -> InternalError {
-        InternalError::Error(err.to_string())
+
+impl From<rraw::error::Error> for InternalError {
+    fn from(err: rraw::error::Error) -> InternalError {
+        InternalError::RRAWError(err)
     }
 }
+impl From<rraw::error::http_error::HTTPError> for InternalError {
+    fn from(err: rraw::error::http_error::HTTPError) -> InternalError {
+        InternalError::RRAWError(rraw::error::Error::HTTPError(err))
+    }
+}
+
 impl From<PoisonError<std::sync::MutexGuard<'_, RNCore>>> for InternalError {
     fn from(_err: PoisonError<std::sync::MutexGuard<'_, RNCore>>) -> InternalError {
         InternalError::Error("Tux Broke Something really bad".to_string())

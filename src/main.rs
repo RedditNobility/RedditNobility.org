@@ -36,7 +36,6 @@ use crate::user::models::{BackupUser, User};
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
 use rraw::auth::{AnonymousAuthenticator, PasswordAuthenticator};
-use rraw::me::Me;
 
 use crate::api_response::{APIResponse, SiteResponse};
 use serde::{Deserialize, Serialize};
@@ -77,7 +76,7 @@ struct Cli {
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 pub type Database = web::Data<DbPool>;
 pub type RN = web::Data<Arc<Mutex<RNCore>>>;
-pub type RedditClient = web::Data<Me>;
+pub type RedditClient = web::Data<rraw::Client<PasswordAuthenticator>>;
 pub type TitleData = web::Data<Titles>;
 
 pub struct RNCore {
@@ -224,7 +223,7 @@ async fn main() -> std::io::Result<()> {
         std::env::var("REDDIT_USER").unwrap().as_str(),
         std::env::var("PASSWORD").unwrap().as_str(),
     );
-    let client = Me::login(arc, "RedditNobility bot(by u/KingTuxWH)".to_string())
+    let client = rraw::Client::login(arc, "RedditNobility bot(by u/KingTuxWH)".to_string())
         .await
         .unwrap();
     let site_core = Arc::new(Mutex::new(RNCore::new()));
@@ -258,7 +257,7 @@ async fn main() -> std::io::Result<()> {
         loop {
             let string = std::env::var("DATABASE_URL").expect("DATABASE_URL");
             let result = MysqlConnection::establish(&*string).unwrap();
-            let client = rraw::me::Me::login(AnonymousAuthenticator::new(), "RedditNobility bot(by u/KingTuxWH)".to_string()).await.unwrap();
+            let client = rraw::Client::login(AnonymousAuthenticator::new(), "RedditNobility bot(by u/KingTuxWH)".to_string()).await.unwrap();
             let r_all = client.subreddit("all");
             let new_list: SubmissionsResponse = r_all.get_submissions("hot", None).await.unwrap();
             for submission_response in new_list.data.children.iter() {

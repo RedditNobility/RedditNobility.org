@@ -13,8 +13,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::user::models::UserProperties;
 use log::error;
-use rraw::auth::AnonymousAuthenticator;
-use rraw::me::Me;
+use rraw::auth::{AnonymousAuthenticator, PasswordAuthenticator};
+use rraw::Client;
 use rraw::utils::options::FriendType;
 
 #[derive(RustEmbed)]
@@ -56,7 +56,7 @@ pub(crate) fn get_current_time() -> i64 {
         .as_millis() as i64
 }
 
-pub async fn send_login(user: &str, password: String, rr: &Me) -> Result<(), InternalError> {
+pub async fn send_login(user: &str, password: String, rr: &Client<PasswordAuthenticator>) -> Result<(), InternalError> {
     let string = build_message(user, password)?;
     rr.inbox()
         .compose(
@@ -77,7 +77,7 @@ fn build_message(user: &str, password: String) -> Result<String, InternalError> 
     Ok(string)
 }
 
-pub async fn approve_user(user: &User, client: &Me) -> bool {
+pub async fn approve_user(user: &User, client: &Client<PasswordAuthenticator>) -> bool {
     let result1 = client
         .subreddit("RedditNobility".to_string())
         .add_friend(user.username.clone(), FriendType::Contributor)
@@ -141,23 +141,18 @@ pub async fn get_avatar(username: &str, user: &UserProperties) -> Result<String,
         return Ok(option1.unwrap().clone());
     }
 
-    let client = Me::login(
+    let client = rraw::Client::login(
         AnonymousAuthenticator::new(),
         "Robotic Monarch by u/KingTuxWH".to_string(),
     )
-    .await?;
+        .await?;
     let user1 = client.user(username);
     let about = user1.about().await?;
 
-    let option = about.data.snoovatar_img;
-    if let Some(avatar) = option {
-        if !avatar.is_empty() {
-            return Ok(avatar);
-        }
+    let avatar = about.data.snoovatar_img;
+    if !avatar.is_empty() {
+        return Ok(avatar);
     }
-    let option = about.data.icon_img;
-    if option.is_some() {
-        return Ok(option.unwrap());
-    }
-    Ok("".to_string())
+
+    Ok(about.data.icon_img)
 }

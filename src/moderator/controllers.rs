@@ -12,9 +12,9 @@ use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use log::{debug, error, trace};
-use rraw::utils::error::APIError;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use rraw::error::Error::HTTPError;
 
 use crate::moderator::action::{
     get_approve_count, get_approve_count_total, get_discover_count, get_discover_count_total,
@@ -212,17 +212,22 @@ pub async fn review_user(
             "Failed to grab about data for {} error {}",
             &user.username, &error
         );
-        if let APIError::NotFound = error {
-            delete_user(&user.id, &conn)?;
-            return bad_request("We have fixed the issue please try again");
+        if let rraw::error::Error::HTTPError(error) = error {
+            return if error.eq(&rraw::error::http_error::HTTPError::NotFound) {
+                delete_user(&user.id, &conn)?;
+                bad_request("We have fixed the issue please try again")
+            } else {
+                Err(error.into())
+            }
+        }else {
+            return Err(error.into());
         }
-        return Err(error.into());
     }
 
     let about = about.unwrap();
     let mut user_posts = Vec::<RedditPost>::new();
     let mut user_comments = Vec::<Comment>::new();
-    if !about.data.is_suspended.unwrap_or(false) {
+    if !about.data.is_suspended{
         let submissions = r_user.submissions(None).await?;
         let comments = r_user.comments(None).await?;
         yeet(rn);
@@ -268,10 +273,10 @@ pub async fn review_user(
     }
     let user = RedditUser {
         name: about.data.name,
-        avatar: about.data.icon_img.unwrap_or_else(|| "".to_string()),
-        comment_karma: about.data.comment_karma.unwrap_or(0),
-        total_karma: about.data.total_karma.unwrap_or(0),
-        created: about.data.created.unwrap_or(0.0) as i64,
+        avatar: about.data.icon_img,
+        comment_karma: about.data.comment_karma,
+        total_karma: about.data.total_karma,
+        created: about.data.created as i64,
         top_posts: user_posts,
         top_comments: user_comments,
         user,
