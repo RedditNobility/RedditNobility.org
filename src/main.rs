@@ -58,7 +58,7 @@ pub mod utils;
 use clap::Parser;
 use futures_util::TryFutureExt;
 use rraw::comments::CommentRetriever;
-use rraw::responses::RedditType;
+use rraw::responses::{RedditResponse, RedditTypeResponse};
 use rraw::submission::response::SubmissionsResponse;
 use rraw::submission::{SubmissionRetriever, SubmissionType};
 use crate::user::action::{add_new_user, get_user_by_name, get_users_for_backup};
@@ -258,7 +258,7 @@ async fn main() -> std::io::Result<()> {
             let string = std::env::var("DATABASE_URL").expect("DATABASE_URL");
             let result = MysqlConnection::establish(&*string).unwrap();
             let client = rraw::Client::login(AnonymousAuthenticator::new(), "RedditNobility bot(by u/KingTuxWH)".to_string()).await.unwrap();
-            let r_all = client.subreddit("all");
+            let r_all = client.subreddit("all").await.unwrap();
             let new_list: SubmissionsResponse = r_all.get_submissions("hot", None).await.unwrap();
             for submission_response in new_list.data.children.iter() {
                 let author = submission_response.data.author.clone();
@@ -269,7 +269,7 @@ async fn main() -> std::io::Result<()> {
                 let comments = submission.get_comments(None).await.unwrap();
                 let listings = &comments.get(1).unwrap().data;
                 for comment in listings.children.iter() {
-                    if let RedditType::Comment(comment) = &comment.data {
+                    if let RedditTypeResponse::Comment(comment) = &comment.data {
                         let author = comment.author.as_ref().unwrap();
                         if let Some(title) = crate::utils::is_valid(&author, &my_titles) {
                             quick_add(&author, "Bot", &result, &my_titles).unwrap();

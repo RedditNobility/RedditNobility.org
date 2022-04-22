@@ -58,12 +58,11 @@ pub(crate) fn get_current_time() -> i64 {
 
 pub async fn send_login(user: &str, password: String, rr: &Client<PasswordAuthenticator>) -> Result<(), InternalError> {
     let string = build_message(user, password)?;
-    rr.inbox()
+    rr.subreddit("RedditNobility").await?
         .compose(
             user.to_string(),
             "RedditNobility Login".to_string(),
             string,
-            None,
         )
         .await?;
     Ok(())
@@ -78,15 +77,18 @@ fn build_message(user: &str, password: String) -> Result<String, InternalError> 
 }
 
 pub async fn approve_user(user: &User, client: &Client<PasswordAuthenticator>) -> bool {
-    let result1 = client
-        .subreddit("RedditNobility".to_string())
-        .add_friend(user.username.clone(), FriendType::Contributor)
+    let subreddit = client
+        .subreddit("RedditNobility").await.unwrap();
+    let result = subreddit.add_friend(user.username.clone(), FriendType::Contributor)
         .await;
-    if result1.is_err() {
-        error!("Unable to approve User {}", result1.err().unwrap());
-        return false;
+    if let Err(error) = result {
+        error!("Unable to approve User {}", error);
+        false
+    } else if let Ok(friend) = result {
+        friend.success
+    }else{
+        false
     }
-    result1.unwrap().success
 }
 
 pub fn yeet<T>(_drop: T) {}
@@ -146,13 +148,12 @@ pub async fn get_avatar(username: &str, user: &UserProperties) -> Result<String,
         "Robotic Monarch by u/KingTuxWH".to_string(),
     )
         .await?;
-    let user1 = client.user(username);
-    let about = user1.about().await?;
+    let reddit_user = client.user(username).await?;
 
-    let avatar = about.data.snoovatar_img;
+    let avatar = reddit_user.user.snoovatar_img;
     if !avatar.is_empty() {
         return Ok(avatar);
     }
 
-    Ok(about.data.icon_img)
+    Ok(reddit_user.user.icon_img)
 }

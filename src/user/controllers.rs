@@ -30,7 +30,7 @@ pub async fn submit_user(
     if result1.is_some() {
         return already_exists();
     }
-    let user_reddit = reddit_client.user(suggest.clone()).about().await?;
+    let user_reddit = reddit_client.user(suggest.clone()).await?;
     quick_add(&suggest, &discoverer.username, &conn, &titles)?;
     let result1 = get_user_by_name(&suggest, &conn)?;
     if result1.is_none() {

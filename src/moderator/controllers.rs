@@ -205,9 +205,8 @@ pub async fn review_user(
     rn.add_id(user.id);
 
     trace!("Grabbing About Data for {}", &user.username);
-    let r_user = client.user(user.username.clone());
-    let about = r_user.about().await;
-    if let Err(error) = about {
+    let r_user = client.user(user.username.clone()).await;
+    if let Err(error) = r_user {
         error!(
             "Failed to grab about data for {} error {}",
             &user.username, &error
@@ -218,16 +217,15 @@ pub async fn review_user(
                 bad_request("We have fixed the issue please try again")
             } else {
                 Err(error.into())
-            }
-        }else {
+            };
+        } else {
             return Err(error.into());
         }
     }
-
-    let about = about.unwrap();
+    let r_user = r_user.unwrap();
     let mut user_posts = Vec::<RedditPost>::new();
     let mut user_comments = Vec::<Comment>::new();
-    if !about.data.is_suspended{
+    if !r_user.user.is_suspended {
         let submissions = r_user.submissions(None).await?;
         let comments = r_user.comments(None).await?;
         yeet(rn);
@@ -272,11 +270,11 @@ pub async fn review_user(
         }
     }
     let user = RedditUser {
-        name: about.data.name,
-        avatar: about.data.icon_img,
-        comment_karma: about.data.comment_karma,
-        total_karma: about.data.total_karma,
-        created: about.data.created as i64,
+        name: r_user.user.name,
+        avatar: r_user.user.icon_img,
+        comment_karma: r_user.user.comment_karma,
+        total_karma: r_user.user.total_karma,
+        created: r_user.user.created as i64,
         top_posts: user_posts,
         top_comments: user_comments,
         user,
