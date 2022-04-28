@@ -11,7 +11,7 @@
   "dependencies": {
     "@element-plus/icons": "^0.0.11",
     "@kyvg/vue3-notification": "^2.3.4",
-    "axios": "^0.26.1",
+    "axios": "^0.27.2",
     "core-js": "^3.22.1",
     "element-plus": "2.1.10",
     "equal-vue": "^0.79.3",
