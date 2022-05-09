@@ -24,7 +24,7 @@ serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.64"
 serde_qs = "0.9.1"
 futures = "0.3.15"
-sanitize-filename = "0.3"
+sanitize-filename = "0.4"
 rraw = "1.0.0-beta.0"
 argon2 = "0.4.0"
 rand = "0.8.4"
