@@ -171,7 +171,7 @@ async fn main() -> std::io::Result<()> {
 
     let request = Request::builder()
         .method(Method::GET)
-        .uri(std::env::var("TITLES").unwrap_or_else(|_| "https://raw.githubusercontent.com/RedditNobility/Titles/master/titles.json".to_string()))
+        .uri(std::env::var("TITLES").expect("Missing Titles Param"))
         .body(Body::empty())
         .unwrap();
     let result = hyper.request(request).await;

@@ -1,0 +1,182 @@
+{
+    "$schema": "https://raw.githubusercontent.com/RedditNobility/Titles/master/titles.schema.json",
+    "$id": "https://raw.githubusercontent.com/RedditNobility/Titles/master/titles.schema.json",
+    "titles": [
+        {
+            "value": "viking",
+            "properName": "Viking",
+            "description": "Yeah, I know what you're thinking. \"BuT vIkInG iSn'T a NoBlE tItLe!\" Officially, we say it's because our system flags the \"king\" part of \"viking.\" Between you and me, though? You try arguing with a battle axe. If a viking wants in, they get in."
+        },
+        {
+            "value": "king",
+            "properName": "King",
+            "color": "b58900",
+            "possibleTitles": [
+                "viking"
+            ],
+            "description": " You know it, you love it, classic and simple, it's the King! Whether by the sword or with a gentle hand, you lead your people to prosperity. Save for the ones who don't bend the knee. You lead those ones to the dungeon."
+        },
+        {
+            "value": "queen",
+            "properName": "Queen",
+            "color": "268bd2",
+            "description": " They say life is a game of chess, and if that's true, you're the most powerful piece! Your Kingdom follows your words like scripture and will war a thousand nations in your name if you asked. God save the Queen (you)!"
+        },
+        {
+            "value": "lord",
+            "properName": "Lord",
+            "color": "000dff",
+            "description": "Not gonna call you God, but you do share a title! Common as a title, yet every lord is distinct in their own right. Whether you be the Lord of Kittens or Lord of the Apocalypse, welcome aboard!"
+        },
+        {
+            "value": "lady",
+            "properName": "Lady",
+            "color": "ce3416",
+            "description": "People often bemoan unladylike behavior, but you don't ever have to worry about it, since everything you do--whether it be giving a curtsey or just straight up killing a guy in an alley-- is ladylike by definition. Fun!"
+        },
+        {
+            "value": "prince",
+            "properName": "Prince",
+            "color": "3adbd6",
+            "possibleTitles": [
+                "princess"
+            ],
+            "description": " A knight in shining armor, a young and hopeful ruler, one heck of a singer. You are beloved by everyone who ever watched a Disney movie. You may not have the throne, yet, but once you do, the world will never be the same. God help us"
+        },
+        {
+            "value": "princess",
+            "properName": "princess",
+            "color": "fc7bcf",
+            "description": "Whether in line to become Queen or are just very special to your dad, congrats! You're a Princess! Loved or feared by your people, doesn't matter, you're free to get away with whatever. Who's gonna say no to the Princess?"
+        },
+        {
+            "value": "count",
+            "properName": "Count",
+            "possibleTitles": [
+                "countess"
+            ],
+            "description": "Count Dracula, Count Dooku, Countertop, the world loves counts! Usually you're the villain of everybody else's story, but it's not your fault it's a good title for vampires and spooky dudes."
+        },
+        {
+            "value": "countess",
+            "properName": "Countess",
+            "description": "Femme fatale of the highest caliber. You have money, you have power, you have mystique. What does a Countess do? Be filthy rich and live in a spooky looking castle is what a Countess does."
+        },
+        {
+            "value": "emperor",
+            "properName": "Emperor",
+            "description": "From Ceasar, to Palpatine, to Penguin, you're one scary motherlover. You've taken what is yours and the people fall in line. No one dare stand in your way unless it's to catch an arrow for you."
+        },
+        {
+            "value": "empress",
+            "properName": "Empress",
+            "description": "They say absolute power corrupts absolutely. Or at least they did until you \"disappeared\" them. Now you are your people's everything. What else are they going to love? Each other?"
+        },
+        {
+            "value": "monarch",
+            "properName": "Monarch",
+            "description": "Achieving nobility is a hard task as it is. If you're not born into it, achieving even only one low title can be someone's life's work. Not you. You just get to be all of them. And all it took was typing in a username that wasn't taken."
+        },
+        {
+            "value": "duke",
+            "properName": "Duke",
+            "description": "Master of a dutchy. What is a dutchy? Idunno. I don't think you really care. Because regardless, you're a noble, baby! So take pride in your dutchy, whatever it is, as it's made you quite rich"
+        },
+        {
+            "value": "duchess",
+            "properName": "Duchess",
+            "description": "Star of any cotillion. Grace, elegance, not actually from Dutch culture, you are many things to many people, and all of them good. Except the ones that aren't good, but that's coming from poor people, so what do you care?"
+        },
+        {
+            "value": "pharoh",
+            "properName": "Pharoh"
+        },
+        {
+            "value": "baron",
+            "properName": "Baron",
+            "possibleTitles": [
+                "baroness"
+            ],
+            "description": "Probably the least understood, yet coolest sounding of the noble professions. Notable Barons include the Red one and I think one iteration of Dracula. Not sure. You're still way better than the peasants, though!             "
+        },
+        {
+            "value": "baroness",
+            "properName": "Baroness",
+            "description": "Yeah, I don't know, either. I don't even think your people know what it is you do. Just enjoy it and don't ask questions. After all, just because you don't know what you did to earn this wealth and status doesn't mean you don't still deserve it, right?"
+        },
+        {
+            "value": "sultan",
+            "properName": "Sultan",
+            "possibleTitles": [
+                "sultana"
+            ],
+            "description": "Like king, but in the desert. I know, I wish I had more for this one, too"
+        },
+        {
+            "value": "sultana",
+            "properName": "Sultana",
+            "description": "Like Sultan, but in a girl. Look, I'm trying here, I promise"
+        },
+        {
+            "value": "tsar",
+            "properName": "Tsar",
+            "possibleTitles": [
+                "tsarina"
+            ],
+            "description": "Distinctly Russian. You rule with a strong will and high alcohol tolerance. Also, probably a really cool mustache/beard combo. It would take a global conflict AND  a revolution to unseat you. And what are the odd of that happening? Hopefully low"
+        },
+        {
+            "value": "tsarina",
+            "properName": "Tsarina",
+            "description": "What you lack in a cool mustache, you more than make up for in your charm. There's something magical about a noble Slavic woman-- perhaps her beauty, or her wit, or maybe it's just the curse she put on me to fall in love with her-- I don't know"
+        },
+        {
+            "value": "czar",
+            "properName": "Czar",
+            "possibleTitles": [
+                "czarina"
+            ],
+            "description": "Distinctly Russian. You rule with a strong will and high alcohol tolerance. Also, probably a really cool mustache/beard combo. It would take a global conflict AND  a revolution to unseat you. And what are the odd of that happening? Hopefully low"
+        },
+        {
+            "value": "czarina",
+            "properName": "Czarina",
+            "description": "What you lack in a cool mustache, you more than make up for in your charm. There's something magical about a noble Slavic woman-- perhaps her beauty, or her wit, or maybe it's just the curse she put on me to fall in love with her-- I don't know"
+        },
+        {
+            "value": "jarl",
+            "properName": "Jarl",
+            "description": " The \"J\" is actually silent. Well, not silent, just pronounced like a \"Y\". I dunno why they don't just spell it with a \"Y,\" then, but what do I know? Only been speaking this language my whole life"
+        },
+        {
+            "value": "caesar",
+            "properName": "Caesar",
+            "description": " Different spellings, same pronunciation, believe it or not. Though centuries apart, the Kaiser and Caeser are very similar roles. The only difference being one wears the funny little flower crown and the other wears a helmet with a spike in it. So, I think we know who wins that fight."
+        },
+        {
+            "value": "marquis",
+            "properName": "Marquis",
+            "description": "Sounds French. I thought Marquess was the feminine counterpart to Marquis, but no... Just a different spelling. Quick little fun fact for you... Yup, thought you might find that... Well, I'd better be going! Welcome to the club."
+        },
+        {
+            "value": "marquess",
+            "properName": "Marquess",
+            "description": "Sounds French. I thought Marquess was the feminine counterpart to Marquis, but no... Just a different spelling. Quick little fun fact for you... Yup, thought you might find that... Well, I'd better be going! Welcome to the club."
+        },
+        {
+            "value": "maharaja",
+            "properName": "Maharaja",
+            "description": "You made this one up, didn't you? I don't believe you, but hey, it's on the list, so my hands are tied."
+        },
+        {
+            "value": "maharani",
+            "properName": "Maharani",
+            "description": "Really? No, no, no problem, I've just... Well, forgive me, but I've never heard of that, before. Right, go on in."
+        },
+        {
+            "value": "kaiser",
+            "properName": "Kaiser",
+            "description": " Different spellings, same pronunciation, believe it or not. Though centuries apart, the Kaiser and Caeser are very similar roles. The only difference being one wears the funny little flower crown and the other wears a helmet with a spike in it. So, I think we know who wins that fight."
+        }
+    ]
+}
