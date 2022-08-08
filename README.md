@@ -13,7 +13,7 @@
 1. Pull the latest code and go into the site directory. Execute `npm install`
 2. If on Linux execute the build.sh add the argument `ssl` if you want ssl support
 3. if on Windows. Execute `npm run build` in the site directory. Then `cargo build --release` for the final build. Add --features ssl if you want ssl
-4. After the build is complete an executable will be available at `target/release/rn_site` This is your website
+4. After the build is complete an executable will be available at `target/releaseerror: could not find native static library `mysqlclient`, perhaps an -L flag is missing?my/rn_site` This is your website
 # Configuring Website
 1. Copy example.env to your working directory of the application and name it .env
 2. The only one you will need to edit will be the `DATABASE_URL` and BIND_URL if that port is already in use

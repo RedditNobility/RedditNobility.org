@@ -20,19 +20,19 @@ r2d2 = "0.8.9"
 r2d2_mysql = "21.0.0"
 dotenv = "0.15.0"
 
-serde = { version = "1.0.137", features = ["derive"] }
-serde_json = "1.0.81"
-serde_qs = "0.9.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_qs = "0.9"
 futures = "0.3.21"
 sanitize-filename = "0.4.0"
 rraw = "1.0.0-beta.0"
 argon2 = "0.4.0"
 rand = "0.8.5"
 futures-util = "0.3.21"
-nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }
+nitro_log = { git = "https://github.com/wherkamp/nitro_log" }
 log = "0.4.17"
-strum = { version = "0.24.0", features = ["derive"] }
-strum_macros = "0.24.0"
+strum = { version = "0.24", features = ["derive"] }
+strum_macros = "0.24"
 derive_more = "0.99.17"
 chrono = "0.4.19"
 hyper = "0.14.18"

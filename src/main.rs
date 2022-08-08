@@ -104,18 +104,6 @@ async fn main() -> std::io::Result<()> {
         println!("Unable to load dotenv {}", error);
         return Ok(());
     }
-    let file = match std::env::var("MODE")
-        .expect("MODE must be RELEASE OR DEBUG")
-        .as_str()
-    {
-        "DEBUG" => "log-debug.json",
-        "RELEASE" => "log-release.json",
-        _ => {
-            panic!("Must be Release or Debug")
-        }
-    };
-    let config: Config = serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
-    NitroLogger::load(config, None).unwrap();
     info!("Initializing Database");
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
     let manager = ConnectionManager::<MysqlConnection>::new(connspec);
